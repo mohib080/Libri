@@ -1,125 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Libri - Online Bookshop</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      background-color: #f4f4f4;
-    }
-    header {
-      background-color: #4A90E2;
-      color: white;
-      padding: 1rem 2rem;
-      text-align: center;
-    }
-    nav {
-      background: #333;
-      display: flex;
-      justify-content: center;
-      padding: 0.5rem;
-    }
-    nav a {
-      color: white;
-      text-decoration: none;
-      margin: 0 1rem;
-    }
-    nav a:hover {
-      text-decoration: underline;
-    }
-    .container {
-      max-width: 1100px;
-      margin: auto;
-      padding: 2rem;
-    }
-    .book-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-      justify-content: center;
-    }
-    .book {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      width: 200px;
-      padding: 1rem;
-      text-align: center;
-    }
-    .book img {
-      max-width: 100%;
-      border-radius: 5px;
-    }
-    .book h3 {
-      font-size: 1.1rem;
-      margin: 0.5rem 0;
-    }
-    .book p {
-      font-size: 0.9rem;
-      color: #555;
-    }
-    .book button {
-      margin-top: 0.5rem;
-      padding: 0.5rem 1rem;
-      background-color: #4A90E2;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    footer {
-      background-color: #222;
-      color: white;
-      text-align: center;
-      padding: 1rem;
-      margin-top: 2rem;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
+  <!-- Header -->
   <header>
-    <h1>Libri</h1>
-    <p>Your One-Stop Online Bookshop</p>
+    <div class="container">
+      <h1 class="logo">Libri</h1>
+      <nav>
+        <a href="#">Home</a>
+        <a href="#">Shop</a>
+        <a href="#">Categories</a>
+        <a href="#">About</a>
+        <a href="#">Contact</a>
+      </nav>
+      <button class="cart-btn">🛒 Cart</button>
+    </div>
   </header>
 
-  <nav>
-    <a href="#">Home</a>
-    <a href="#">Shop</a>
-    <a href="#">Categories</a>
-    <a href="#">Contact</a>
-    <a href="#">Cart</a>
-  </nav>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <h2>Your Gateway to Every Book Imaginable</h2>
+      <p>Explore the best collection of books, eBooks, and more—all in one place.</p>
+      <a href="#" class="btn-primary">Start Browsing</a>
+    </div>
+  </section>
 
-  <div class="container">
-    <h2>Featured Books</h2>
-    <div class="book-list">
-      <div class="book">
-        <img src="https://via.placeholder.com/150x220" alt="Book Cover">
-        <h3>The Great Gatsby</h3>
-        <p>by F. Scott Fitzgerald</p>
-        <button>Add to Cart</button>
-      </div>
-      <div class="book">
-        <img src="https://via.placeholder.com/150x220" alt="Book Cover">
-        <h3>1984</h3>
-        <p>by George Orwell</p>
-        <button>Add to Cart</button>
-      </div>
-      <div class="book">
-        <img src="https://via.placeholder.com/150x220" alt="Book Cover">
-        <h3>To Kill a Mockingbird</h3>
-        <p>by Harper Lee</p>
-        <button>Add to Cart</button>
+  <!-- Featured Books -->
+  <section class="books-section">
+    <div class="container">
+      <h2>Featured Books</h2>
+      <div class="book-grid">
+        <div class="book-card">
+          <img src="https://via.placeholder.com/180x260" alt="Book Cover">
+          <h3>The Great Gatsby</h3>
+          <p class="author">by F. Scott Fitzgerald</p>
+          <p class="price">$12.99</p>
+          <button>Add to Cart</button>
+        </div>
+        <div class="book-card">
+          <img src="https://via.placeholder.com/180x260" alt="Book Cover">
+          <h3>1984</h3>
+          <p class="author">by George Orwell</p>
+          <p class="price">$10.50</p>
+          <button>Add to Cart</button>
+        </div>
+        <div class="book-card">
+          <img src="https://via.placeholder.com/180x260" alt="Book Cover">
+          <h3>To Kill a Mockingbird</h3>
+          <p class="author">by Harper Lee</p>
+          <p class="price">$14.00</p>
+          <button>Add to Cart</button>
+        </div>
       </div>
     </div>
-  </div>
+  </section>
 
+  <!-- Footer -->
   <footer>
-    &copy; 2025 Libri Bookshop. All rights reserved.
+    <div class="container">
+      <p>&copy; 2025 Libri. All rights reserved.</p>
+    </div>
   </footer>
 
 </body>
