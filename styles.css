@@ -276,6 +276,7 @@ nav a:hover {
   cursor: pointer;
   transition: background 0.3s ease, transform 0.3s ease;
 }
+
 /* Dark Mode Styles */
 body.dark-mode {
   background: #121212;
@@ -407,4 +408,25 @@ body.dark-mode .dark-mode-btn:hover {
 .dark-mode-btn i {
   font-size: 1.5rem; /* Match the button's font size */
   line-height: 1; /* Vertically align the icon */
+}
+
+.profile-link {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 0.7rem 1rem;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.profile-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .profile-link {
+  color: #e0e0e0;
+}
+
+body.dark-mode .profile-link:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
