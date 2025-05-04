@@ -1,3 +1,4 @@
+/* Global Styles */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -17,11 +18,21 @@ body {
   padding: 1rem 2rem;
 }
 
+/* Header */
 header {
   background: #1e1f26;
   color: white;
   padding: 1rem 0;
   border-bottom: 4px solid #4A90E2;
+  transition: all 0.3s ease;
+}
+
+header.sticky {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 header .container {
@@ -38,7 +49,6 @@ header .container {
   align-items: center;
 }
 
-
 .search-bar input {
   width: 100%;
   max-width: 800px;
@@ -51,7 +61,6 @@ header .container {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-
 .logo {
   display: flex;
   align-items: left;
@@ -61,25 +70,27 @@ header .container {
 .logo i {
   font-size: 3rem;
   color: #4A90E2;
-  /* Match your logo color */
 }
 
 nav a {
   margin: 0 1rem;
   color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   text-decoration: none;
-  font-weight: 500;
-  transition: color 0.3s ease;
+  padding: 0.5rem 0;
+  transition: color 0.3s ease, transform 0.3s ease;
 }
 
 nav a:hover {
   color: #4A90E2;
+  transform: translateY(-5px);
 }
 
 .profile {
   display: flex;
   align-items: center;
-  margin-left: 1rem;
   position: relative;
   display: inline-block;
 }
@@ -126,60 +137,79 @@ nav a:hover {
   transform: scale(1.1);
 }
 
-
 .nav-area {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-
 .cart-btn {
   background: #4A90E2;
   color: white;
-  padding: 0.5rem 1rem;
+  padding: 0.7rem 1.2rem;
   border: none;
   font-weight: 600;
-  border-radius: 5px;
+  border-radius: 25px;
   cursor: pointer;
-  transition: background 0.3s;
+  position: relative;
+  transition: background 0.3s ease, transform 0.3s ease;
 }
 
 .cart-btn:hover {
   background: #367cd6;
+  transform: scale(1.1);
 }
 
+.cart-btn::after {
+  content: '3'; /* Replace this with dynamic cart count using JavaScript */
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: red;
+  color: white;
+  border-radius: 50%;
+  padding: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* Hero Section */
 .hero {
   background: linear-gradient(to right, #4A90E2, #2c3e50);
   color: white;
-  padding: 4rem 0;
+  padding: 6rem 0;
   text-align: center;
+  position: relative;
 }
 
 .hero h2 {
-  font-size: 2.5rem;
+  font-size: 3rem;
   margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .hero p {
-  font-size: 1.1rem;
-  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  margin-bottom: 2rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .btn-primary {
-  background: white;
+  background: #fff;
   color: #4A90E2;
-  padding: 0.75rem 1.5rem;
+  padding: 1rem 2rem;
   border-radius: 25px;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
-  transition: background 0.3s;
+  transition: background 0.3s, transform 0.2s;
 }
 
 .btn-primary:hover {
   background: #e4e4e4;
+  transform: scale(1.1);
 }
 
+/* Featured Books Section */
 .books-section {
   padding: 3rem 0;
   background: #fff;
@@ -194,7 +224,7 @@ nav a:hover {
 
 .book-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Dynamic column size */
   gap: 2rem;
 }
 
@@ -204,15 +234,18 @@ nav a:hover {
   padding: 1rem;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
   text-align: center;
-  transition: transform 0.2s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .book-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-10px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
 .book-card img {
   width: 100%;
+  height: 300px;
+  object-fit: cover;
   border-radius: 8px;
   margin-bottom: 1rem;
 }
@@ -237,21 +270,141 @@ nav a:hover {
   background: #4A90E2;
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
+  padding: 0.7rem 1.3rem;
+  border-radius: 25px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+/* Dark Mode Styles */
+body.dark-mode {
+  background: #121212;
+  color: #e0e0e0;
 }
 
-.book-card button:hover {
-  background: #367cd6;
+body.dark-mode header {
+  background: #1e1e1e;
+  color: #bbbbbb;
+  border-bottom-color: #bb86fc;
 }
 
-footer {
-  background: #1e1f26;
-  color: white;
-  text-align: center;
-  padding: 1rem 0;
-  margin-top: 3rem;
+body.dark-mode header nav a {
+  color: #bbbbbb;
+}
+
+body.dark-mode header nav a:hover {
+  color: #bb86fc;
+}
+
+body.dark-mode .search-bar input {
+  background-color: #303030;
+  color: #e0e0e0;
+  box-shadow: 0 2px 5px rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .logo i {
+  color: #bb86fc;
+}
+
+body.dark-mode .cart-btn {
+  background: #bb86fc;
+  color: #212121;
+}
+
+body.dark-mode .cart-btn:hover {
+  background: #9c6ade;
+}
+
+body.dark-mode .profile-dropdown {
+  background: #303030;
+  box-shadow: 0 8px 16px rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .profile-dropdown a {
+  color: #e0e0e0;
+}
+
+body.dark-mode .profile-dropdown a:hover {
+  background: #424242;
+}
+
+body.dark-mode .profile-img {
+  border-color: #bb86fc;
+}
+
+body.dark-mode .hero {
+  background: linear-gradient(to right, #bb86fc, #303030);
+  color: #e0e0e0;
+}
+
+body.dark-mode .books-section {
+  background: #212121;
+}
+
+body.dark-mode .books-section h2 {
+  color: #e0e0e0;
+}
+
+body.dark-mode .book-card {
+  background: #303030;
+  box-shadow: 0 4px 8px rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .book-card h3 {
+  color: #e0e0e0;
+}
+
+body.dark-mode .book-card .author {
+  color: #9e9e9e;
+}
+
+body.dark-mode .book-card .price {
+  color: #bb86fc;
+}
+
+body.dark-mode .book-card button {
+  background: #bb86fc;
+  color: #212121;
+}
+
+body.dark-mode .book-card button:hover {
+  background: #9c6ade;
+}
+
+body.dark-mode footer {
+  background: #1e1e1e;
+  color: #bbbbbb;
+}
+
+/* Dark Mode Toggle Button Styles - Enhanced */
+.dark-mode-btn {
+  background: none;
+  color: #f0f0f0; /* Light text for better contrast on dark backgrounds */
+  border: 2px solid #555; /* Subtle border */
+  cursor: pointer;
+  font-size: 1.5rem; /* Bigger icon */
+  padding: 0.75rem 1rem; /* More padding */
+  border-radius: 8px; /* Slightly rounded corners */
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.dark-mode-btn:hover {
+  color: #4A90E2;
+  border-color: #4A90E2;
+}
+
+body.dark-mode .dark-mode-btn {
+  color: #e0e0e0;
+  border-color: #888;
+}
+
+body.dark-mode .dark-mode-btn:hover {
+  color: #bb86fc;
+  border-color: #bb86fc;
+}
+
+/* Ensure the icon inside is also appropriately sized */
+.dark-mode-btn i {
+  font-size: 1.5rem; /* Match the button's font size */
+  line-height: 1; /* Vertically align the icon */
 }
