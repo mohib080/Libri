@@ -1,0 +1,144 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: #0c1c29;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 800px;
+}
+
+.login-box {
+    display: flex;
+    background: linear-gradient(135deg, #3b8d99, #2a4d72);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.login-left,
+.login-right {
+    flex: 1;
+    padding: 40px;
+}
+
+.login-left h2 {
+    margin-bottom: 20px;
+    font-size: 2.2rem;
+    color: white;
+}
+
+.form-group {
+    position: relative;
+    margin-bottom: 25px;
+}
+
+input {
+    width: 100%;
+    padding: 14px 12px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: #f1f1f1;
+    outline: none;
+}
+
+input:focus {
+    border-color: #01c6be;
+}
+
+input:focus+label,
+input:not(:placeholder-shown)+label {
+    transform: translateY(-25px);
+    font-size: 0.85rem;
+    color: #01c6be;
+}
+
+label {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    transition: all 0.2s ease;
+    color: #999;
+    pointer-events: none;
+    background-color: transparent;
+}
+
+button {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    background-color: #01c6be;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #028e8c;
+}
+
+.switch-form {
+    margin-top: 20px;
+    color: white;
+    text-align: center;
+}
+
+.switch-form a {
+    color: #01c6be;
+    text-decoration: none;
+}
+
+.login-right {
+    background-color: #2c3e50;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.cap-icon {
+    font-size: 5rem;
+    margin-bottom: 20px;
+    color: #01c6be;
+}
+
+@keyframes fadeSlideUp {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .login-right .cap-icon {
+    animation: fadeSlideUp 0.8s ease-out forwards;
+    opacity: 0;
+    animation-delay: 0.1s;
+  }
+  
+  .login-right h2 {
+    animation: fadeSlideUp 0.8s ease-out forwards;
+    opacity: 0;
+    animation-delay: 0.3s;
+  }
+  
+  .login-right p {
+    animation: fadeSlideUp 0.8s ease-out forwards;
+    opacity: 0;
+    animation-delay: 0.5s;
+  }
+  

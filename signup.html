@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sign Up - Libri</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        <link rel="stylesheet" href="signup.css" />
+      </head>
+      
+<body>
+  <div class="signup-screen">
+    <div class="signup-left">
+      <h2>Create an Account</h2>
+      <form id="signup">
+        <div class="form-group">
+          <input type="text" id="username" placeholder=" " required />
+          <label for="username">Username</label>
+        </div>
+        <div class="form-group">
+          <input type="email" id="email" placeholder=" " required />
+          <label for="email">Email</label>
+        </div>
+        <div class="form-group">
+          <input type="password" id="password" placeholder=" " required />
+          <label for="password">Password</label>
+        </div>
+        <div class="form-group">
+          <input type="password" id="confirm" placeholder=" " required />
+          <label for="confirm">Confirm Password</label>
+        </div>
+        <button type="submit">Sign Up</button>
+      </form>
+      <div class="switch-form">
+        Already have an account? <a href="signin.html">Sign In</a>
+      </div>
+    </div>
+
+    <div class="signup-right">
+        <i class="fas fa-graduation-cap cap-icon"></i>
+      <h2>WELCOME ABOARD!</h2>
+      <p>Join Libri and explore thousands of books curated just for you.</p>
+    </div>
+  </div>
+  <script src="signup.js"></script>
+</body>
+</html>

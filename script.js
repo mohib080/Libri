@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } else {
         profileContainer.innerHTML = `
-            <a href="/auth.html" class="profile-link">Profile</a>
+            <a href="/signin.html" class="profile-link">Profile</a>
         `;
     }
 
