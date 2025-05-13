@@ -82,3 +82,31 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error fetching books:', error);
         });
 });
+
+// Assuming you're getting books from your backend to display on the homepage
+document.addEventListener('DOMContentLoaded', () => {
+    // Call the fetch function when the page loads
+    fetchBooks();
+});
+
+// Function to fetch book data from backend
+function fetchBooks() {
+    fetch('http://localhost:3000/api/books')  // Your backend API URL
+        .then(response => response.json())     // Parse the response as JSON
+        .then(data => {
+            console.log(data);  // Do something with the data (e.g., display it)
+            displayBooks(data); // Function to display books in the homepage
+        })
+        .catch(error => console.error('Error fetching data:', error));
+}
+
+// Function to display books data in the homepage
+function displayBooks(books) {
+    const booksList = document.getElementById('books-list');  // Make sure your HTML has this element
+
+    books.forEach(book => {
+        const listItem = document.createElement('li');
+        listItem.textContent = `${book.title} by ${book.author}`;  // Adjust this based on your DB schema
+        booksList.appendChild(listItem);
+    });
+}
