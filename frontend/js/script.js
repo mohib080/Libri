@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Function to fetch book data from backend
 function fetchBooks() {
-    fetch('http://localhost:3000/api/books')  // Your backend API URL
+    fetch('http://192.168.0.176:3000/api/books')  // Your backend API URL
         .then(response => response.json())     // Parse the response as JSON
         .then(data => {
             console.log(data);  // Do something with the data (e.g., display it)
@@ -110,3 +110,34 @@ function displayBooks(books) {
         booksList.appendChild(listItem);
     });
 }
+
+document.getElementById('hero-search-box')?.addEventListener('input', (e) => {
+    const query = e.target.value.trim().toLowerCase();
+    // You can implement fetch(`/api/search?q=${query}`) here
+    console.log('Searching for:', query);
+});
+
+// Typing animation for placeholder text
+const typingPlaceholder = document.getElementById('hero-search-box');
+const placeholderTexts = ["Search by Book Name...", "Search by Author Name...", "Try 'Atomic Habits' or 'J.K. Rowling'"];
+let currentText = 0;
+let charIndex = 0;
+
+function typePlaceholder() {
+    if (!typingPlaceholder) return;
+
+    if (charIndex <= placeholderTexts[currentText].length) {
+        typingPlaceholder.setAttribute("placeholder", placeholderTexts[currentText].substring(0, charIndex++));
+        setTimeout(typePlaceholder, 80);
+    } else {
+        setTimeout(() => {
+            charIndex = 0;
+            currentText = (currentText + 1) % placeholderTexts.length;
+            typePlaceholder();
+        }, 2000);
+    }
+}
+
+typePlaceholder();
+
+

@@ -2,59 +2,94 @@ const express = require('express');
 const { Pool } = require('pg');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-
-// Create Express app
+const path = require('path');
 const app = express();
+
+app.use(express.static(path.join(__dirname, '../frontend/html')));
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+
+
+
+
 const port = 3000;
 
-// Use CORS and body-parser middleware
 app.use(cors());
 app.use(bodyParser.json());
 
-// Import database configuration
-const dbConfig = require('../Connection/config.js'); // Path to your config.js file
+const dbConfig = require('../Connection/config.js');
 
-// Create a PostgreSQL connection pool
-// This manages connections to your database efficiently
+
 const pool = new Pool(dbConfig);
 
-// Event listener for successful connections (optional but good for debugging)
 pool.on('connect', () => {
   console.log('Connected to PostgreSQL database');
 });
 
-// Event listener for errors in the connection pool (important for error handling)
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
-  // Consider more graceful error handling in production, like logging and trying to recover
-  process.exit(-1); // Exit process if there's a serious database error
+
+  process.exit(-1);
 });
 
-// Route to fetch data (Example: Books data)
+
 app.get('/api/books', async (req, res) => {
-  let client; // Declare client variable outside try block for finally block access
+  let client;
   try {
-    // Get a client from the connection pool
+
     client = await pool.connect();
 
-    // Query to fetch data from the 'books' table
-    // PostgreSQL uses standard SQL. Table and column names are typically lowercase.
-    const result = await client.query('SELECT * FROM books');
 
-    // pg returns the rows in the 'rows' property of the result object
+    const result = await client.query('SELECT * FROM book');
+    // console.log('Data fetched from PostgreSQL DB:', result.rows);
+
+
     res.json(result.rows);
   } catch (err) {
     console.error('Database query error:', err);
     res.status(500).send('Error fetching data from PostgreSQL DB');
   } finally {
-    // Ensure the client is released back to the pool, even if an error occurs
     if (client) {
       client.release();
     }
   }
 });
+app.get('/api/books/search', async (req, res) => {
+  const query = req.query.q;
 
-// Start the server on port 3000
+  if (!query) {
+    return res.status(400).json({ error: 'Search query is required' });
+  }
+
+  let client;
+
+  try {
+    client = await pool.connect();
+
+    const searchQuery = `
+      SELECT * FROM book
+      WHERE LOWER(title) LIKE LOWER($1)
+         OR LOWER(author) LIKE LOWER($1)
+    `;
+
+    const result = await client.query(searchQuery, [`%${query}%`]);
+    console.log('Search results:', result.rows);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Search error:', err);
+    res.status(500).send('Error searching books');
+  } finally {
+    if (client) client.release();
+  }
+});
+
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/html/index.html'));
+});
+
+
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
