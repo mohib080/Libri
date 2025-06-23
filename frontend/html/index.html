@@ -11,19 +11,14 @@
 </head>
 
 <body>
-
   <header id="header">
     <div class="container">
       <h1 class="logo"><i class="fas fa-graduation-cap"></i> Libri</h1>
 
-      <div class="search-bar">
-        <input type="text" placeholder="Search for books...">
-      </div>
-
       <div class="nav-area">
         <nav>
-          <a href="#">Home</a>
-          <a href="#">Categories</a>
+          <a href="index.html">Home</a>
+          <a href="#" id="categories-nav-link">Categories</a> <!-- Placeholder for now, can be dropdown later -->
           <a href="#">Contact</a>
         </nav>
         <button class="cart-btn"><i class="fas fa-shopping-cart"></i> Cart</button>
@@ -50,6 +45,26 @@
     </div>
   </section>
 
+  <section class="filter-section">
+    <div class="container">
+      <div class="filters-container">
+        <div class="filter-group">
+          <label for="category-select">Category:</label>
+          <select id="category-select">
+            <option value="">All Categories</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="subcategory-select">Sub-Category:</label>
+          <select id="subcategory-select" disabled>
+            <option value="">All Sub-Categories</option>
+          </select>
+        </div>
+        <button id="clear-filters-btn" class="clear-filters-btn">Clear Filters</button>
+      </div>
+    </div>
+  </section>
 
 
   <section class="books-section">

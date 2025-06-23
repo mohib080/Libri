@@ -1,188 +1,376 @@
+/* BASE */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', sans-serif;
-    background-color: #0c1c29;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  font-family: 'Source Sans Pro', sans-serif;
+  background: #f8f9fc;
+  color: #222;
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  animation: fadeInPage 1s ease forwards;
+  transition: background-color 0.3s, color 0.3s;
+  /* Smooth dark mode transition */
 }
 
-.auth-container {
-    width: 100%;
-    max-width: 800px;
+@keyframes fadeInPage {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.login-box {
-    display: flex;
-    background: linear-gradient(135deg, #3b8d99, #2a4d72);
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+.signin-screen {
+  background: white;
+  max-width: 960px;
+  width: 100%;
+  display: flex;
+  border-radius: 15px;
+  box-shadow: 0 20px 50px rgba(100, 100, 140, 0.15);
+  overflow: hidden;
+  transition: background 0.3s, box-shadow 0.3s;
+  /* Smooth dark mode transition */
 }
 
-.login-left,
-.login-right {
-    flex: 1;
-    padding: 40px;
+/* LEFT FORM AREA */
+.signin-left {
+  flex: 1;
+  padding: 3rem 3rem 3rem 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  animation: slideInLeft 0.8s ease forwards;
+  background: #fff;
+  transition: background 0.3s, color 0.3s;
+  /* Smooth dark mode transition */
 }
 
-.login-left h2 {
-    margin-bottom: 20px;
-    font-size: 2.2rem;
-    color: white;
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.signin-left h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  font-weight: 700;
+  color: #4f46e5;
+  transition: color 0.3s;
+  /* Smooth dark mode transition */
+}
+
+/* FORM */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.8rem;
 }
 
 .form-group {
-    position: relative;
-    margin-bottom: 25px;
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
 }
 
-input {
-    width: 100%;
-    padding: 14px 12px;
-    border: 2px solid #ccc;
-    border-radius: 8px;
-    font-size: 1rem;
-    background-color: #f1f1f1;
-    outline: none;
+input[type="email"],
+input[type="password"] {
+  border: none;
+  border-bottom: 2px solid #ccc;
+  padding: 0.8rem 0.5rem 0.25rem 0.5rem;
+  font-size: 1rem;
+  font-family: 'Source Sans Pro', sans-serif;
+  background: transparent;
+  outline-offset: 2px;
+  transition: border-color 0.3s ease, background-color 0.3s, color 0.3s;
+  /* Smooth dark mode transition */
+}
+
+input::placeholder {
+  color: transparent;
 }
 
 input:focus {
-    border-color: #01c6be;
+  border-color: #4f46e5;
+  outline: none;
 }
 
 input:focus+label,
 input:not(:placeholder-shown)+label {
-    transform: translateY(-25px);
-    font-size: 0.85rem;
-    color: #01c6be;
+  color: #4f46e5;
+  font-weight: 600;
+  font-size: 0.8rem;
+  transform: translateY(-28px);
+  transition: all 0.3s ease;
 }
 
 label {
-    position: absolute;
-    top: 50%;
-    left: 12px;
-    transform: translateY(-50%);
-    transition: all 0.2s ease;
-    color: #999;
-    pointer-events: none;
-    background-color: transparent;
+  position: absolute;
+  left: 0.5rem;
+  top: 0.8rem;
+  color: #999;
+  font-weight: 400;
+  font-size: 1rem;
+  pointer-events: none;
+  user-select: none;
+  transition: all 0.3s ease;
 }
 
-button {
-    width: 100%;
-    padding: 15px;
-    border: none;
-    border-radius: 8px;
-    background-color: #01c6be;
-    color: white;
-    font-size: 1.2rem;
-    cursor: pointer;
+button.btn-primary {
+  background: #4f46e5;
+  color: white;
+  padding: 1rem 0;
+  border: none;
+  border-radius: 40px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  font-family: 'Source Sans Pro', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgb(79 70 229 / 0.4);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
-button:hover {
-    background-color: #028e8c;
+button.btn-primary:hover {
+  background: #3730a3;
+  box-shadow: 0 12px 25px rgb(55 48 163 / 0.6);
 }
 
+/* Error message styling */
+.error-msg {
+  color: #e11d48;
+  font-size: 0.85rem;
+  height: 1.2rem;
+  margin-top: 0.3rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* SWITCH FORM */
 .switch-form {
-    margin-top: 20px;
-    color: white;
-    text-align: center;
+  margin-top: 1.8rem;
+  font-size: 0.9rem;
+  color: #555;
+  transition: color 0.3s;
+  /* Smooth dark mode transition */
 }
 
 .switch-form a {
-    color: #01c6be;
-    text-decoration: none;
+  color: #4f46e5;
+  font-weight: 600;
+  transition: color 0.3s ease;
 }
 
-.login-right {
-    background-color: #2c3e50;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+.switch-form a:hover {
+  color: #3730a3;
+}
+
+/* RIGHT INFO AREA */
+.signin-right {
+  flex: 1;
+  background: linear-gradient(135deg, #6366f1, #a8b3ff);
+  color: white;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  animation: slideInRight 0.8s ease forwards;
+  transition: background 0.3s, color 0.3s;
+  /* Smooth dark mode transition */
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .cap-icon {
-    font-size: 5rem;
-    margin-bottom: 20px;
-    color: #01c6be;
+  font-size: 5rem;
+  margin-bottom: 1.2rem;
+  color: rgba(255 255 255 / 0.85);
+  animation: bounce 2.5s infinite ease-in-out;
+  transition: color 0.3s;
+  /* Smooth dark mode transition */
 }
 
-@keyframes fadeSlideUp {
-    0% {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
   }
-  
-  .login-right .cap-icon {
-    animation: fadeSlideUp 0.8s ease-out forwards;
-    opacity: 0;
-    animation-delay: 0.1s;
+
+  50% {
+    transform: translateY(-15px);
   }
-  
-  .login-right h2 {
-    animation: fadeSlideUp 0.8s ease-out forwards;
-    opacity: 0;
-    animation-delay: 0.3s;
+}
+
+.signin-right h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.signin-right p {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  font-weight: 500;
+  max-width: 320px;
+  text-align: center;
+  color: rgba(255 255 255 / 0.9);
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .signin-screen {
+    flex-direction: column;
+    border-radius: 15px;
   }
-  
-  .login-right p {
-    animation: fadeSlideUp 0.8s ease-out forwards;
-    opacity: 0;
-    animation-delay: 0.5s;
+
+  .signin-left,
+  .signin-right {
+    padding: 2.5rem 2rem;
   }
-  /* Keyframe animation for form fields */
-@keyframes formFadeIn {
-    0% {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
+
+  .signin-right {
+    order: -1;
+    text-align: center;
+    border-radius: 0 0 15px 15px;
   }
-  
-  .form-group {
-    animation: formFadeIn 0.8s ease-out forwards;
-    opacity: 0;
+}
+
+/* --- DARK MODE STYLES --- */
+body.dark-mode {
+  background: #1a1a1a;
+  /* Darker background */
+  color: #e0e0e0;
+  /* Lighter text */
+}
+
+body.dark-mode .signin-screen {
+  background: #2a2a2a;
+  /* Dark background for the card */
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  /* Darker shadow */
+}
+
+body.dark-mode .signin-left {
+  background: #2a2a2a;
+  /* Same as screen background */
+  color: #e0e0e0;
+}
+
+body.dark-mode .signin-left h2 {
+  color: #bb86fc;
+  /* Dark mode accent color */
+}
+
+body.dark-mode input[type="email"],
+body.dark-mode input[type="password"] {
+  border-bottom-color: #555;
+  /* Darker border */
+  background: #333;
+  /* Darker input background */
+  color: #e0e0e0;
+  /* Lighter input text */
+}
+
+body.dark-mode input:focus {
+  border-color: #7c3aed;
+  /* Dark mode focus border */
+}
+
+body.dark-mode input:focus+label,
+body.dark-mode input:not(:placeholder-shown)+label {
+  color: #bb86fc;
+  /* Dark mode label color */
+}
+
+body.dark-mode label {
+  color: #999;
+  /* Dark mode default label color */
+}
+
+body.dark-mode button.btn-primary {
+  background: #7c3aed;
+  /* Dark mode primary button */
+  box-shadow: 0 8px 20px rgb(124 58 237 / 0.4);
+  /* Dark mode button shadow */
+}
+
+body.dark-mode button.btn-primary:hover {
+  background: #5927a8;
+  /* Darker hover */
+  box-shadow: 0 12px 25px rgb(89 39 168 / 0.6);
+  /* Darker hover shadow */
+}
+
+body.dark-mode .error-msg {
+  color: #cf6679;
+  /* Soft red for errors in dark mode */
+}
+
+body.dark-mode .switch-form {
+  color: #bbb;
+  /* Lighter text */
+}
+
+body.dark-mode .switch-form a {
+  color: #bb86fc;
+  /* Dark mode link color */
+}
+
+body.dark-mode .switch-form a:hover {
+  color: #7c3aed;
+  /* Darker hover */
+}
+
+body.dark-mode .signin-right {
+  background: linear-gradient(135deg, #4c1d95, #7c3aed);
+  /* Dark mode gradient */
+  color: #e0e0e0;
+}
+
+body.dark-mode .cap-icon {
+  color: rgba(255 255 255 / 0.7);
+  /* Slightly reduced opacity */
+}
+
+body.dark-mode .signin-right p {
+  color: rgba(255 255 255 / 0.8);
+}
+
+@media (max-width: 900px) {
+  body.dark-mode .signin-right {
+    border-radius: 0 0 15px 15px;
+    /* Apply border radius consistently in dark mode */
   }
-  
-  .form-group:nth-child(1) {
-    animation-delay: 0.2s;
-  }
-  
-  .form-group:nth-child(2) {
-    animation-delay: 0.4s;
-  }
-  
-  button {
-    animation: formFadeIn 0.8s ease-out forwards;
-    opacity: 0;
-    animation-delay: 0.6s;
-  }
-  
-  /* Hover effect for the button */
-  button:hover {
-    background-color: #028e8c;
-    transform: scale(1.05);
-    transition: transform 0.3s ease;
-  }
-  
-  /* Input focus animation */
-  input:focus {
-    border-color: #01c6be;
-    transform: scale(1.05);
-    transition: transform 0.3s ease, border-color 0.3s ease;
-  }
-  
+}
