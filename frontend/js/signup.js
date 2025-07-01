@@ -1,4 +1,4 @@
-document.getElementById('signup').addEventListener('submit', function (event) {
+document.getElementById('signup').addEventListener('submit', async function (event) {
     event.preventDefault();
 
     const usernameInput = document.getElementById('username');
@@ -6,129 +6,151 @@ document.getElementById('signup').addEventListener('submit', function (event) {
     const passwordInput = document.getElementById('password');
     const confirmInput = document.getElementById('confirm');
 
-    const username = usernameInput.value.trim();
+    const name = usernameInput.value.trim();
     const email = emailInput.value.trim();
     const password = passwordInput.value;
     const confirmPassword = confirmInput.value;
 
     let isValid = true;
+    const errors = {};
 
-    // Username validation
-    const usernameError = usernameInput.nextElementSibling;
-    if (!username) {
-        usernameError.textContent = 'Username is required.';
-        usernameError.style.opacity = '1';
+    // Validation
+    if (!name) {
+        errors.username = 'Username is required';
         isValid = false;
-    } else {
-        usernameError.textContent = '';
-        usernameError.style.opacity = '0';
     }
 
-    // Email validation
-    const emailError = emailInput.nextElementSibling;
     if (!email) {
-        emailError.textContent = 'Email is required.';
-        emailError.style.opacity = '1';
+        errors.email = 'Email is required';
         isValid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        emailError.textContent = 'Invalid email format.';
-        emailError.style.opacity = '1';
+        errors.email = 'Invalid email format';
         isValid = false;
-    } else {
-        emailError.textContent = '';
-        emailError.style.opacity = '0';
     }
 
-    // Password validation
-    const passwordError = passwordInput.nextElementSibling;
     if (!password) {
-        passwordError.textContent = 'Password is required.';
-        passwordError.style.opacity = '1';
+        errors.password = 'Password is required';
         isValid = false;
-    } else if (password.length < 6) {
-        passwordError.textContent = 'Password must be at least 6 characters.';
-        passwordError.style.opacity = '1';
+    } else if (password.length < 8) {
+        errors.password = 'Password must be at least 8 characters';
         isValid = false;
-    } else {
-        passwordError.textContent = '';
-        passwordError.style.opacity = '0';
+    } else if (!/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])/.test(password)) {
+        errors.password = 'Password must contain uppercase, lowercase, and number';
+        isValid = false;
     }
 
-    // Confirm Password validation
-    const confirmError = confirmInput.nextElementSibling;
     if (password !== confirmPassword) {
-        confirmError.textContent = 'Passwords do not match.';
-        confirmError.style.opacity = '1';
+        errors.confirm = 'Passwords do not match';
         isValid = false;
-    } else {
-        confirmError.textContent = '';
-        confirmError.style.opacity = '0';
     }
 
-    if (!isValid) {
-        return;
+    // Display errors
+    for (const [field, message] of Object.entries(errors)) {
+        const errorElement = document.getElementById(`${field}-error`);
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
     }
 
-    console.log("User sign-up attempt:", { username, email, password });
+    if (!isValid) return;
 
-    // Simulate successful signup
-    alert("Signup successful! You can now log in.");
-    window.location.href = 'signin.html'; // Redirect to login page
-});
+    try {
+        const response = await fetch('/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name,
+                email,
+                password,
+                phone_number: null,
+                address: null
+            })
+        });
 
+        const data = await response.json();
 
-document.getElementById('username').addEventListener('input', function () {
-    const usernameInput = this;
-    const usernameError = usernameInput.nextElementSibling;
-    if (!usernameInput.value.trim()) {
-        usernameError.textContent = 'Username is required.';
-        usernameError.style.opacity = '1';
-    } else {
-        usernameError.textContent = '';
-        usernameError.style.opacity = '0';
-    }
-});
-
-document.getElementById('email').addEventListener('input', function () {
-    const emailInput = this;
-    const emailError = emailInput.nextElementSibling;
-    if (!emailInput.value.trim()) {
-        emailError.textContent = 'Email is required.';
-        emailError.style.opacity = '1';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim())) {
-        emailError.textContent = 'Invalid email format.';
-        emailError.style.opacity = '1';
-    } else {
-        emailError.textContent = '';
-        emailError.style.opacity = '0';
-    }
-});
-
-document.getElementById('password').addEventListener('input', function () {
-    const passwordInput = this;
-    const passwordError = passwordInput.nextElementSibling;
-    if (!passwordInput.value) {
-        passwordError.textContent = 'Password is required.';
-        passwordError.style.opacity = '1';
-    } else if (passwordInput.value.length < 6) {
-        passwordError.textContent = 'Password must be at least 6 characters.';
-        passwordError.style.opacity = '1';
-    } else {
-        passwordError.textContent = '';
-        passwordError.style.opacity = '0';
-    }
-    document.getElementById('confirm').dispatchEvent(new Event('input'));
-});
-
-document.getElementById('confirm').addEventListener('input', function () {
-    const confirmInput = this;
-    const passwordInput = document.getElementById('password');
-    const confirmError = confirmInput.nextElementSibling;
-    if (passwordInput.value !== confirmInput.value) {
-        confirmError.textContent = 'Passwords do not match.';
-        confirmError.style.opacity = '1';
-    } else {
-        confirmError.textContent = '';
-        confirmError.style.opacity = '0';
+        if (response.ok) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('customer', JSON.stringify(data.customer));
+            alert("Signup successful! You can now log in.");
+            window.location.href = 'signin.html';
+        } else {
+            if (data.error.includes('Email')) {
+                document.getElementById('email-error').textContent = data.error;
+                document.getElementById('email-error').style.display = 'block';
+            } else {
+                alert(`Signup failed: ${data.error}`);
+            }
+        }
+    } catch (error) {
+        console.error('Signup error:', error);
+        alert('Signup failed. Please try again.');
     }
 });
+
+// Real-time Validation
+document.getElementById('username').addEventListener('input', validateName);
+document.getElementById('email').addEventListener('input', validateEmail);
+document.getElementById('password').addEventListener('input', validatePassword);
+document.getElementById('confirm').addEventListener('input', validateConfirm);
+
+function validateName() {
+    const input = document.getElementById('username');
+    const error = document.getElementById('username-error');
+    if (!input.value.trim()) {
+        error.textContent = 'Username is required';
+        error.style.display = 'block';
+    } else {
+        error.style.display = 'none';
+    }
+}
+
+function validateEmail() {
+    const input = document.getElementById('email');
+    const error = document.getElementById('email-error');
+    const email = input.value.trim();
+
+    if (!email) {
+        error.textContent = 'Email is required';
+        error.style.display = 'block';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        error.textContent = 'Invalid email format';
+        error.style.display = 'block';
+    } else {
+        error.style.display = 'none';
+    }
+}
+
+function validatePassword() {
+    const input = document.getElementById('password');
+    const error = document.getElementById('password-error');
+    const password = input.value;
+
+    if (!password) {
+        error.textContent = 'Password is required';
+        error.style.display = 'block';
+    } else if (password.length < 8) {
+        error.textContent = 'Password must be at least 8 characters';
+        error.style.display = 'block';
+    } else if (!/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])/.test(password)) {
+        error.textContent = 'Password must contain uppercase, lowercase, and number';
+        error.style.display = 'block';
+    } else {
+        error.style.display = 'none';
+    }
+    validateConfirm();
+}
+
+function validateConfirm() {
+    const password = document.getElementById('password').value;
+    const confirm = document.getElementById('confirm').value;
+    const error = document.getElementById('confirm-error');
+
+    if (password !== confirm) {
+        error.textContent = 'Passwords do not match';
+        error.style.display = 'block';
+    } else {
+        error.style.display = 'none';
+    }
+}

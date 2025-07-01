@@ -3,6 +3,8 @@ const { Pool } = require('pg');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const app = express();
 
 app.use(express.static(path.join(__dirname, '../frontend/html')));
@@ -17,8 +19,6 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const dbConfig = require('../Connection/config.js');
-
-
 const pool = new Pool(dbConfig);
 
 pool.on('connect', () => {
@@ -295,6 +295,147 @@ app.get('/api/books/:bookId/reviews', async (req, res) => {
         }
     }
 });
+app.post('/signup', async (req, res) => {
+    const { name, email, password, phone_number, address } = req.body;
+    try {
+        // Check if customer exists
+        const customerExists = await pool.query(
+            'SELECT * FROM customer WHERE email = $1',
+            [email]
+        );
+
+        if (customerExists.rows.length > 0) {
+            return res.status(400).json({ error: 'Email already exists' });
+        }
+
+        // Hash password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // Create new customer
+        const newCustomer = await pool.query(
+            `INSERT INTO customer (name, email, hashed_password, phone_number, address, created_at, updated_at, role, is_verified) 
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), 'customer', false) 
+       RETURNING *`,
+            [name, email, hashedPassword, phone_number || null, address || null]
+        );
+
+        // Generate JWT token
+        const token = jwt.sign(
+            {
+                customerId: newCustomer.rows[0].customer_id,
+                email: newCustomer.rows[0].email,
+                role: newCustomer.rows[0].role
+            },
+            'your_secret_key',
+            { expiresIn: '24h' }
+        );
+
+        res.status(201).json({
+            token,
+            customer: {
+                customer_id: newCustomer.rows[0].customer_id,
+                name: newCustomer.rows[0].name,
+                email: newCustomer.rows[0].email,
+                role: newCustomer.rows[0].role
+            }
+        });
+    } catch (err) {
+        console.error('Signup error:', err);
+        res.status(500).json({ error: 'Registration failed' });
+    }
+});
+
+// Signin Route
+app.post('/signin', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        // Find customer by email
+        const customerResult = await pool.query(
+            'SELECT * FROM customer WHERE email = $1',
+            [email]
+        );
+
+        if (customerResult.rows.length === 0) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const customer = customerResult.rows[0];
+
+        // Verify password
+        const validPassword = await bcrypt.compare(password, customer.hashed_password);
+        if (!validPassword) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // Update last_login_at
+        await pool.query(
+            'UPDATE customer SET last_login_at = NOW() WHERE customer_id = $1',
+            [customer.customer_id]
+        );
+
+        // Generate JWT token
+        const token = jwt.sign(
+            {
+                customerId: customer.customer_id,
+                email: customer.email,
+                role: customer.role
+            },
+            'your_secret_key',
+            { expiresIn: '24h' }
+        );
+
+        res.json({
+            token,
+            customer: {
+                customer_id: customer.customer_id,
+                name: customer.name,
+                email: customer.email,
+                role: customer.role
+            }
+        });
+    } catch (err) {
+        console.error('Signin error:', err);
+        res.status(500).json({ error: 'Login failed' });
+    }
+});
+
+// Optional: Get current user profile
+app.get('/profile', authenticateToken, async (req, res) => {
+    try {
+        const customerResult = await pool.query(
+            'SELECT customer_id, name, email, phone_number, address, role, created_at, last_login_at, is_verified FROM customer WHERE customer_id = $1',
+            [req.user.customerId]
+        );
+
+        if (customerResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Customer not found' });
+        }
+
+        res.json({ customer: customerResult.rows[0] });
+    } catch (err) {
+        console.error('Profile error:', err);
+        res.status(500).json({ error: 'Failed to fetch profile' });
+    }
+});
+
+// Middleware to authenticate JWT tokens
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'Access token required' });
+    }
+
+    jwt.verify(token, 'your_secret_key', (err, user) => {
+        if (err) {
+            return res.status(403).json({ error: 'Invalid token' });
+        }
+        req.user = user;
+        next();
+    });
+}
 
 
 app.get('/', (req, res) => {
