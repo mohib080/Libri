@@ -123,9 +123,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 </a>
             `;
             bookCard.querySelector('.add-to-cart-btn').addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                console.log(`Added "${book.title}" to cart!`);
+                event.preventDefault(); // Prevents any default form submission or link following behavior
+                event.stopPropagation(); // Stops the click event from bubbling up to parent elements
+                window.location.href = 'signin.html'; // This line redirects to signin.html
             });
 
             bookGrid.appendChild(bookCard);
