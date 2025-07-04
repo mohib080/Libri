@@ -26,7 +26,7 @@ document.getElementById('signin').addEventListener('submit', async function (eve
             localStorage.setItem('token', data.token);
             localStorage.setItem('customer', JSON.stringify(data.customer));
             alert('Login successful!');
-            window.location.href = 'index.html';
+            window.location.href = 'user.html';
         } else {
             document.getElementById('login-error').textContent =
                 data.error || 'Invalid email or password';

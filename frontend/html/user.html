@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Libri - Online Bookshop</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <header id="header">
+        <div class="container">
+            <h1 class="logo"><i class="fas fa-graduation-cap"></i> Libri</h1>
+
+            <div class="nav-area">
+                <nav>
+                    <a href="user.html">Home</a>
+                    <a href="#" id="categories-nav-link">Categories</a>
+                    <a href="#">Contact</a>
+                </nav>
+                <button class="cart-btn"><i class="fas fa-shopping-cart"></i> Cart</button>
+                <div class="profile-container">
+                    <!-- Profile icon only, not functional yet -->
+                    <a href="#" class="profile-link" title="Profile">
+                        <i class="fas fa-user-circle fa-2x"></i>
+                    </a>
+                </div>
+                <button id="dark-mode-toggle" class="dark-mode-btn">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h2>Your Gateway to Every Book Imaginable</h2>
+            <p>Explore the best collection of books, eBooks, and more—all in one place.</p>
+
+            <div class="hero-search">
+                <input type="text" id="hero-search-box" class="typing-placeholder" placeholder="" autocomplete="off" />
+                <button type="submit" style="display:none;">Search</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="filter-section">
+        <div class="container">
+            <div class="filters-container">
+                <div class="filter-group">
+                    <label for="category-select">Category:</label>
+                    <select id="category-select">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="subcategory-select">Sub-Category:</label>
+                    <select id="subcategory-select" disabled>
+                        <option value="">All Sub-Categories</option>
+                    </select>
+                </div>
+                <button id="clear-filters-btn" class="clear-filters-btn">Clear Filters</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="books-section">
+        <div class="container">
+            <h2>Featured Books</h2>
+            <div class="book-grid">
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Libri. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- <script src="../js/script.js"></script> -->
+
+</body>
+
+</html>
