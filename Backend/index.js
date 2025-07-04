@@ -14,7 +14,6 @@ app.use(express.static(path.join(__dirname, '../frontend/js')));
 
 const port = 3000;
 
-
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -25,7 +24,6 @@ pool.on('connect', () => {
     console.log('Connected to PostgreSQL database');
 });
 
-
 pool.on('error', (err) => {
     console.error('Unexpected error on idle client', err);
     process.exit(-1);
@@ -35,7 +33,7 @@ const getBookDetailsBaseQuery = `
     SELECT
         b.book_id AS id,
         b.title,
-        STRING_AGG(DISTINCT a.name, ', ') AS author, -- Use DISTINCT for authors
+        STRING_AGG(DISTINCT a.name, ', ') AS author,
         b.description,
         b.image_url,
         b.price,
@@ -43,8 +41,8 @@ const getBookDetailsBaseQuery = `
         b.publisher,
         b.publication_date,
         b.language,
-        COALESCE(AVG(r.rating), 0)::numeric(3, 2) AS average_rating, -- Calculate average rating, default to 0 if no reviews
-        COUNT(r.review_id) AS review_count, -- Count total reviews
+        COALESCE(AVG(r.rating), 0)::numeric(3, 2) AS average_rating,
+        COUNT(r.review_id) AS review_count,
         bc.category_id,
         bc.category_name,
         sc.sub_category_id,
@@ -65,7 +63,7 @@ const getBookDetailsBaseQuery = `
         book_category bc ON sc.category_id = bc.category_id
 `;
 
-
+// --- BOOK ROUTES ---
 app.get('/api/books', async (req, res) => {
     let client;
     try {
@@ -75,7 +73,6 @@ app.get('/api/books', async (req, res) => {
         let query = getBookDetailsBaseQuery;
         const queryParams = [];
         let paramIndex = 1;
-
         const whereClauses = [];
 
         if (categoryId) {
@@ -143,7 +140,6 @@ app.get('/api/books/search', async (req, res) => {
         query += ` GROUP BY b.book_id, bc.category_id, bc.category_name, sc.sub_category_id, sc.sub_category_name ORDER BY b.title ASC`;
 
         const result = await client.query(query, queryParams);
-        console.log('Search results:', result.rows);
         res.json(result.rows);
     } catch (err) {
         console.error('Search error:', err);
@@ -152,7 +148,6 @@ app.get('/api/books/search', async (req, res) => {
         if (client) client.release();
     }
 });
-
 
 app.get('/api/books/by-name', async (req, res) => {
     const bookTitle = req.query.title;
@@ -215,7 +210,7 @@ app.get('/api/books/:id', async (req, res) => {
     }
 });
 
-
+// --- CATEGORY ROUTES ---
 app.get('/api/categories', async (req, res) => {
     let client;
     try {
@@ -256,7 +251,7 @@ app.get('/api/subcategories', async (req, res) => {
     }
 });
 
-
+// --- REVIEWS ---
 app.get('/api/books/:bookId/reviews', async (req, res) => {
     const bookId = parseInt(req.params.bookId, 10);
 
@@ -272,7 +267,7 @@ app.get('/api/books/:bookId/reviews', async (req, res) => {
                 r.review_id,
                 r.book_id,
                 r.customer_id,
-                c.name AS customer_name, -- Get customer name
+                c.name AS customer_name,
                 r.rating,
                 r.comment,
                 r.review_date
@@ -295,6 +290,10 @@ app.get('/api/books/:bookId/reviews', async (req, res) => {
         }
     }
 });
+
+// --- AUTHENTICATION & USER ROUTES ---
+
+// Registration
 app.post('/signup', async (req, res) => {
     const { name, email, password, phone_number, address } = req.body;
     try {
@@ -346,7 +345,7 @@ app.post('/signup', async (req, res) => {
     }
 });
 
-// Signin Route
+// Login
 app.post('/signin', async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -400,26 +399,7 @@ app.post('/signin', async (req, res) => {
     }
 });
 
-// Optional: Get current user profile
-app.get('/profile', authenticateToken, async (req, res) => {
-    try {
-        const customerResult = await pool.query(
-            'SELECT customer_id, name, email, phone_number, address, role, created_at, last_login_at, is_verified FROM customer WHERE customer_id = $1',
-            [req.user.customerId]
-        );
-
-        if (customerResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Customer not found' });
-        }
-
-        res.json({ customer: customerResult.rows[0] });
-    } catch (err) {
-        console.error('Profile error:', err);
-        res.status(500).json({ error: 'Failed to fetch profile' });
-    }
-});
-
-// Middleware to authenticate JWT tokens
+// --- JWT AUTH MIDDLEWARE ---
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -437,7 +417,48 @@ function authenticateToken(req, res, next) {
     });
 }
 
+// --- PROFILE API (secured) ---
+app.get('/api/profile', authenticateToken, async (req, res) => {
+    try {
+        const customerResult = await pool.query(
+            'SELECT customer_id, name, email, phone_number, address, role, created_at, last_login_at, is_verified FROM customer WHERE customer_id = $1',
+            [req.user.customerId]
+        );
 
+        if (customerResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Customer not found' });
+        }
+
+        res.json({ customer: customerResult.rows[0] });
+    } catch (err) {
+        console.error('Profile error:', err);
+        res.status(500).json({ error: 'Failed to fetch profile' });
+    }
+});
+app.post('/api/change-password', authenticateToken, async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+        return res.status(400).json({ error: 'Both old and new passwords are required.' });
+    }
+    try {
+        // Fetch user's hashed password from DB
+        const result = await pool.query('SELECT hashed_password FROM customer WHERE customer_id = $1', [req.user.customerId]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+        const valid = await bcrypt.compare(oldPassword, result.rows[0].hashed_password);
+        if (!valid) return res.status(401).json({ error: 'Old password is incorrect.' });
+
+        // Hash new password and update
+        const hashedNew = await bcrypt.hash(newPassword, 10);
+        await pool.query('UPDATE customer SET hashed_password = $1, updated_at = NOW() WHERE customer_id = $2', [hashedNew, req.user.customerId]);
+        res.json({ message: 'Password updated successfully.' });
+    } catch (err) {
+        console.error('Change password error:', err);
+        res.status(500).json({ error: 'Failed to change password.' });
+    }
+});
+// --- STATIC FILE ROUTES ---
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/html/index.html'));
 });
@@ -445,7 +466,6 @@ app.get('/', (req, res) => {
 app.get('/book-details.html', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/html/book-details.html'));
 });
-
 
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
