@@ -75,51 +75,89 @@ nav a:hover {
     align-items: center;
 }
 
-.profile-btn {
-    background: #4A90E2;
-    /* Blue background */
-    color: white;
-    /* White text */
-    padding: 0.7rem 1.2rem;
-    border: none;
-    font-weight: 600;
-    border-radius: 25px;
-    /* Rounded corners like cart button */
-    cursor: pointer;
-    text-decoration: none;
-    /* Remove underline */
-    display: inline-flex;
-    /* Allows padding and alignment */
+/* Profile Image and Dropdown */
+.profile {
+    position: relative;
+    /* Needed for dropdown positioning */
+    display: flex;
     align-items: center;
-    justify-content: center;
-    transition: background 0.3s ease, transform 0.3s ease;
+    cursor: pointer;
+    padding: 5px;
+    /* Add some padding for hover area */
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.profile:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    /* Subtle highlight on hover */
+}
+
+.profile-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #4A90E2;
+    /* Accent border */
+}
+
+body.dark-mode .profile-img {
+    border-color: #bb86fc;
+    /* Dark mode accent border */
+}
+
+.profile-dropdown {
+    display: none;
+    /* Hidden by default */
+    position: absolute;
+    top: 100%;
+    /* Position below the profile icon */
+    right: 0;
+    /* Align to the right of the profile icon */
+    background: #2a2a2a;
+    /* Darker background for dropdown */
+    border: 1px solid #333;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    min-width: 160px;
+    padding: 10px 0;
+    z-index: 100;
+    /* Ensure it's above other content */
+}
+
+body.dark-mode .profile-dropdown {
+    background: #1e1e1e;
+    border-color: #333;
+}
+
+.profile-dropdown a {
+    color: #e0e0e0;
+    /* Light text for dropdown links */
+    padding: 10px 20px;
+    text-decoration: none;
+    display: block;
     white-space: nowrap;
     /* Prevent text wrapping */
+    transition: background-color 0.2s ease, color 0.2s ease;
+    margin: 0;
+    /* Override nav margin */
 }
 
-.profile-btn:hover {
-    background: #367cd6;
-    /* Darker blue on hover */
-    transform: scale(1.05);
-    /* Slight scale effect on hover */
+.profile-dropdown a:hover {
+    background-color: #4A90E2;
+    /* Highlight on hover */
+    color: white;
+    /* White text on hover */
+    transform: none;
+    /* Remove transform on hover */
 }
 
-.profile-btn:active {
-    transform: translateY(0);
-    /* Reset on click */
-}
-
-/* Dark Mode for Profile Button */
-body.dark-mode .profile-btn {
-    background: #bb86fc;
-    /* Purple for dark mode */
+body.dark-mode .profile-dropdown a:hover {
+    background-color: #bb86fc;
+    /* Dark mode highlight on hover */
     color: #212121;
-    /* Dark text for contrast */
-}
-
-body.dark-mode .profile-btn:hover {
-    background: #9c6ade;
-    /* Darker purple on hover */
+    /* Dark text on hover */
 }
 
 
@@ -129,6 +167,7 @@ body.dark-mode .profile-btn:hover {
     gap: 1rem;
 }
 
+/* MODIFIED CART BUTTON STYLES */
 .cart-btn {
     background: #4A90E2;
     color: white;
@@ -138,27 +177,47 @@ body.dark-mode .profile-btn:hover {
     border-radius: 25px;
     cursor: pointer;
     position: relative;
+    /* For the cart count badge */
     transition: background 0.3s ease, transform 0.3s ease;
+    text-decoration: none;
+    /* Ensure it looks like a button even if it's an <a> */
+    display: flex;
+    /* To align icon and text */
+    align-items: center;
+    gap: 5px;
+    /* Space between icon and text */
 }
 
 .cart-btn:hover {
     background: #367cd6;
-    transform: scale(1.1);
+    transform: scale(1.05);
+    /* Slightly less aggressive scale for general buttons */
 }
 
-.cart-btn::after {
-    content: '3';
-    /* Replace this with dynamic cart count using JavaScript */
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    background: red;
+/* Cart Count Badge - NEW */
+.cart-count {
+    background-color: red;
+    /* Distinct color for the badge */
     color: white;
     border-radius: 50%;
-    padding: 0.3rem;
-    font-size: 0.8rem;
-    font-weight: bold;
+    padding: 2px 7px;
+    font-size: 0.75em;
+    position: absolute;
+    /* Position relative to .cart-btn */
+    top: -8px;
+    /* Adjust vertical position */
+    right: -8px;
+    /* Adjust horizontal position */
+    white-space: nowrap;
+    /* Prevent number from wrapping */
+    min-width: 20px;
+    /* Ensure circular shape for single digits */
+    text-align: center;
+    line-height: 1.2;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    /* Subtle shadow for depth */
 }
+
 
 /* Hero Section */
 .hero {
@@ -524,6 +583,12 @@ body.dark-mode #hero-search-box:not(:placeholder-shown) {
     transition: background 0.3s ease, transform 0.3s ease;
 }
 
+/* MODIFIED: Add to cart button hover (less aggressive than cart nav button) */
+.book-card button.add-to-cart-btn:hover {
+    background: #367cd6;
+    transform: scale(1.05);
+}
+
 /* Dark Mode Styles */
 body.dark-mode {
     background: #121212;
@@ -763,9 +828,104 @@ body.dark-mode .clear-filters-btn:hover {
     box-shadow: 0 6px 16px rgba(255, 80, 80, 0.25);
 }
 
+/* --- NEW CSS FOR NOTIFICATION AREA --- */
+.notification-area {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    /* Ensure it's on top of everything */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.notification {
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-size: 0.95rem;
+    color: #fff;
+    opacity: 1;
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+    transform: translateX(0);
+    /* Start fully visible */
+    min-width: 250px;
+    /* Ensure some minimum width */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.notification.success {
+    background-color: #28a745;
+    /* Green for success */
+}
+
+.notification.error {
+    background-color: #dc3545;
+    /* Red for error */
+}
+
+.notification.hide {
+    opacity: 0;
+    transform: translateX(100%);
+    /* Slide out to the right */
+}
+
+/* Dark mode for notifications */
+body.dark-mode .notification.success {
+    background-color: #4CAF50;
+    /* Slightly brighter green for dark mode */
+    color: #e0e0e0;
+}
+
+body.dark-mode .notification.error {
+    background-color: #EF5350;
+    /* Slightly brighter red for dark mode */
+    color: #e0e0e0;
+}
+
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+    header .container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .nav-area {
+        flex-direction: column;
+        width: 100%;
+        gap: 0.5rem;
+    }
+
+    nav {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    nav a {
+        margin: 0.5rem 0;
+    }
+
+    .profile-container {
+        width: 100%;
+        justify-content: center;
+        /* Center profile on mobile */
+    }
+
+    .profile-dropdown {
+        left: 50%;
+        /* Center dropdown on mobile */
+        transform: translateX(-50%);
+        right: auto;
+        /* Override right:0 */
+    }
+
+
     .filters-container {
         flex-direction: column;
         align-items: stretch;
@@ -792,5 +952,31 @@ body.dark-mode .clear-filters-btn:hover {
         margin-top: 0.5rem;
         padding: 0.7rem 1rem;
         /* Adjust padding for mobile button */
+    }
+
+    .books-section .book-grid {
+        grid-template-columns: 1fr;
+        /* Single column on small screens */
+    }
+
+    .notification-area {
+        top: auto;
+        bottom: 20px;
+        /* Position at the bottom on mobile */
+        right: 50%;
+        transform: translateX(50%);
+        /* Center horizontally */
+        width: 90%;
+        /* Take up more width */
+        max-width: 350px;
+        align-items: center;
+        /* Center notifications if they stack */
+    }
+
+    .notification {
+        width: 100%;
+        text-align: center;
+        min-width: unset;
+        /* Remove min-width for mobile flexibility */
     }
 }

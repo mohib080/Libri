@@ -458,6 +458,223 @@ app.post('/api/change-password', authenticateToken, async (req, res) => {
         res.status(500).json({ error: 'Failed to change password.' });
     }
 });
+
+// --- CART ROUTES ---
+app.get('/api/cart', authenticateToken, async (req, res) => {
+    const customerId = req.user.customerId;
+    let client;
+    try {
+        client = await pool.connect();
+
+        // Find the user's cart (create if it doesn't exist, though typically created on first add)
+        let cartResult = await client.query('SELECT cart_id FROM cart WHERE customer_id = $1', [customerId]);
+        let cartId;
+
+        if (cartResult.rows.length === 0) {
+            // If no cart exists, create one for the customer
+            const newCart = await client.query('INSERT INTO cart (customer_id, created_at, updated_at) VALUES ($1, NOW(), NOW()) RETURNING cart_id', [customerId]);
+            cartId = newCart.rows[0].cart_id;
+        } else {
+            cartId = cartResult.rows[0].cart_id;
+        }
+
+        // Fetch cart items with book details
+        const cartItemsResult = await client.query(`
+            SELECT
+                ci.cart_item_id,
+                ci.book_id,
+                b.title,
+                b.image_url,
+                b.price,
+                ci.quantity,
+                (b.price * ci.quantity) AS total_item_price
+            FROM
+                cart_item ci
+            JOIN
+                book b ON ci.book_id = b.book_id
+            WHERE
+                ci.cart_id = $1
+            ORDER BY
+                ci.cart_item_id;
+        `, [cartId]);
+
+        // Calculate total amount of the cart
+        const totalAmount = cartItemsResult.rows.reduce((sum, item) => sum + parseFloat(item.total_item_price), 0);
+
+        res.json({
+            cart_id: cartId,
+            customer_id: customerId,
+            items: cartItemsResult.rows,
+            total_amount: totalAmount.toFixed(2) // Format to 2 decimal places
+        });
+
+    } catch (err) {
+        console.error('Error fetching cart:', err);
+        res.status(500).json({ error: 'Failed to retrieve cart' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+app.post('/api/cart/add', authenticateToken, async (req, res) => {
+    const customerId = req.user.customerId;
+    const { bookId, quantity } = req.body;
+
+    if (!bookId || !quantity || quantity <= 0) {
+        return res.status(400).json({ error: 'Book ID and a positive quantity are required.' });
+    }
+
+    let client;
+    try {
+        client = await pool.connect();
+        await client.query('BEGIN'); // Start transaction
+
+        // 1. Get or Create Cart
+        let cartResult = await client.query('SELECT cart_id FROM cart WHERE customer_id = $1 FOR UPDATE', [customerId]);
+        let cartId;
+
+        if (cartResult.rows.length === 0) {
+            const newCart = await client.query('INSERT INTO cart (customer_id, created_at, updated_at) VALUES ($1, NOW(), NOW()) RETURNING cart_id', [customerId]);
+            cartId = newCart.rows[0].cart_id;
+        } else {
+            cartId = cartResult.rows[0].cart_id;
+        }
+
+        // 2. Check if book exists in inventory and is active
+        const bookCheck = await client.query('SELECT price, is_active FROM book WHERE book_id = $1', [bookId]);
+        if (bookCheck.rows.length === 0 || !bookCheck.rows[0].is_active) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Book not found or is not available.' });
+        }
+        const bookPrice = bookCheck.rows[0].price;
+
+        // 3. Check if item already exists in cart_item
+        const cartItemResult = await client.query('SELECT * FROM cart_item WHERE cart_id = $1 AND book_id = $2 FOR UPDATE', [cartId, bookId]);
+
+        if (cartItemResult.rows.length > 0) {
+            // Update quantity if item exists
+            const existingQuantity = cartItemResult.rows[0].quantity;
+            const newQuantity = existingQuantity + quantity;
+            await client.query('UPDATE cart_item SET quantity = $1 WHERE cart_id = $2 AND book_id = $3', [newQuantity, cartId, bookId]);
+            res.json({ message: 'Cart item quantity updated successfully.' });
+        } else {
+            // Add new item to cart
+            await client.query('INSERT INTO cart_item (cart_id, book_id, quantity) VALUES ($1, $2, $3)', [cartId, bookId, quantity]);
+            res.status(201).json({ message: 'Book added to cart successfully.' });
+        }
+
+        // 4. Update cart's updated_at timestamp
+        await client.query('UPDATE cart SET updated_at = NOW() WHERE cart_id = $1', [cartId]);
+
+        await client.query('COMMIT'); // Commit transaction
+
+    } catch (err) {
+        await client.query('ROLLBACK'); // Rollback on error
+        console.error('Error adding item to cart:', err);
+        res.status(500).json({ error: 'Failed to add item to cart.' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+app.put('/api/cart/update', authenticateToken, async (req, res) => {
+    const customerId = req.user.customerId;
+    const { bookId, quantity } = req.body;
+
+    if (!bookId || quantity === undefined || quantity < 0) { // Quantity can be 0 to effectively remove
+        return res.status(400).json({ error: 'Book ID and quantity are required.' });
+    }
+
+    let client;
+    try {
+        client = await pool.connect();
+        await client.query('BEGIN'); // Start transaction
+
+        // Get the cart_id for the customer
+        const cartResult = await client.query('SELECT cart_id FROM cart WHERE customer_id = $1', [customerId]);
+        if (cartResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Cart not found for this customer.' });
+        }
+        const cartId = cartResult.rows[0].cart_id;
+
+        if (quantity === 0) {
+            // If quantity is 0, remove the item from cart
+            await client.query('DELETE FROM cart_item WHERE cart_id = $1 AND book_id = $2', [cartId, bookId]);
+            res.json({ message: 'Book removed from cart.' });
+        } else {
+            // Update quantity
+            const updateResult = await client.query(
+                'UPDATE cart_item SET quantity = $1 WHERE cart_id = $2 AND book_id = $3 RETURNING *',
+                [quantity, cartId, bookId]
+            );
+
+            if (updateResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'Book not found in cart.' });
+            }
+            res.json({ message: 'Cart item quantity updated successfully.' });
+        }
+
+        // Update cart's updated_at timestamp
+        await client.query('UPDATE cart SET updated_at = NOW() WHERE cart_id = $1', [cartId]);
+
+        await client.query('COMMIT'); // Commit transaction
+
+    } catch (err) {
+        await client.query('ROLLBACK'); // Rollback on error
+        console.error('Error updating cart item quantity:', err);
+        res.status(500).json({ error: 'Failed to update cart item quantity.' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+app.delete('/api/cart/remove/:bookId', authenticateToken, async (req, res) => {
+    const customerId = req.user.customerId;
+    const bookId = parseInt(req.params.bookId, 10);
+
+    if (isNaN(bookId)) {
+        return res.status(400).json({ error: 'Invalid book ID.' });
+    }
+
+    let client;
+    try {
+        client = await pool.connect();
+        await client.query('BEGIN'); // Start transaction
+
+        // Get the cart_id for the customer
+        const cartResult = await client.query('SELECT cart_id FROM cart WHERE customer_id = $1', [customerId]);
+        if (cartResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Cart not found for this customer.' });
+        }
+        const cartId = cartResult.rows[0].cart_id;
+
+        const deleteResult = await client.query(
+            'DELETE FROM cart_item WHERE cart_id = $1 AND book_id = $2 RETURNING *',
+            [cartId, bookId]
+        );
+
+        if (deleteResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Book not found in cart.' });
+        }
+
+        // Update cart's updated_at timestamp
+        await client.query('UPDATE cart SET updated_at = NOW() WHERE cart_id = $1', [cartId]);
+
+        await client.query('COMMIT'); // Commit transaction
+        res.json({ message: 'Book removed from cart successfully.' });
+
+    } catch (err) {
+        await client.query('ROLLBACK'); // Rollback on error
+        console.error('Error removing item from cart:', err);
+        res.status(500).json({ error: 'Failed to remove item from cart.' });
+    } finally {
+        if (client) client.release();
+    }
+});
 // --- STATIC FILE ROUTES ---
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/html/index.html'));

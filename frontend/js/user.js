@@ -76,6 +76,91 @@ document.addEventListener('DOMContentLoaded', function () {
     const subCategorySelect = document.getElementById('subcategory-select');
     const clearFiltersBtn = document.getElementById('clear-filters-btn');
     const heroSearchBox = document.getElementById('hero-search-box');
+    const cartItemCountSpan = document.getElementById('cart-item-count'); // NEW: Cart item count element
+    const notificationArea = document.getElementById('notification-area'); // NEW: Notification area
+
+    // NEW: Helper to get JWT token
+    function getAuthToken() {
+        return localStorage.getItem('token');
+    }
+
+    // NEW: Function to show transient notifications
+    function showNotification(message, type = 'success') {
+        if (!notificationArea) return;
+        const notification = document.createElement('div');
+        notification.classList.add('notification', type);
+        notification.textContent = message;
+        notificationArea.appendChild(notification);
+
+        setTimeout(() => {
+            notification.classList.add('hide');
+            notification.addEventListener('transitionend', () => {
+                notification.remove();
+            }, { once: true });
+        }, 3000); // Notification disappears after 3 seconds
+    }
+
+    // NEW: Function to update cart item count in header
+    async function updateCartCount() {
+        if (!cartItemCountSpan) return;
+        const token = getAuthToken();
+        if (!token) {
+            cartItemCountSpan.textContent = '0';
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}/cart`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (response.ok) {
+                const cartData = await response.json();
+                const totalItems = cartData.items.reduce((sum, item) => sum + item.quantity, 0);
+                cartItemCountSpan.textContent = totalItems;
+            } else {
+                console.error('Failed to fetch cart for count update:', response.statusText);
+                cartItemCountSpan.textContent = '0'; // Reset on error
+            }
+        } catch (error) {
+            console.error('Error updating cart count:', error);
+            cartItemCountSpan.textContent = '0'; // Reset on error
+        }
+    }
+
+    // NEW: Add to Cart functionality
+    async function addToCart(bookId, quantity = 1) {
+        const token = getAuthToken();
+        if (!token) {
+            showNotification('Please log in to add items to your cart.', 'error');
+            // Optionally redirect to login or show login modal
+            setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/cart/add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ bookId, quantity })
+            });
+
+            if (response.ok) {
+                showNotification('Book added to cart successfully!', 'success');
+                updateCartCount(); // Update cart icon
+            } else {
+                const errorData = await response.json();
+                showNotification(`Failed to add book to cart: ${errorData.error || 'Unknown error'}`, 'error');
+                console.error('Failed to add to cart:', errorData.error || response.statusText);
+            }
+        } catch (error) {
+            showNotification('An error occurred while adding to cart.', 'error');
+            console.error('Error adding to cart:', error);
+        }
+    }
 
     function displayBooks(books) {
         if (!bookGrid) return;
@@ -93,14 +178,21 @@ document.addEventListener('DOMContentLoaded', function () {
                     <h3>${book.title}</h3>
                     <p class="author">by ${book.author || 'Unknown Author'}</p>
                     <p class="price">$${parseFloat(book.price).toFixed(2)}</p>
-                    <button class="add-to-cart-btn">Add to Cart</button>
+                    <button class="add-to-cart-btn" data-book-id="${book.id}">Add to Cart</button>
                 </a>
             `;
-            bookCard.querySelector('.add-to-cart-btn').addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                console.log(`Added "${book.title}" to cart!`);
-            });
+            // Attach event listener directly to the button element
+            // Make sure this button is NOT wrapped by the <a> tag if you want it to perform an action
+            // without navigating away. I've adjusted the HTML above to reflect this.
+            const addToCartBtn = bookCard.querySelector('.add-to-cart-btn');
+            if (addToCartBtn) {
+                addToCartBtn.addEventListener('click', (event) => {
+                    event.preventDefault(); // Prevent default link behavior if it was inside <a>
+                    event.stopPropagation(); // Stop event from bubbling up to the book card link
+                    const bookId = event.target.dataset.bookId;
+                    addToCart(bookId, 1); // Add 1 quantity by default
+                });
+            }
             bookGrid.appendChild(bookCard);
         });
     }
@@ -216,6 +308,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- INITIAL LOAD ---
     fetchBooks();
     fetchAndPopulateCategories();
+    updateCartCount(); // NEW: Fetch and display initial cart count on load
 
     // --- TYPING PLACEHOLDER ANIMATION ---
     const typingPlaceholder = document.getElementById('hero-search-box');
