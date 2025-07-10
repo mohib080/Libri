@@ -8,7 +8,6 @@ if (localStorage.getItem("dark-mode") === "enabled") {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    // --- DARK MODE TOGGLE ---
     const darkModeToggle = document.getElementById("dark-mode-toggle");
     if (darkModeToggle) {
         darkModeToggle.innerHTML = document.body.classList.contains("dark-mode")
@@ -26,7 +25,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // --- PROFILE DROPDOWN AND LOGOUT ---
     const profileContainer = document.querySelector('.profile-container');
     if (profileContainer) {
         profileContainer.innerHTML = `
@@ -62,7 +60,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // --- FETCH AND RENDER PROFILE DATA ---
     async function getProfileData() {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -88,24 +85,20 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!profile) return;
         document.getElementById('profile-name').textContent = profile.name || '';
         document.getElementById('profile-email').textContent = profile.email || '';
-        if (document.getElementById('profile-phone'))
-            document.getElementById('profile-phone').textContent = profile.phone_number || '';
-        if (document.getElementById('profile-address'))
-            document.getElementById('profile-address').textContent = profile.address || '';
-        if (document.getElementById('edit-name'))
-            document.getElementById('edit-name').value = profile.name || '';
-        if (document.getElementById('edit-email'))
-            document.getElementById('edit-email').value = profile.email || '';
-        if (document.getElementById('edit-phone'))
-            document.getElementById('edit-phone').value = profile.phone_number || '';
-        if (document.getElementById('edit-address'))
-            document.getElementById('edit-address').value = profile.address || '';
-        // You can also display created_at, last_login_at, etc. if desired.
+        document.getElementById('profile-phone').textContent = `Phone: ${profile.phone_number || ''}`;
+        document.getElementById('profile-address').textContent = `Address: ${profile.address || ''}`;
+        document.getElementById('profile-role').textContent = `Role: ${profile.role || ''}`;
+        document.getElementById('profile-verified').textContent = `Verified: ${profile.is_verified ? 'Yes' : 'No'}`;
+        document.getElementById('profile-last-login').textContent = `Last Login: ${new Date(profile.last_login_at).toLocaleString() || ''}`;
+
+        document.getElementById('edit-name').value = profile.name || '';
+        document.getElementById('edit-email').value = profile.email || '';
+        document.getElementById('edit-phone').value = profile.phone_number || '';
+        document.getElementById('edit-address').value = profile.address || '';
     }
 
     renderProfile();
 
-    // --- EDIT PROFILE LOGIC (Frontend UI only, backend update not implemented) ---
     const editProfileBtn = document.getElementById('edit-profile-btn');
     const editSection = document.getElementById('edit-profile-section');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
@@ -125,12 +118,43 @@ document.addEventListener('DOMContentLoaded', function () {
     if (profileEditForm) {
         profileEditForm.addEventListener('submit', async function (e) {
             e.preventDefault();
-            // To enable: implement backend PUT/PATCH /api/profile and send the form data there.
-            // For now: just close the edit section and reload info.
-            editSection.style.display = 'none';
-            renderProfile();
+            const token = localStorage.getItem('token');
+            const updatedData = {
+                name: document.getElementById('edit-name').value.trim(),
+                email: document.getElementById('edit-email').value.trim(),
+                phone_number: document.getElementById('edit-phone').value.trim(),
+                address: document.getElementById('edit-address').value.trim(),
+            };
+
+            try {
+                const response = await fetch('http://localhost:3000/api/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(updatedData)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) throw new Error("Update failed");
+
+                // ✅ Store the new token if returned (after email update, etc.)
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                }
+
+                alert("Profile updated successfully");
+                editSection.style.display = 'none';
+                renderProfile();
+            } catch (err) {
+                alert("Error updating profile.");
+            }
         });
     }
+
+
     const changePasswordBtn = document.getElementById('change-password-btn');
     const changePasswordSection = document.getElementById('change-password-section');
     const cancelPasswordBtn = document.getElementById('cancel-password-btn');
@@ -176,7 +200,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // --- AVATAR UPLOAD (local preview only) ---
     const avatarUpload = document.getElementById('avatar-upload');
     if (avatarUpload) {
         avatarUpload.addEventListener('change', function () {
@@ -185,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const reader = new FileReader();
                 reader.onload = function (e) {
                     document.getElementById('profile-avatar').src = e.target.result;
-                    // To persist avatar, implement avatar upload & save in backend
+                    // TODO: Upload avatar to server
                 };
                 reader.readAsDataURL(file);
             }

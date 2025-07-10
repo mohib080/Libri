@@ -88,7 +88,8 @@ app.get('/api/books', async (req, res) => {
         if (whereClauses.length > 0) {
             query += ' WHERE ' + whereClauses.join(' AND ');
         }
-        query += ` GROUP BY b.book_id, bc.category_id, bc.category_name, sc.sub_category_id, sc.sub_category_name ORDER BY b.title ASC`;
+        query += ` GROUP BY b.book_id, bc.category_id, bc.category_name, sc.sub_category_id,
+        sc.sub_category_name ORDER BY b.title ASC`;
 
         const result = await client.query(query, queryParams);
         res.json(result.rows);
@@ -137,7 +138,8 @@ app.get('/api/books/search', async (req, res) => {
             query += ' WHERE ' + whereClauses.join(' AND ');
         }
 
-        query += ` GROUP BY b.book_id, bc.category_id, bc.category_name, sc.sub_category_id, sc.sub_category_name ORDER BY b.title ASC`;
+        query += ` GROUP BY b.book_id, bc.category_id, bc.category_name, sc.sub_category_id,
+        c.sub_category_name ORDER BY b.title ASC`;
 
         const result = await client.query(query, queryParams);
         res.json(result.rows);
@@ -162,7 +164,8 @@ app.get('/api/books/by-name', async (req, res) => {
         const result = await client.query(`
             ${getBookDetailsBaseQuery}
             WHERE b.title ILIKE $1
-            GROUP BY b.book_id, bc.category_id, bc.category_name, sc.sub_category_id, sc.sub_category_name
+            GROUP BY b.book_id, bc.category_id, bc.category_name, sc.sub_category_id,
+            sc.sub_category_name
             LIMIT 1;
         `, [bookTitle]);
 
@@ -192,7 +195,8 @@ app.get('/api/books/:id', async (req, res) => {
         const result = await client.query(`
             ${getBookDetailsBaseQuery}
             WHERE b.book_id = $1
-            GROUP BY b.book_id, bc.category_id, bc.category_name, sc.sub_category_id, sc.sub_category_name
+            GROUP BY b.book_id, bc.category_id, bc.category_name, sc.sub_category_id,
+            sc.sub_category_name
         `, [bookId]);
 
         if (result.rows.length > 0) {
@@ -435,6 +439,32 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch profile' });
     }
 });
+app.put('/api/profile', authenticateToken, async (req, res) => {
+    const { name, email, phone_number, address } = req.body;
+    try {
+        const updated = await pool.query(`
+            UPDATE customer
+            SET name = $1, email = $2, phone_number = $3, address = $4, updated_at = NOW()
+            WHERE customer_id = $5
+            RETURNING customer_id, name, email, role
+        `, [name, email, phone_number || null, address || null, req.user.customerId]);
+
+        const updatedCustomer = updated.rows[0];
+
+        const newToken = jwt.sign({
+            customerId: updatedCustomer.customer_id,
+            email: updatedCustomer.email,
+            role: updatedCustomer.role
+        }, 'your_secret_key', { expiresIn: '24h' });
+
+        res.json({ message: 'Profile updated successfully.', token: newToken });
+    } catch (err) {
+        console.error('Error updating profile:', err);
+        res.status(500).json({ error: 'Failed to update profile.' });
+    }
+});
+
+
 app.post('/api/change-password', authenticateToken, async (req, res) => {
     const { oldPassword, newPassword } = req.body;
     if (!oldPassword || !newPassword) {

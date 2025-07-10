@@ -423,3 +423,72 @@ body.dark-mode .profile-details button[type="button"]:hover {
         justify-content: center;
     }
 }
+/* Add these new rules or update your existing profile.css with the enhancements */
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.profile-info p {
+    font-size: 1.05rem;
+    margin: 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--light-secondary-text);
+}
+
+body.dark-mode .profile-info p {
+    color: var(--dark-secondary-text);
+}
+
+.profile-info p i {
+    color: var(--accent-color);
+    width: 20px;
+    min-width: 20px;
+    text-align: center;
+}
+
+#profile-verified.verified {
+    color: green;
+    font-weight: 500;
+}
+
+#profile-verified.unverified {
+    color: red;
+    font-weight: 500;
+}
+
+#profile-last-login {
+    font-style: italic;
+}
+
+/* Edit Profile Inputs */
+.profile-details input[type="text"],
+.profile-details input[type="email"],
+.profile-details input[type="password"] {
+    padding: 0.7rem 0.9rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: 0.2s ease-in-out;
+    background: var(--light-input-bg);
+    color: var(--light-input-text);
+}
+
+body.dark-mode .profile-details input {
+    background: var(--dark-input-bg);
+    color: var(--dark-input-text);
+    border: 1px solid var(--dark-border);
+}
+
+.profile-details label {
+    font-weight: 500;
+    color: var(--light-text);
+}
+
+body.dark-mode .profile-details label {
+    color: var(--dark-text);
+}

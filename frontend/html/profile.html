@@ -17,7 +17,8 @@
         </div>
         <div class="nav-right">
             <button id="dark-mode-toggle" title="Toggle dark mode">
-                <i class="fas fa-moon"></i> </button>
+                <i class="fas fa-moon"></i>
+            </button>
             <div class="profile-container"></div>
         </div>
     </nav>
@@ -33,6 +34,11 @@
             <div class="profile-info">
                 <h2 id="profile-name">Your Name</h2>
                 <p id="profile-email">your.email@example.com</p>
+                <p id="profile-phone">Phone: </p>
+                <p id="profile-address">Address: </p>
+                <p id="profile-role">Role: </p>
+                <p id="profile-verified">Verified: </p>
+                <p id="profile-last-login">Last Login: </p>
                 <div class="profile-actions">
                     <button id="edit-profile-btn"><i class="fas fa-edit"></i> Edit Profile</button>
                     <button id="change-password-btn"><i class="fas fa-key"></i> Change Password</button>
@@ -49,6 +55,14 @@
                 <label>
                     Email:
                     <input type="email" id="edit-email" name="email" required>
+                </label>
+                <label>
+                    Phone:
+                    <input type="text" id="edit-phone" name="phone_number">
+                </label>
+                <label>
+                    Address:
+                    <input type="text" id="edit-address" name="address">
                 </label>
                 <button type="submit">Save</button>
                 <button type="button" id="cancel-edit-btn">Cancel</button>
