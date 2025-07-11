@@ -6,31 +6,42 @@ if (!isLoggedIn) {
 }
 
 // --- 2. DARK/LIGHT MODE INITIAL STATE ---
-if (localStorage.getItem("dark-mode") === "enabled") {
+// UPDATED: Use 'theme' key and handle 'light-mode' explicitly
+const savedThemeOnLoad = localStorage.getItem("theme"); // Read the 'theme' key
+if (savedThemeOnLoad === "dark-mode") {
     document.body.classList.add("dark-mode");
+} else if (savedThemeOnLoad === "light-mode") { // Explicitly check for 'light-mode'
+    document.body.classList.remove("dark-mode"); // Ensure dark-mode class is removed
+} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    // Apply system preference if no explicit theme is saved
+    document.body.classList.add('dark-mode');
 }
+
 
 // --- 3. DARK MODE BUTTON & PROFILE LOGIC ---
 document.addEventListener('DOMContentLoaded', function () {
     // Dark/Light mode toggle logic
     const darkModeToggle = document.getElementById("dark-mode-toggle");
     if (darkModeToggle) {
+        // Set initial icon based on current theme
         if (document.body.classList.contains("dark-mode")) {
-            darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>'; // Sun icon for dark mode
         } else {
-            darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>'; // Moon icon for light mode
         }
+
         darkModeToggle.addEventListener("click", () => {
             document.body.classList.toggle("dark-mode");
             if (document.body.classList.contains("dark-mode")) {
                 darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-                localStorage.setItem("dark-mode", "enabled");
+                localStorage.setItem("theme", "dark-mode"); // UPDATED: Save 'theme' as 'dark-mode'
             } else {
                 darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-                localStorage.setItem("dark-mode", "disabled");
+                localStorage.setItem("theme", "light-mode"); // UPDATED: Explicitly save 'theme' as 'light-mode'
             }
         });
     }
+
     // Profile logic (user only)
     const profileContainer = document.querySelector('.profile-container');
     if (profileContainer) {
@@ -64,6 +75,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 e.preventDefault();
                 localStorage.removeItem('token');
                 localStorage.removeItem('customer');
+                // Also clear theme preference on logout if desired, or keep it
+                // localStorage.removeItem('theme'); // Optional: uncomment to clear theme on logout
                 window.location.href = 'index.html';
             });
         }
@@ -76,15 +89,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const subCategorySelect = document.getElementById('subcategory-select');
     const clearFiltersBtn = document.getElementById('clear-filters-btn');
     const heroSearchBox = document.getElementById('hero-search-box');
-    const cartItemCountSpan = document.getElementById('cart-item-count'); // NEW: Cart item count element
-    const notificationArea = document.getElementById('notification-area'); // NEW: Notification area
+    const cartNavBtn = document.getElementById('cart-nav-btn'); // Cart nav button
+    const cartItemCountSpan = document.getElementById('cart-item-count'); // Get the span for the count
+    const notificationArea = document.getElementById('notification-area'); // Notification area
 
-    // NEW: Helper to get JWT token
+    if (cartNavBtn) {
+        cartNavBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = 'cart.html';
+        });
+    }
+
+    // Helper to get JWT token
     function getAuthToken() {
         return localStorage.getItem('token');
     }
 
-    // NEW: Function to show transient notifications
+    // Function to show transient notifications
     function showNotification(message, type = 'success') {
         if (!notificationArea) return;
         const notification = document.createElement('div');
@@ -100,12 +121,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 3000); // Notification disappears after 3 seconds
     }
 
-    // NEW: Function to update cart item count in header
+    // Function to update cart item count in header
     async function updateCartCount() {
-        if (!cartItemCountSpan) return;
+        if (!cartItemCountSpan) return; // Ensure the element exists
         const token = getAuthToken();
         if (!token) {
             cartItemCountSpan.textContent = '0';
+            cartNavBtn.setAttribute('data-cart-count', '0'); // Also update data-attribute for CSS ::after
             return;
         }
         try {
@@ -118,23 +140,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 const cartData = await response.json();
                 const totalItems = cartData.items.reduce((sum, item) => sum + item.quantity, 0);
                 cartItemCountSpan.textContent = totalItems;
+                cartNavBtn.setAttribute('data-cart-count', totalItems.toString()); // Update data-attribute for CSS ::after
             } else {
                 console.error('Failed to fetch cart for count update:', response.statusText);
                 cartItemCountSpan.textContent = '0'; // Reset on error
+                cartNavBtn.setAttribute('data-cart-count', '0');
             }
         } catch (error) {
             console.error('Error updating cart count:', error);
             cartItemCountSpan.textContent = '0'; // Reset on error
+            cartNavBtn.setAttribute('data-cart-count', '0');
         }
     }
 
-    // NEW: Add to Cart functionality
+    // Add to Cart functionality
     async function addToCart(bookId, quantity = 1) {
         const token = getAuthToken();
         if (!token) {
             showNotification('Please log in to add items to your cart.', 'error');
-            // Optionally redirect to login or show login modal
-            setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+            setTimeout(() => { window.location.href = 'index.html'; }, 1500); // Redirect to login/home
             return;
         }
 
@@ -178,12 +202,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     <h3>${book.title}</h3>
                     <p class="author">by ${book.author || 'Unknown Author'}</p>
                     <p class="price">$${parseFloat(book.price).toFixed(2)}</p>
-                    <button class="add-to-cart-btn" data-book-id="${book.id}">Add to Cart</button>
                 </a>
+                <button class="add-to-cart-btn" data-book-id="${book.id}">Add to Cart</button>
             `;
             // Attach event listener directly to the button element
-            // Make sure this button is NOT wrapped by the <a> tag if you want it to perform an action
-            // without navigating away. I've adjusted the HTML above to reflect this.
             const addToCartBtn = bookCard.querySelector('.add-to-cart-btn');
             if (addToCartBtn) {
                 addToCartBtn.addEventListener('click', (event) => {
@@ -308,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- INITIAL LOAD ---
     fetchBooks();
     fetchAndPopulateCategories();
-    updateCartCount(); // NEW: Fetch and display initial cart count on load
+    updateCartCount(); // Fetch and display initial cart count on load
 
     // --- TYPING PLACEHOLDER ANIMATION ---
     const typingPlaceholder = document.getElementById('hero-search-box');

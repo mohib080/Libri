@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Cart</title>
+    <!-- <link rel="stylesheet" href="../css/styles.css"> -->
+    <link rel="stylesheet" href="../css/cart.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header content removed as requested -->
+
+    <div class="container main-content">
+        <h1>Your Cart</h1>
+        <div class="cart-items">
+            <!-- New Header Row for Cart Items -->
+            <div class="cart-header-row">
+                <span class="header-item-details">Product</span>
+                <span class="header-price">Price</span>
+                <span class="header-quantity">Quantity</span>
+                <span class="header-total">Total</span>
+                <span class="header-actions">Actions</span>
+            </div>
+            <!-- Cart items will be dynamically added here by cart.js -->
+            <div class="empty-cart-message" style="display: none;">
+                <i class="fas fa-shopping-basket"></i>
+                <p>Your cart is currently empty.</p>
+                <a href="user.html" class="btn-primary">Continue Shopping</a>
+            </div>
+        </div>
+        <div class="cart-summary">
+            <p>Total: $<span id="total-price">0.00</span></p>
+            <button class="checkout-btn">Checkout</button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Libri. All rights reserved.</p>
+            <!-- Dark Mode Toggle Button added to the footer -->
+            <button id="dark-mode-toggle" class="dark-mode-btn">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </footer>
+
+    <div id="notification-area" class="notification-area"></div>
+
+    <script src="../js/cart.js"></script>
+</body>
+
+</html>
