@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="profile-dropdown">
                     <a href="profile.html">Profile</a>
                     <a href="#">Orders</a>
-                    <a href="#">Wishlist</a>
+                    <a href="wishlist.html">Wishlist</a>
                     <a href="#" id="logout-link">Logout</a>
                 </div>
             </div>

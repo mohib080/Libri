@@ -629,18 +629,19 @@
 
             <div class="nav-area">
                 <nav>
-                    <a href="index.html">Home</a>
-                    <a href="#">Categories</a>
+                    <a href="user.html">Home</a>
+                    <a href="#" id="categories-nav-link">Categories</a>
                     <a href="#">Contact</a>
                 </nav>
-                <button class="cart-btn"><i class="fas fa-shopping-cart"></i> Cart</button>
+                <a href="cart.html" class="cart-btn" id="cart-nav-btn"><i class="fas fa-shopping-cart"></i> Cart <span id="cart-item-count" class="cart-count">0</span></a>
                 <div class="profile-container">
-                    <a href="signin.html" class="profile-link">Login</a>
-                    <a href="signup.html" class="profile-link">Sign Up</a>
+                    <a href="#" class="profile-link" title="Profile">
+                        <i class="fas fa-user-circle fa-2x"></i>
+                    </a>
                 </div>
-
                 <button id="dark-mode-toggle" class="dark-mode-btn">
-                    <i class="fas fa-moon"></i> </button>
+                    <i class="fas fa-moon"></i>
+                </button>
             </div>
         </div>
     </header>
@@ -676,7 +677,7 @@
 
     <!-- Include the new JavaScript file for this page -->
     <script src="../js/book-details.js"></script>
-    <script src="../js/script.js"></script> <!-- Keep global script for dark mode etc. -->
+    <script src="../js/user.js"></script> 
 
 </body>
 

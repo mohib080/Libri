@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Wishlist - Libri</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/wishlist.css"> <!-- New CSS file -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header content removed, similar to cart.html -->
+
+    <div class="container main-content">
+        <h1>Your Wishlist</h1>
+        <div class="wishlist-items">
+            <!-- Header Row for Wishlist Items -->
+            <div class="wishlist-header-row">
+                <span class="header-item-details">Product</span>
+                <span class="header-price">Price</span>
+                <span class="header-actions">Actions</span>
+            </div>
+            <!-- Wishlist items will be dynamically added here by wishlist.js -->
+            <div class="empty-wishlist-message" style="display: none;">
+                <i class="fas fa-heart-broken"></i>
+                <p>Your wishlist is empty!</p>
+                <a href="user.html" class="btn-primary">Start Browsing Books</a>
+            </div>
+        </div>
+        <div class="wishlist-summary">
+            <p>Total Items: <span id="wishlist-item-count">0</span></p>
+            <button class="clear-wishlist-btn">Clear Wishlist</button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Libri. All rights reserved.</p>
+            <!-- Dark Mode Toggle Button added to the footer -->
+            <button id="dark-mode-toggle" class="dark-mode-btn">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </footer>
+
+    <div id="notification-area" class="notification-area"></div>
+
+    <script src="../js/wishlist.js"></script> <!-- New JS file -->
+</body>
+
+</html>
