@@ -296,34 +296,49 @@ app.get('/api/books/:bookId/reviews', async (req, res) => {
 
 app.post('/signup', async (req, res) => {
     const { name, email, password, phone_number, address } = req.body;
-    try {
-        const customerExists = await pool.query(
-            'SELECT * FROM customer WHERE email = $1||WHERE name = $2',
-            [email,name]
-        );
 
-        if (customerExists.rows.length > 0 && customerExists.rows[0].email === email || customerExists.rows[0].name === name) {
-            return res.status(400).json({ error: 'Email or Username already exists' });
+    // Basic backend input validation
+    if (!name || !email || !password) {
+        return res.status(400).json({ error: 'Name, email, and password are required' });
+    }
+
+    try {
+        // Check if email already exists
+        const emailCheck = await pool.query('SELECT 1 FROM customer WHERE email = $1', [email]);
+        if (emailCheck.rows.length > 0) {
+            return res.status(400).json({ error: 'Email already exists' });
         }
+
+        // Check if username already exists
+        const nameCheck = await pool.query('SELECT 1 FROM customer WHERE name = $1', [name]);
+        if (nameCheck.rows.length > 0) {
+            return res.status(400).json({ error: 'Username already exists' });
+        }
+
+        // Hash the password
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+        // Insert new customer
         const newCustomer = await pool.query(
             `INSERT INTO customer (name, email, hashed_password, phone_number, address, created_at, updated_at, role, is_verified)
-        VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), 'customer', false)
-        RETURNING *`,
+             VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), 'customer', false)
+             RETURNING *`,
             [name, email, hashedPassword, phone_number || null, address || null]
         );
+
+     
         const token = jwt.sign(
             {
                 customerId: newCustomer.rows[0].customer_id,
                 email: newCustomer.rows[0].email,
                 role: newCustomer.rows[0].role
             },
-            'your_secret_key',
+            'your_secret_key', // Replace this with a real secret in production!
             { expiresIn: '24h' }
         );
 
+        // Send response
         res.status(201).json({
             token,
             customer: {
@@ -339,12 +354,13 @@ app.post('/signup', async (req, res) => {
     }
 });
 
+
 app.post('/signin', async (req, res) => {
     const { email, name, password } = req.body;
     try {
         const customerResult = await pool.query(
             'SELECT * FROM customer WHERE email = $1 OR name = $2',
-            [email,name]
+            [email, name]
         );
 
         if (customerResult.rows.length == 0) {
@@ -760,7 +776,7 @@ app.post('/api/wishlist/add', authenticateToken, async (req, res) => {
             await client.query('INSERT INTO wishlist_item (wishlist_id, book_id, created_at) VALUES ($1, $2, NOW())', [wishlistId, bookId]);
             res.status(201).json({ message: 'Book added to wishlist successfully.' });
         }
-        await client.query('COMMIT'); 
+        await client.query('COMMIT');
 
     } catch (err) {
         await client.query('ROLLBACK');
@@ -782,7 +798,7 @@ app.delete('/api/wishlist/remove/:bookId', authenticateToken, async (req, res) =
     let client;
     try {
         client = await pool.connect();
-        await client.query('BEGIN'); 
+        await client.query('BEGIN');
 
         const wishlistResult = await client.query('SELECT wishlist_id FROM wishlist WHERE customer_id = $1', [customerId]);
         if (wishlistResult.rows.length === 0) {
@@ -829,7 +845,7 @@ app.delete('/api/wishlist/clear', authenticateToken, async (req, res) => {
 
         await client.query('DELETE FROM wishlist_item WHERE wishlist_id = $1', [wishlistId]);
 
-        await client.query('COMMIT'); 
+        await client.query('COMMIT');
         res.json({ message: 'Wishlist cleared successfully.' });
 
     } catch (err) {

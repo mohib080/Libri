@@ -141,7 +141,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Function to check cart status for all displayed books
     async function checkCartStatusForBooks() {
         const token = getAuthToken();
         if (!token) {

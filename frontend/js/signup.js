@@ -1,156 +1,62 @@
-document.getElementById('signup').addEventListener('submit', async function (event) {
-    event.preventDefault();
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('signup');
 
-    const usernameInput = document.getElementById('username');
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const confirmInput = document.getElementById('confirm');
-
-    const name = usernameInput.value.trim();
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-    const confirmPassword = confirmInput.value;
-
-    let isValid = true;
-    const errors = {};
-
-    // Validation
-    if (!name) {
-        errors.username = 'Username is required';
-        isValid = false;
+    if (!form) {
+        console.error('Signup form not found');
+        return;
     }
 
-    if (!email) {
-        errors.email = 'Email is required';
-        isValid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        errors.email = 'Invalid email format';
-        isValid = false;
-    }
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
 
-    if (!password) {
-        errors.password = 'Password is required';
-        isValid = false;
-    } else if (password.length < 8) {
-        errors.password = 'Password must be at least 8 characters';
-        isValid = false;
-    } else if (!/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])/.test(password)) {
-        errors.password = 'Password must contain uppercase, lowercase, and number';
-        isValid = false;
-    }
-
-    if (password !== confirmPassword) {
-        errors.confirm = 'Passwords do not match';
-        isValid = false;
-    }
-
-    // Display errors
-    for (const [field, message] of Object.entries(errors)) {
-        const errorElement = document.getElementById(`${field}-error`);
-        if (errorElement) {
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
+        const name = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirm = document.getElementById('confirm').value;
+        const phone_number = document.getElementById('phone')?.value?.trim() || '';
+        const address = document.getElementById('address')?.value?.trim() || '';
+        if (!name || !email || !password || !confirm) {
+            alert('Please fill out all required fields.');
+            return;
         }
-    }
 
-    if (!isValid) return;
+        if (password !== confirm) {
+            alert('Passwords do not match!');
+            return;
+        }
 
-    try {
-        const response = await fetch('/signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name,
-                email,
-                password,
-                phone_number: null,
-                address: null
-            })
-        });
+        try {
+            const response = await fetch('http://localhost:3000/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name,
+                    email,
+                    password,
+                    phone_number,
+                    address
+                })
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        if (response.ok) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('customer', JSON.stringify(data.customer));
-            alert("Signup successful! You can now log in.");
-            window.location.href = 'signin.html';
-        } else {
-            if (data.error.includes('Email')) {
-                document.getElementById('email-error').textContent = data.error;
-                document.getElementById('email-error').style.display = 'block';
+            if (response.ok) {
+                alert('Signup successful!');
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('customer_name', data.customer.name);
+                localStorage.setItem('customer_id', data.customer.customer_id);
+                localStorage.setItem('customer_email', data.customer.email);
+                localStorage.setItem('customer_role', data.customer.role);
+                window.location.href = '/'; 
             } else {
-                alert(`Signup failed: ${data.error}`);
+                alert('Signup failed: ' + (data.error || 'Unknown error.'));
             }
+
+        } catch (err) {
+            console.error('Error during signup:', err);
+            alert('Network error or server is not responding.');
         }
-    } catch (error) {
-        console.error('Signup error:', error);
-        alert('Signup failed. Please try again.');
-    }
+    });
 });
-
-// Real-time Validation
-document.getElementById('username').addEventListener('input', validateName);
-document.getElementById('email').addEventListener('input', validateEmail);
-document.getElementById('password').addEventListener('input', validatePassword);
-document.getElementById('confirm').addEventListener('input', validateConfirm);
-
-function validateName() {
-    const input = document.getElementById('username');
-    const error = document.getElementById('username-error');
-    if (!input.value.trim()) {
-        error.textContent = 'Username is required';
-        error.style.display = 'block';
-    } else {
-        error.style.display = 'none';
-    }
-}
-
-function validateEmail() {
-    const input = document.getElementById('email');
-    const error = document.getElementById('email-error');
-    const email = input.value.trim();
-
-    if (!email) {
-        error.textContent = 'Email is required';
-        error.style.display = 'block';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        error.textContent = 'Invalid email format';
-        error.style.display = 'block';
-    } else {
-        error.style.display = 'none';
-    }
-}
-
-function validatePassword() {
-    const input = document.getElementById('password');
-    const error = document.getElementById('password-error');
-    const password = input.value;
-
-    if (!password) {
-        error.textContent = 'Password is required';
-        error.style.display = 'block';
-    } else if (password.length < 8) {
-        error.textContent = 'Password must be at least 8 characters';
-        error.style.display = 'block';
-    } else if (!/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])/.test(password)) {
-        error.textContent = 'Password must contain uppercase, lowercase, and number';
-        error.style.display = 'block';
-    } else {
-        error.style.display = 'none';
-    }
-    validateConfirm();
-}
-
-function validateConfirm() {
-    const password = document.getElementById('password').value;
-    const confirm = document.getElementById('confirm').value;
-    const error = document.getElementById('confirm-error');
-
-    if (password !== confirm) {
-        error.textContent = 'Passwords do not match';
-        error.style.display = 'block';
-    } else {
-        error.style.display = 'none';
-    }
-}
