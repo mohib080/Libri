@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalPriceElement = document.getElementById('total-price');
     const checkoutBtn = document.querySelector('.checkout-btn');
 
-    // --- Dark Mode Toggle Logic ---
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     const body = document.body;
 
@@ -34,15 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // --- User Authentication Check ---
     const token = localStorage.getItem('token');
     if (!token) {
         window.location.href = 'signin.html';
         return;
     }
 
-    // --- Fetch Cart Data from Backend ---
     async function fetchCart() {
         try {
             const response = await fetch('http://localhost:3000/api/cart', {
@@ -71,27 +67,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Render Cart Items (FIXED for headers) ---
     function renderCart(cart) {
-        // Select the header row and empty message elements
         const headerRow = cartItemsContainer.querySelector('.cart-header-row');
         const emptyCartMessageElement = cartItemsContainer.querySelector('.empty-cart-message');
 
-        // Remove only the dynamically generated cart items, preserve header and empty message
         const existingCartItems = cartItemsContainer.querySelectorAll('.cart-item');
         existingCartItems.forEach(item => item.remove());
 
         if (!cart.items || cart.items.length === 0) {
-            if (headerRow) headerRow.style.display = 'none'; // Hide header if cart is empty
+            if (headerRow) headerRow.style.display = 'none';
             if (emptyCartMessageElement) {
-                emptyCartMessageElement.style.display = 'block'; // Show empty message
-                emptyCartMessageElement.querySelector('p').textContent = 'Your cart is currently empty.'; // Reset text
+                emptyCartMessageElement.style.display = 'block';
+                emptyCartMessageElement.querySelector('p').textContent = 'Your cart is currently empty.';
             }
             totalPriceElement.textContent = '0.00';
             return;
         } else {
-            if (headerRow) headerRow.style.display = 'flex'; // Show header if items exist
-            if (emptyCartMessageElement) emptyCartMessageElement.style.display = 'none'; // Hide empty message
+            if (headerRow) headerRow.style.display = 'flex';
+            if (emptyCartMessageElement) emptyCartMessageElement.style.display = 'none';
         }
 
         cart.items.forEach(item => {
@@ -115,19 +108,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="total-item-price">$${(item.price * item.quantity).toFixed(2)}</div>
                 <button class="remove-btn" data-id="${item.book_id}"><i class="fas fa-trash-alt"></i> Remove</button>
             `;
-            // Insert new cart items *after* the header row and *before* the empty message
-            // This ensures the header and empty message remain in their positions
             if (emptyCartMessageElement) {
                 cartItemsContainer.insertBefore(cartItemElement, emptyCartMessageElement);
             } else {
-                cartItemsContainer.appendChild(cartItemElement); // Fallback if empty message not found
+                cartItemsContainer.appendChild(cartItemElement);
             }
         });
 
         totalPriceElement.textContent = parseFloat(cart.total_amount).toFixed(2);
     }
 
-    // --- Update Cart Item Quantity ---
     async function updateCartItem(bookId, quantity) {
         try {
             const response = await fetch('http://localhost:3000/api/cart/update', {
@@ -152,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Remove Cart Item ---
     async function removeCartItem(bookId) {
         try {
             const response = await fetch(`http://localhost:3000/api/cart/remove/${bookId}`, {
@@ -174,8 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error removing cart item:', error);
         }
     }
-
-    // --- Event Listeners for Cart Actions ---
     cartItemsContainer.addEventListener('click', (e) => {
         const target = e.target;
         const bookId = target.dataset.id || target.closest('button')?.dataset.id;
@@ -199,13 +186,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Checkout Button ---
     if (checkoutBtn) {
         checkoutBtn.addEventListener('click', () => {
             alert('Checkout functionality is not yet implemented.');
         });
     }
-
-    // Initial fetch of cart data when the page loads
     fetchCart();
 });

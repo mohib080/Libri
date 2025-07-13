@@ -2,9 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const wishlistItemsContainer = document.querySelector('.wishlist-items');
     const wishlistItemCountElement = document.getElementById('wishlist-item-count');
     const clearWishlistBtn = document.querySelector('.clear-wishlist-btn');
-    const notificationArea = document.getElementById('notification-area'); // Assuming you have this in wishlist.html
-
-    // --- Dark Mode Toggle Logic (Copied from cart.js for consistency) ---
+    const notificationArea = document.getElementById('notification-area');
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     const body = document.body;
 
@@ -35,19 +33,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    // --- End Dark Mode Toggle Logic ---
 
-
-    // --- User Authentication Check ---
     const token = localStorage.getItem('token');
     if (!token) {
-        window.location.href = 'signin.html'; // Redirect to signin if no token
+        window.location.href = 'signin.html';
         return;
     }
 
-    const API_BASE_URL = 'http://localhost:3000/api'; // Define API base URL
+    const API_BASE_URL = 'http://localhost:3000/api';
 
-    // Helper to show transient notifications
     function showNotification(message, type = 'success') {
         if (!notificationArea) return;
         const notification = document.createElement('div');
@@ -62,8 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }, { once: true });
         }, 3000);
     }
-
-    // --- Fetch Wishlist Data from Backend ---
     async function fetchWishlist() {
         try {
             const response = await fetch(`${API_BASE_URL}/wishlist`, {
@@ -90,18 +82,15 @@ document.addEventListener('DOMContentLoaded', () => {
             wishlistItemCountElement.textContent = '0';
         }
     }
-
-    // --- Render Wishlist Items ---
     function renderWishlist(wishlist) {
         const headerRow = wishlistItemsContainer.querySelector('.wishlist-header-row');
         const emptyWishlistMessageElement = wishlistItemsContainer.querySelector('.empty-wishlist-message');
 
-        // Remove only dynamically generated wishlist items, preserve header and empty message
         const existingWishlistItems = wishlistItemsContainer.querySelectorAll('.wishlist-item');
         existingWishlistItems.forEach(item => item.remove());
 
         if (!wishlist.items || wishlist.items.length === 0) {
-            if (headerRow) headerRow.style.display = 'none'; // Hide header if wishlist is empty
+            if (headerRow) headerRow.style.display = 'none';
             if (emptyWishlistMessageElement) {
                 emptyWishlistMessageElement.style.display = 'block';
                 emptyWishlistMessageElement.querySelector('p').textContent = 'Your wishlist is empty!';
@@ -138,13 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        wishlistItemCountElement.textContent = wishlist.items.length; // Display total number of items
+        wishlistItemCountElement.textContent = wishlist.items.length;
     }
 
-    // --- Add to Cart from Wishlist ---
     async function addToCartFromWishlist(bookId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/wishlist/move-to-cart`, { // Use the new move-to-cart endpoint
+            const response = await fetch(`${API_BASE_URL}/wishlist/move-to-cart`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -161,14 +149,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Failed to move item to cart');
             }
             showNotification('Item moved to cart!', 'success');
-            fetchWishlist(); // Re-fetch the wishlist to show updated state
+            fetchWishlist();
         } catch (error) {
             console.error('Error moving item to cart from wishlist:', error);
             showNotification('Failed to move item to cart.', 'error');
         }
     }
-
-    // --- Remove Item from Wishlist ---
     async function removeWishlistItem(bookId, refetch = true) {
         try {
             const response = await fetch(`${API_BASE_URL}/wishlist/remove/${bookId}`, {
@@ -187,21 +173,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             showNotification('Item removed from wishlist.', 'success');
             if (refetch) {
-                fetchWishlist(); // Re-fetch the wishlist to show updated state
+                fetchWishlist();
             }
         } catch (error) {
             console.error('Error removing wishlist item:', error);
             showNotification('Failed to remove item from wishlist.', 'error');
         }
     }
-
-    // --- Clear All Items from Wishlist ---
     async function clearWishlist() {
-        if (!confirm('Are you sure you want to clear your entire wishlist?')) { // Use a custom modal in production
+        if (!confirm('Are you sure you want to clear your entire wishlist?')) {
             return;
         }
         try {
-            const response = await fetch(`${API_BASE_URL}/wishlist/clear`, { // Assuming a clear all endpoint
+            const response = await fetch(`${API_BASE_URL}/wishlist/clear`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -216,14 +200,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Failed to clear wishlist');
             }
             showNotification('Wishlist cleared successfully!', 'success');
-            fetchWishlist(); // Re-fetch to show empty state
+            fetchWishlist();
         } catch (error) {
             console.error('Error clearing wishlist:', error);
             showNotification('Failed to clear wishlist.', 'error');
         }
     }
-
-    // --- Event Listeners for Wishlist Actions ---
     wishlistItemsContainer.addEventListener('click', (e) => {
         const target = e.target;
         const bookId = target.dataset.id || target.closest('button')?.dataset.id;
@@ -236,11 +218,8 @@ document.addEventListener('DOMContentLoaded', () => {
             removeWishlistItem(bookId);
         }
     });
-
     if (clearWishlistBtn) {
         clearWishlistBtn.addEventListener('click', clearWishlist);
     }
-
-    // Initial fetch of wishlist data when the page loads
     fetchWishlist();
 });

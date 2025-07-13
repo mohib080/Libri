@@ -22,7 +22,7 @@ const dbConfig = require('../Connection/config.js');
 const pool = new Pool(dbConfig);
 
 pool.on('connect', () => {
-    console.log('Connected to PostgreSQL database');
+    console.log('Connected to database');
 });
 
 pool.on('error', (err) => {
@@ -64,7 +64,7 @@ const getBookDetailsBaseQuery = `
         book_category bc ON sc.category_id = bc.category_id
 `;
 
-// --- BOOK ROUTES ---
+
 app.get('/api/books', async (req, res) => {
     let client;
     try {
@@ -237,13 +237,12 @@ app.get('/api/subcategories', async (req, res) => {
     try {
         client = await pool.connect();
         const { categoryId } = req.query;
-        let query = `SELECT sub_category_id, category_id, sub_category_name FROM sub_category`;
+        let query = `SELECT sub_category_id, category_id, sub_category_name FROM sub_category ORDER BY sub_category_name`;
         const queryParams = [];
         if (categoryId) {
             query += ` WHERE category_id = $1`;
             queryParams.push(parseInt(categoryId, 10));
         }
-        query += ` ORDER BY sub_category_name`;
         const result = await client.query(query, queryParams);
         res.json(result.rows);
     } catch (err) {
@@ -256,7 +255,6 @@ app.get('/api/subcategories', async (req, res) => {
     }
 });
 
-// --- REVIEWS ---
 app.get('/api/books/:bookId/reviews', async (req, res) => {
     const bookId = parseInt(req.params.bookId, 10);
 
@@ -296,35 +294,26 @@ app.get('/api/books/:bookId/reviews', async (req, res) => {
     }
 });
 
-// --- AUTHENTICATION & USER ROUTES ---
-
-// Registration
 app.post('/signup', async (req, res) => {
     const { name, email, password, phone_number, address } = req.body;
     try {
-        // Check if customer exists
         const customerExists = await pool.query(
-            'SELECT * FROM customer WHERE email = $1',
-            [email]
+            'SELECT * FROM customer WHERE email = $1||WHERE name = $2',
+            [email,name]
         );
 
-        if (customerExists.rows.length > 0) {
-            return res.status(400).json({ error: 'Email already exists' });
+        if (customerExists.rows.length > 0 && customerExists.rows[0].email === email || customerExists.rows[0].name === name) {
+            return res.status(400).json({ error: 'Email or Username already exists' });
         }
-
-        // Hash password
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // Create new customer
         const newCustomer = await pool.query(
             `INSERT INTO customer (name, email, hashed_password, phone_number, address, created_at, updated_at, role, is_verified)
         VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), 'customer', false)
         RETURNING *`,
             [name, email, hashedPassword, phone_number || null, address || null]
         );
-
-        // Generate JWT token
         const token = jwt.sign(
             {
                 customerId: newCustomer.rows[0].customer_id,
@@ -350,29 +339,25 @@ app.post('/signup', async (req, res) => {
     }
 });
 
-// Login
 app.post('/signin', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, name, password } = req.body;
     try {
-        // Find customer by email
         const customerResult = await pool.query(
-            'SELECT * FROM customer WHERE email = $1',
-            [email]
+            'SELECT * FROM customer WHERE email = $1 OR name = $2',
+            [email,name]
         );
 
-        if (customerResult.rows.length === 0) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+        if (customerResult.rows.length == 0) {
+            return res.status(401).json({ error: 'Invalid Email or Username' });
         }
 
         const customer = customerResult.rows[0];
 
-        // Verify password
         const validPassword = await bcrypt.compare(password, customer.hashed_password);
         if (!validPassword) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+            return res.status(401).json({ error: 'Wrong Password' });
         }
 
-        // Update last_login_at
         await pool.query(
             'UPDATE customer SET last_login_at = NOW() WHERE customer_id = $1',
             [customer.customer_id]
@@ -470,10 +455,9 @@ app.put('/api/profile', authenticateToken, async (req, res) => {
 app.post('/api/change-password', authenticateToken, async (req, res) => {
     const { oldPassword, newPassword } = req.body;
     if (!oldPassword || !newPassword) {
-        return res.status(400).json({ error: 'Both old and new passwords are required.' });
+        return res.status(400).json({ error: 'Both passwords are required.' });
     }
     try {
-        // Fetch user's hashed password from DB
         const result = await pool.query('SELECT hashed_password FROM customer WHERE customer_id = $1', [req.user.customerId]);
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'User not found.' });
@@ -481,7 +465,6 @@ app.post('/api/change-password', authenticateToken, async (req, res) => {
         const valid = await bcrypt.compare(oldPassword, result.rows[0].hashed_password);
         if (!valid) return res.status(401).json({ error: 'Old password is incorrect.' });
 
-        // Hash new password and update
         const hashedNew = await bcrypt.hash(newPassword, 10);
         await pool.query('UPDATE customer SET hashed_password = $1, updated_at = NOW() WHERE customer_id = $2', [hashedNew, req.user.customerId]);
         res.json({ message: 'Password updated successfully.' });
@@ -491,53 +474,48 @@ app.post('/api/change-password', authenticateToken, async (req, res) => {
     }
 });
 
-// --- CART ROUTES ---
 app.get('/api/cart', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     let client;
     try {
         client = await pool.connect();
 
-        // Find the user's cart (create if it doesn't exist, though typically created on first add)
         let cartResult = await client.query('SELECT cart_id FROM cart WHERE customer_id = $1', [customerId]);
         let cartId;
 
         if (cartResult.rows.length === 0) {
-            // If no cart exists, create one for the customer
             const newCart = await client.query('INSERT INTO cart (customer_id, created_at, updated_at) VALUES ($1, NOW(), NOW()) RETURNING cart_id', [customerId]);
             cartId = newCart.rows[0].cart_id;
         } else {
             cartId = cartResult.rows[0].cart_id;
         }
 
-        // Fetch cart items with book details
         const cartItemsResult = await client.query(`
             SELECT
-                ci.cart_item_id,
-                ci.book_id,
+                crt.cart_item_id,
+                crt.book_id,
                 b.title,
                 b.image_url,
                 b.price,
-                ci.quantity,
-                (b.price * ci.quantity) AS total_item_price
+                crt.quantity,
+                (b.price * crt.quantity) AS total_item_price
             FROM
-                cart_item ci
+                cart_item crt
             JOIN
-                book b ON ci.book_id = b.book_id
+                book b ON crt.book_id = b.book_id
             WHERE
-                ci.cart_id = $1
+                crt.cart_id = $1
             ORDER BY
-                ci.cart_item_id;
+                crt.cart_item_id;
         `, [cartId]);
 
-        // Calculate total amount of the cart
         const totalAmount = cartItemsResult.rows.reduce((sum, item) => sum + parseFloat(item.total_item_price), 0);
 
         res.json({
             cart_id: cartId,
             customer_id: customerId,
             items: cartItemsResult.rows,
-            total_amount: totalAmount.toFixed(2) // Format to 2 decimal places
+            total_amount: totalAmount.toFixed(2)
         });
 
     } catch (err) {
@@ -559,9 +537,8 @@ app.post('/api/cart/add', authenticateToken, async (req, res) => {
     let client;
     try {
         client = await pool.connect();
-        await client.query('BEGIN'); // Start transaction
+        await client.query('BEGIN');
 
-        // 1. Get or Create Cart
         let cartResult = await client.query('SELECT cart_id FROM cart WHERE customer_id = $1 FOR UPDATE', [customerId]);
         let cartId;
 
@@ -578,30 +555,22 @@ app.post('/api/cart/add', authenticateToken, async (req, res) => {
             await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Book not found or is not available.' });
         }
-        const bookPrice = bookCheck.rows[0].price; // This variable is not used, but kept for context.
-
-        // 3. Check if item already exists in cart_item
         const cartItemResult = await client.query('SELECT * FROM cart_item WHERE cart_id = $1 AND book_id = $2 FOR UPDATE', [cartId, bookId]);
 
         if (cartItemResult.rows.length > 0) {
-            // Update quantity if item exists
-            const existingQuantity = cartItemResult.rows[0].quantity;
-            const newQuantity = existingQuantity + quantity;
-            await client.query('UPDATE cart_item SET quantity = $1 WHERE cart_id = $2 AND book_id = $3', [newQuantity, cartId, bookId]);
-            res.json({ message: 'Cart item quantity updated successfully.' });
-        } else {
-            // Add new item to cart
+            await client.query('ROLLBACK');
+            return res.status(409).json({ message: 'Book already in the cart.' });
+        }
+        else {
             await client.query('INSERT INTO cart_item (cart_id, book_id, quantity) VALUES ($1, $2, $3)', [cartId, bookId, quantity]);
             res.status(201).json({ message: 'Book added to cart successfully.' });
         }
-
-        // 4. Update cart's updated_at timestamp
         await client.query('UPDATE cart SET updated_at = NOW() WHERE cart_id = $1', [cartId]);
 
-        await client.query('COMMIT'); // Commit transaction
+        await client.query('COMMIT');
 
     } catch (err) {
-        await client.query('ROLLBACK'); // Rollback on error
+        await client.query('ROLLBACK');
         console.error('Error adding item to cart:', err);
         res.status(500).json({ error: 'Failed to add item to cart.' });
     } finally {
@@ -613,16 +582,15 @@ app.put('/api/cart/update', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     const { bookId, quantity } = req.body;
 
-    if (!bookId || quantity === undefined || quantity < 0) { // Quantity can be 0 to effectively remove
+    if (!bookId || quantity === undefined || quantity < 0) {
         return res.status(400).json({ error: 'Book ID and quantity are required.' });
     }
 
     let client;
     try {
         client = await pool.connect();
-        await client.query('BEGIN'); // Start transaction
+        await client.query('BEGIN');
 
-        // Get the cart_id for the customer
         const cartResult = await client.query('SELECT cart_id FROM cart WHERE customer_id = $1', [customerId]);
         if (cartResult.rows.length === 0) {
             await client.query('ROLLBACK');
@@ -631,11 +599,9 @@ app.put('/api/cart/update', authenticateToken, async (req, res) => {
         const cartId = cartResult.rows[0].cart_id;
 
         if (quantity === 0) {
-            // If quantity is 0, remove the item from cart
             await client.query('DELETE FROM cart_item WHERE cart_id = $1 AND book_id = $2', [cartId, bookId]);
             res.json({ message: 'Book removed from cart.' });
         } else {
-            // Update quantity
             const updateResult = await client.query(
                 'UPDATE cart_item SET quantity = $1 WHERE cart_id = $2 AND book_id = $3 RETURNING *',
                 [quantity, cartId, bookId]
@@ -648,13 +614,12 @@ app.put('/api/cart/update', authenticateToken, async (req, res) => {
             res.json({ message: 'Cart item quantity updated successfully.' });
         }
 
-        // Update cart's updated_at timestamp
         await client.query('UPDATE cart SET updated_at = NOW() WHERE cart_id = $1', [cartId]);
 
-        await client.query('COMMIT'); // Commit transaction
+        await client.query('COMMIT');
 
     } catch (err) {
-        await client.query('ROLLBACK'); // Rollback on error
+        await client.query('ROLLBACK');
         console.error('Error updating cart item quantity:', err);
         res.status(500).json({ error: 'Failed to update cart item quantity.' });
     } finally {
@@ -673,9 +638,7 @@ app.delete('/api/cart/remove/:bookId', authenticateToken, async (req, res) => {
     let client;
     try {
         client = await pool.connect();
-        await client.query('BEGIN'); // Start transaction
-
-        // Get the cart_id for the customer
+        await client.query('BEGIN');
         const cartResult = await client.query('SELECT cart_id FROM cart WHERE customer_id = $1', [customerId]);
         if (cartResult.rows.length === 0) {
             await client.query('ROLLBACK');
@@ -692,15 +655,13 @@ app.delete('/api/cart/remove/:bookId', authenticateToken, async (req, res) => {
             await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Book not found in cart.' });
         }
-
-        // Update cart's updated_at timestamp
         await client.query('UPDATE cart SET updated_at = NOW() WHERE cart_id = $1', [cartId]);
 
-        await client.query('COMMIT'); // Commit transaction
+        await client.query('COMMIT');
         res.json({ message: 'Book removed from cart successfully.' });
 
     } catch (err) {
-        await client.query('ROLLBACK'); // Rollback on error
+        await client.query('ROLLBACK');
         console.error('Error removing item from cart:', err);
         res.status(500).json({ error: 'Failed to remove item from cart.' });
     } finally {
@@ -708,52 +669,45 @@ app.delete('/api/cart/remove/:bookId', authenticateToken, async (req, res) => {
     }
 });
 
-// --- WISHLIST ROUTES (ADAPTED FOR YOUR SCHEMA) ---
-// Get User's Wishlist
 app.get('/api/wishlist', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     let client;
     try {
         client = await pool.connect();
-
-        // Find the user's wishlist (create if it doesn't exist)
         let wishlistResult = await client.query('SELECT wishlist_id FROM wishlist WHERE customer_id = $1', [customerId]);
         let wishlistId;
 
         if (wishlistResult.rows.length === 0) {
-            // If no wishlist exists, create one for the customer
-            // Removed 'updated_at' from INSERT as per your schema
             const newWishlist = await client.query('INSERT INTO wishlist (customer_id, created_at) VALUES ($1, NOW()) RETURNING wishlist_id', [customerId]);
             wishlistId = newWishlist.rows[0].wishlist_id;
         } else {
             wishlistId = wishlistResult.rows[0].wishlist_id;
         }
 
-        // Fetch wishlist items with book details
-        // Changed 'wi.added_at' to 'wi.created_at' as per your schema
         const wishlistItemDetailsQuery = `
-            SELECT
-                wi.wishlist_item_id,
-                wi.book_id,
-                b.title,
-                b.image_url,
-                b.price,
-                STRING_AGG(DISTINCT a.name, ', ') AS author
-            FROM
-                wishlist_item wi
-            JOIN
-                book b ON wi.book_id = b.book_id
-            LEFT JOIN
-                book_author ba ON b.book_id = ba.book_id
-            LEFT JOIN
-                author a ON ba.author_id = a.author_id
-            WHERE
-                wi.wishlist_id = $1
-            GROUP BY
-                wi.wishlist_item_id, wi.book_id, b.title, b.image_url, b.price
-            ORDER BY
-                wi.wishlist_item_id;
-        `;
+    SELECT
+        wish.wishlist_item_id,
+        wish.book_id,
+        b.title,
+        b.image_url,
+        b.price,
+        STRING_AGG(DISTINCT a.name, ', ') AS author
+    FROM
+        wishlist_item wish
+    JOIN
+        book b ON wish.book_id = b.book_id
+    LEFT JOIN
+        book_author ba ON b.book_id = ba.book_id
+    LEFT JOIN
+        author a ON ba.author_id = a.author_id
+    WHERE
+        wish.wishlist_id = $1
+    GROUP BY
+        wish.wishlist_item_id, wish.book_id, b.title, b.image_url, b.price
+    ORDER BY
+        wish.wishlist_item_id;
+`;
+
         const wishlistItemsResult = await client.query(wishlistItemDetailsQuery, [wishlistId]);
 
         res.json({
@@ -770,7 +724,6 @@ app.get('/api/wishlist', authenticateToken, async (req, res) => {
     }
 });
 
-// Add Book to Wishlist
 app.post('/api/wishlist/add', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     const { bookId } = req.body;
@@ -778,52 +731,39 @@ app.post('/api/wishlist/add', authenticateToken, async (req, res) => {
     if (!bookId) {
         return res.status(400).json({ error: 'Book ID is required.' });
     }
-
     let client;
     try {
         client = await pool.connect();
-        await client.query('BEGIN'); // Start transaction
+        await client.query('BEGIN');
 
-        // 1. Get or Create Wishlist
         let wishlistResult = await client.query('SELECT wishlist_id FROM wishlist WHERE customer_id = $1 FOR UPDATE', [customerId]);
         let wishlistId;
 
         if (wishlistResult.rows.length === 0) {
-            // Removed 'updated_at' from INSERT as per your schema
             const newWishlist = await client.query('INSERT INTO wishlist (customer_id, name, created_at) VALUES ($1, $2, NOW()) RETURNING wishlist_id', [customerId, `Wishlist for Customer ${customerId}`]); // Added 'name'
             wishlistId = newWishlist.rows[0].wishlist_id;
         } else {
             wishlistId = wishlistResult.rows[0].wishlist_id;
         }
 
-        // 2. Check if book exists and is active
         const bookCheck = await client.query('SELECT book_id, is_active FROM book WHERE book_id = $1', [bookId]);
         if (bookCheck.rows.length === 0 || !bookCheck.rows[0].is_active) {
             await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Book not found or is not available.' });
         }
-
-        // 3. Check if item already exists in wishlist_item (Crucial due to missing UNIQUE constraint)
         const wishlistItemResult = await client.query('SELECT * FROM wishlist_item WHERE wishlist_id = $1 AND book_id = $2 FOR UPDATE', [wishlistId, bookId]);
 
         if (wishlistItemResult.rows.length > 0) {
-            // Item already in wishlist, no update needed
-            await client.query('ROLLBACK'); // Rollback the transaction as no change is made
-            return res.status(409).json({ message: 'Book is already in your wishlist.' }); // 409 Conflict
+            await client.query('ROLLBACK');
+            return res.status(409).json({ message: 'Book is already in your wishlist.' });
         } else {
-            // Add new item to wishlist
-            // Changed 'added_at' to 'created_at' as per your schema
             await client.query('INSERT INTO wishlist_item (wishlist_id, book_id, created_at) VALUES ($1, $2, NOW())', [wishlistId, bookId]);
             res.status(201).json({ message: 'Book added to wishlist successfully.' });
         }
-
-        // Removed: Update wishlist's updated_at timestamp, as it's not in your schema
-        // await client.query('UPDATE wishlist SET updated_at = NOW() WHERE wishlist_id = $1', [wishlistId]);
-
-        await client.query('COMMIT'); // Commit transaction
+        await client.query('COMMIT'); 
 
     } catch (err) {
-        await client.query('ROLLBACK'); // Rollback on error
+        await client.query('ROLLBACK');
         console.error('Error adding item to wishlist:', err);
         res.status(500).json({ error: 'Failed to add item to wishlist.' });
     } finally {
@@ -831,7 +771,6 @@ app.post('/api/wishlist/add', authenticateToken, async (req, res) => {
     }
 });
 
-// Remove Book from Wishlist
 app.delete('/api/wishlist/remove/:bookId', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     const bookId = parseInt(req.params.bookId, 10);
@@ -843,9 +782,8 @@ app.delete('/api/wishlist/remove/:bookId', authenticateToken, async (req, res) =
     let client;
     try {
         client = await pool.connect();
-        await client.query('BEGIN'); // Start transaction
+        await client.query('BEGIN'); 
 
-        // Get the wishlist_id for the customer
         const wishlistResult = await client.query('SELECT wishlist_id FROM wishlist WHERE customer_id = $1', [customerId]);
         if (wishlistResult.rows.length === 0) {
             await client.query('ROLLBACK');
@@ -863,14 +801,11 @@ app.delete('/api/wishlist/remove/:bookId', authenticateToken, async (req, res) =
             return res.status(404).json({ error: 'Book not found in wishlist.' });
         }
 
-        // Removed: Update wishlist's updated_at timestamp, as it's not in your schema
-        // await client.query('UPDATE wishlist SET updated_at = NOW() WHERE wishlist_id = $1', [wishlistId]);
-
-        await client.query('COMMIT'); // Commit transaction
+        await client.query('COMMIT');
         res.json({ message: 'Book removed from wishlist successfully.' });
 
     } catch (err) {
-        await client.query('ROLLBACK'); // Rollback on error
+        await client.query('ROLLBACK');
         console.error('Error removing item from wishlist:', err);
         res.status(500).json({ error: 'Failed to remove item from wishlist.' });
     } finally {
@@ -878,15 +813,13 @@ app.delete('/api/wishlist/remove/:bookId', authenticateToken, async (req, res) =
     }
 });
 
-// Clear All Items from Wishlist
 app.delete('/api/wishlist/clear', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     let client;
     try {
         client = await pool.connect();
-        await client.query('BEGIN'); // Start transaction
+        await client.query('BEGIN');
 
-        // Get the wishlist_id for the customer
         const wishlistResult = await client.query('SELECT wishlist_id FROM wishlist WHERE customer_id = $1', [customerId]);
         if (wishlistResult.rows.length === 0) {
             await client.query('ROLLBACK');
@@ -896,14 +829,11 @@ app.delete('/api/wishlist/clear', authenticateToken, async (req, res) => {
 
         await client.query('DELETE FROM wishlist_item WHERE wishlist_id = $1', [wishlistId]);
 
-        // Removed: Update wishlist's updated_at timestamp, as it's not in your schema
-        // await client.query('UPDATE wishlist SET updated_at = NOW() WHERE wishlist_id = $1', [wishlistId]);
-
-        await client.query('COMMIT'); // Commit transaction
+        await client.query('COMMIT'); 
         res.json({ message: 'Wishlist cleared successfully.' });
 
     } catch (err) {
-        await client.query('ROLLBACK'); // Rollback on error
+        await client.query('ROLLBACK');
         console.error('Error clearing wishlist:', err);
         res.status(500).json({ error: 'Failed to clear wishlist.' });
     } finally {
@@ -911,7 +841,6 @@ app.delete('/api/wishlist/clear', authenticateToken, async (req, res) => {
     }
 });
 
-// Move item from wishlist to cart
 app.post('/api/wishlist/move-to-cart', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     const { bookId } = req.body;
@@ -925,7 +854,6 @@ app.post('/api/wishlist/move-to-cart', authenticateToken, async (req, res) => {
         client = await pool.connect();
         await client.query('BEGIN');
 
-        // 1. Get wishlist ID
         const wishlistResult = await client.query('SELECT wishlist_id FROM wishlist WHERE customer_id = $1', [customerId]);
         if (wishlistResult.rows.length === 0) {
             await client.query('ROLLBACK');
@@ -933,14 +861,12 @@ app.post('/api/wishlist/move-to-cart', authenticateToken, async (req, res) => {
         }
         const wishlistId = wishlistResult.rows[0].wishlist_id;
 
-        // 2. Remove from wishlist
         const deleteResult = await client.query('DELETE FROM wishlist_item WHERE wishlist_id = $1 AND book_id = $2 RETURNING *', [wishlistId, bookId]);
         if (deleteResult.rows.length === 0) {
             await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Book not found in wishlist.' });
         }
 
-        // 3. Get or create cart
         let cartResult = await client.query('SELECT cart_id FROM cart WHERE customer_id = $1 FOR UPDATE', [customerId]);
         let cartId;
         if (cartResult.rows.length === 0) {
@@ -950,7 +876,6 @@ app.post('/api/wishlist/move-to-cart', authenticateToken, async (req, res) => {
             cartId = cartResult.rows[0].cart_id;
         }
 
-        // 4. Add to cart
         const cartItemResult = await client.query('SELECT * FROM cart_item WHERE cart_id = $1 AND book_id = $2 FOR UPDATE', [cartId, bookId]);
         if (cartItemResult.rows.length > 0) {
             // If item exists in cart, increment quantity
@@ -960,7 +885,7 @@ app.post('/api/wishlist/move-to-cart', authenticateToken, async (req, res) => {
             // If item does not exist, add it with quantity 1
             await client.query('INSERT INTO cart_item (cart_id, book_id, quantity) VALUES ($1, $2, 1)', [cartId, bookId]);
         }
-        
+
         await client.query('UPDATE cart SET updated_at = NOW() WHERE cart_id = $1', [cartId]);
 
         await client.query('COMMIT');
