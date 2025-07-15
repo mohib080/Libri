@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - BookWise</title>
+    <link rel="stylesheet" href="/css/orders.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <a href="index.html">BookWise</a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="categories.html">Categories</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </nav>
+            <div class="header-icons">
+                <button id="dark-mode-toggle" class="icon-btn"><i class="fas fa-moon"></i></button>
+                <a href="cart.html" class="icon-btn cart-btn" data-cart-count="0">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span id="cart-item-count" class="cart-count">0</span>
+                </a>
+                <div class="dropdown">
+                    <button class="icon-btn user-btn"><i class="fas fa-user-circle"></i></button>
+                    <div class="dropdown-content">
+                        <a href="profile.html" id="profile-link">My Profile</a>
+                        <a href="orders.html" id="orders-link">My Orders</a>
+                        <a href="#" id="signout-link">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div id="notification-area" class="notification-area"></div>
+        
+        <section class="orders-section">
+            <div class="container">
+                <h1>My Orders</h1>
+                
+                <!-- Order Filters -->
+                <div class="order-filters">
+                    <button class="filter-btn active" data-status="all">All Orders</button>
+                    <button class="filter-btn" data-status="pending">Pending</button>
+                    <button class="filter-btn" data-status="processing">Processing</button>
+                    <button class="filter-btn" data-status="shipped">Shipped</button>
+                    <button class="filter-btn" data-status="delivered">Delivered</button>
+                    <button class="filter-btn" data-status="cancelled">Cancelled</button>
+                </div>
+
+                <!-- Orders List -->
+                <div class="orders-list" id="orders-list">
+                    <div class="loading-message">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading your orders...</p>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-orders" id="empty-orders" style="display: none;">
+                    <i class="fas fa-box-open"></i>
+                    <h3>No orders found</h3>
+                    <p>You haven't placed any orders yet. Start shopping to see your orders here.</p>
+                    <a href="index.html" class="btn-primary">Start Shopping</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Order Details Modal -->
+        <div class="modal-overlay" id="order-modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Order Details</h2>
+                    <button class="modal-close" id="modal-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="order-modal-body">
+                    <!-- Order details will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Cancellation Modal -->
+        <div class="modal-overlay" id="cancellation-modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Cancel Order</h2>
+                    <button class="modal-close" id="cancellation-modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="cancellation-form">
+                        <div class="form-group">
+                            <label for="cancellation-reason">Reason for cancellation:</label>
+                            <select id="cancellation-reason" required>
+                                <option value="">Select a reason</option>
+                                <option value="changed_mind">Changed my mind</option>
+                                <option value="found_better_price">Found better price elsewhere</option>
+                                <option value="ordered_by_mistake">Ordered by mistake</option>
+                                <option value="shipping_delay">Shipping taking too long</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cancellation-details">Additional details (optional):</label>
+                            <textarea id="cancellation-details" rows="3" placeholder="Please provide more details..."></textarea>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-secondary" id="cancel-cancellation">Keep Order</button>
+                            <button type="submit" class="btn-danger">Cancel Order</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section about">
+                    <h3>About Us</h3>
+                    <p>BookWise is your go-to online bookstore.</p>
+                </div>
+                <div class="footer-section links">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="cart.html">Cart</a></li>
+                        <li><a href="profile.html">Profile</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 BookWise. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/orders.js"></script>
+</body>
+
+</html>

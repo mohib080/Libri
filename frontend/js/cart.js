@@ -193,3 +193,162 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     fetchCart();
 });
+
+// Add this to your existing cart.js file
+
+// Checkout functionality
+const checkoutBtn = document.querySelector('.checkout-btn');
+if (checkoutBtn) {
+    checkoutBtn.addEventListener('click', handleCheckout);
+}
+
+async function handleCheckout() {
+    const token = getAuthToken();
+    if (!token) {
+        showNotification('Please sign in to checkout', 'error');
+        setTimeout(() => {
+            window.location.href = 'signin.html';
+        }, 1500);
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/cart`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch cart');
+        }
+
+        const cart = await response.json();
+
+        if (!cart.items || cart.items.length === 0) {
+            showNotification('Your cart is empty', 'error');
+            return;
+        }
+
+        // Show checkout modal or redirect to checkout page
+        showCheckoutModal(cart);
+
+    } catch (error) {
+        console.error('Error during checkout:', error);
+        showNotification('Failed to proceed to checkout', 'error');
+    }
+}
+
+function showCheckoutModal(cart) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Checkout</h2>
+                <button class="modal-close" onclick="closeCheckoutModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="checkout-form">
+                    <h3>Shipping Information</h3>
+                    <div class="form-group">
+                        <label for="shipping-address">Address:</label>
+                        <input type="text" id="shipping-address" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="shipping-city">City:</label>
+                        <input type="text" id="shipping-city" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="shipping-postal">Postal Code:</label>
+                        <input type="text" id="shipping-postal" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="shipping-country">Country:</label>
+                        <input type="text" id="shipping-country" required>
+                    </div>
+                    
+                    <h3>Order Summary</h3>
+                    <div class="order-summary">
+                        ${cart.items.map(item => `
+                            <div class="summary-item">
+                                <span>${item.title} × ${item.quantity}</span>
+                                <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                        <div class="summary-total">
+                            <span><strong>Total: $${cart.total_amount}</strong></span>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeCheckoutModal()">Cancel</button>
+                        <button type="submit" class="btn-primary">Place Order</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.classList.add('active');
+
+    // Handle form submission
+    document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await processOrder(cart);
+    });
+}
+
+async function processOrder(cart) {
+    const token = getAuthToken();
+    const shippingData = {
+        address: document.getElementById('shipping-address').value,
+        city: document.getElementById('shipping-city').value,
+        postal_code: document.getElementById('shipping-postal').value,
+        country: document.getElementById('shipping-country').value
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/orders`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                items: cart.items,
+                shipping: shippingData,
+                total_amount: cart.total_amount
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to create order');
+        }
+
+        const order = await response.json();
+
+        showNotification('Order placed successfully!', 'success');
+        closeCheckoutModal();
+
+        // Redirect to orders page
+        setTimeout(() => {
+            window.location.href = 'orders.html';
+        }, 1500);
+
+    } catch (error) {
+        console.error('Error creating order:', error);
+        showNotification('Failed to place order', 'error');
+    }
+}
+
+function closeCheckoutModal() {
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+

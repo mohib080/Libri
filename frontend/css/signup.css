@@ -378,3 +378,161 @@ body.dark-mode .signup-right p {
         /* Apply border radius consistently in dark mode */
     }
 }
+
+/* Add these notification styles to your existing signup.css */
+
+/* Notification System Styles */
+.notification-area {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 300px;
+}
+
+.notification {
+    background: #4CAF50;
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateX(400px);
+    transition: all 0.3s ease;
+    opacity: 0;
+    animation: slideIn 0.3s ease forwards;
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.notification.error {
+    background: #f44336;
+}
+
+.notification.info {
+    background: #2196F3;
+}
+
+.notification.success {
+    background: #4CAF50;
+}
+
+.notification.hide {
+    animation: slideOut 0.3s ease forwards;
+}
+
+.notification i {
+    font-size: 1.1rem;
+}
+
+@keyframes slideIn {
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+/* Dark mode notifications */
+body.dark-mode .notification {
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .notification.error {
+    background: #e53935;
+}
+
+body.dark-mode .notification.info {
+    background: #1976d2;
+}
+
+body.dark-mode .notification.success {
+    background: #388e3c;
+}
+
+/* Loading spinner for button */
+.loading-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Enhanced button states */
+button.btn-primary {
+    background: #4f46e5;
+    color: white;
+    padding: 1rem 0;
+    border: none;
+    border-radius: 40px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    font-family: 'Source Sans Pro', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgb(79 70 229 / 0.4);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+button.btn-primary:hover {
+    background: #3730a3;
+    box-shadow: 0 12px 25px rgb(55 48 163 / 0.6);
+}
+
+button.btn-primary:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Responsive notifications */
+@media (max-width: 768px) {
+    .notification-area {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .notification {
+        transform: translateY(-20px);
+        margin-bottom: 0.5rem;
+    }
+
+    .notification.hide {
+        animation: slideOutMobile 0.3s ease forwards;
+    }
+
+    @keyframes slideOutMobile {
+        to {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+    }
+}

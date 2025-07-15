@@ -1,0 +1,244 @@
+CREATE TABLE customer (
+    customer_id SERIAL PRIMARY KEY,
+    name VARCHAR,
+    email VARCHAR UNIQUE,
+    hashed_password VARCHAR,
+    phone_number VARCHAR,
+    address TEXT,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    role VARCHAR,
+    last_login_at TIMESTAMP,
+    is_verified BOOLEAN
+);
+
+CREATE TABLE payment_method (
+    payment_method_id SERIAL PRIMARY KEY,
+    method_name VARCHAR
+);
+
+
+CREATE TABLE admin_user (
+    admin_id SERIAL PRIMARY KEY,
+    username VARCHAR,
+    email VARCHAR,
+    hashed_password VARCHAR,
+    created_at TIMESTAMP,
+    role VARCHAR
+);
+
+
+CREATE TABLE format (
+    format_id SERIAL PRIMARY KEY,
+    format_name VARCHAR
+);
+
+
+CREATE TABLE book (
+    book_id SERIAL PRIMARY KEY,
+    format_id INT REFERENCES format(format_id),
+    title VARCHAR,
+    description TEXT,
+    image_url TEXT,
+    price NUMERIC,
+    is_active BOOLEAN,
+    isbn VARCHAR UNIQUE,
+    publisher VARCHAR,
+    publication_date TIMESTAMP,
+    language VARCHAR
+);
+
+CREATE TABLE author (
+    author_id SERIAL PRIMARY KEY,
+    name VARCHAR,
+    bibliography TEXT,
+    profile_image_url TEXT,
+    nationality VARCHAR
+);
+
+
+CREATE TABLE book_author (
+    book_id INT REFERENCES book(book_id) ON DELETE CASCADE,
+    author_id INT REFERENCES author(author_id) ON DELETE CASCADE,
+    PRIMARY KEY (book_id, author_id)
+);
+
+CREATE TABLE supplier (
+    supplier_id SERIAL PRIMARY KEY,
+    supplier_name VARCHAR,
+    phone_number VARCHAR,
+    email VARCHAR,
+    address TEXT,
+    payment_method VARCHAR
+);
+
+CREATE TABLE book_supply (
+    book_id INT REFERENCES book(book_id) ON DELETE CASCADE,
+    supplier_id INT REFERENCES supplier(supplier_id) ON DELETE CASCADE,
+    PRIMARY KEY (book_id, supplier_id)
+);
+
+CREATE TABLE book_category (
+    category_id SERIAL PRIMARY KEY,
+    category_name VARCHAR,
+    description TEXT
+);
+
+CREATE TABLE sub_category (
+    sub_category_id SERIAL PRIMARY KEY,
+    category_id INT REFERENCES book_category(category_id) ON DELETE CASCADE,
+    sub_category_name VARCHAR
+);
+
+CREATE TABLE book_sub_category (
+    book_id INT REFERENCES book(book_id) ON DELETE CASCADE,
+    sub_category_id INT REFERENCES sub_category(sub_category_id) ON DELETE CASCADE,
+    PRIMARY KEY (book_id, sub_category_id)
+);
+
+CREATE TABLE "order" (
+    order_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES customer(customer_id) ON DELETE CASCADE,
+    status VARCHAR,
+    order_date TIMESTAMP,
+    total_amount NUMERIC,
+    shipping_method VARCHAR,
+    tracking_number VARCHAR
+);
+
+CREATE TABLE order_item (
+    order_item_id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES "order"(order_id) ON DELETE CASCADE,
+    book_id INT REFERENCES book(book_id) ON DELETE CASCADE,
+    order_date TIMESTAMP,
+    quantity INT,
+    item_price NUMERIC
+);
+
+CREATE TABLE shipping (
+    shipping_id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES "order"(order_id) ON DELETE CASCADE,
+    address TEXT,
+    city VARCHAR,
+    postal_code VARCHAR,
+    country VARCHAR,
+    shipped_date TIMESTAMP,
+    delivery_estimate TIMESTAMP
+);
+
+CREATE TABLE order_cancellation (
+    cancellation_id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES "order"(order_id) ON DELETE CASCADE,
+    customer_id INT REFERENCES customer(customer_id) ON DELETE CASCADE,
+    cancelled_by VARCHAR,
+    reason TEXT,
+    status VARCHAR
+);
+
+CREATE TABLE cart (
+    cart_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES customer(customer_id) ON DELETE CASCADE,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+
+CREATE TABLE cart_item (
+    cart_item_id SERIAL PRIMARY KEY,
+    cart_id INT REFERENCES cart(cart_id) ON DELETE CASCADE,
+    book_id INT REFERENCES book(book_id) ON DELETE CASCADE,
+    quantity INT
+);
+
+CREATE TABLE wishlist (
+    wishlist_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES customer(customer_id) ON DELETE CASCADE,
+    name VARCHAR,
+    created_at TIMESTAMP
+);
+
+CREATE TABLE wishlist_item (
+    wishlist_item_id SERIAL PRIMARY KEY,
+    wishlist_id INT REFERENCES wishlist(wishlist_id) ON DELETE CASCADE,
+    book_id INT REFERENCES book(book_id) ON DELETE CASCADE,
+    created_at TIMESTAMP
+);
+
+
+CREATE TABLE chat_session (
+    session_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES customer(customer_id) ON DELETE CASCADE,
+    started_at TIMESTAMP,
+    ended_at TIMESTAMP,
+    is_escalated BOOLEAN
+);
+
+CREATE TABLE chat_message (
+    message_id SERIAL PRIMARY KEY,
+    session_id INT REFERENCES chat_session(session_id) ON DELETE CASCADE,
+    sender_type VARCHAR,
+    message_text TEXT,
+    sent_at TIMESTAMP
+);
+
+
+CREATE TABLE review (
+    review_id SERIAL PRIMARY KEY,
+    book_id INT REFERENCES book(book_id) ON DELETE CASCADE,
+    customer_id INT REFERENCES customer(customer_id) ON DELETE CASCADE,
+    rating FLOAT,
+    comment TEXT,
+    review_date TIMESTAMP
+);
+
+CREATE TABLE inventory (
+    inventory_id SERIAL PRIMARY KEY,
+    book_id INT REFERENCES book(book_id) ON DELETE CASCADE,
+    admin_id INT REFERENCES admin_user(admin_id) ON DELETE SET NULL,
+    quantity_in_stock INT,
+    quantity INT,
+    last_update TIMESTAMP
+);
+
+CREATE TABLE recommendation (
+    recommendation_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES customer(customer_id) ON DELETE CASCADE,
+    book_id INT REFERENCES book(book_id) ON DELETE CASCADE,
+    source VARCHAR,
+    recommended_at TIMESTAMP
+);
+
+CREATE TABLE book_recommendation (
+    recommendation_id INT REFERENCES recommendation(recommendation_id) ON DELETE CASCADE,
+    book_id INT REFERENCES book(book_id) ON DELETE CASCADE,
+    PRIMARY KEY (recommendation_id, book_id)
+);
+
+CREATE TABLE payment (
+    payment_id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES "order"(order_id) ON DELETE CASCADE,
+    payment_method_id INT REFERENCES payment_method(payment_method_id),
+    amount NUMERIC,
+    payment_date TIMESTAMP,
+    requested_at TIMESTAMP
+);
+
+CREATE OR REPLACE FUNCTION remove_from_cart_on_order()
+RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM cart_item
+    WHERE book_id = NEW.book_id
+      AND cart_id IN (
+          SELECT cart_id FROM cart
+          WHERE customer_id = (
+              SELECT customer_id FROM "order" WHERE order_id = NEW.order_id
+          )
+      );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_remove_from_cart
+AFTER INSERT ON order_item
+FOR EACH ROW
+EXECUTE FUNCTION remove_from_cart_on_order();

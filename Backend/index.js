@@ -327,7 +327,7 @@ app.post('/signup', async (req, res) => {
             [name, email, hashedPassword, phone_number || null, address || null]
         );
 
-     
+
         const token = jwt.sign(
             {
                 customerId: newCustomer.rows[0].customer_id,
@@ -915,6 +915,367 @@ app.post('/api/wishlist/move-to-cart', authenticateToken, async (req, res) => {
         if (client) client.release();
     }
 });
+
+app.post('/api/books/:bookId/reviews', authenticateToken, async (req, res) => {
+    const bookId = parseInt(req.params.bookId, 10);
+    const { rating, comment } = req.body;
+    const customerId = req.user.customerId; // Get customer_id from authenticated token
+
+    if (isNaN(bookId)) {
+        return res.status(400).json({ error: 'Invalid book ID.' });
+    }
+    if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ error: 'Rating must be between 1 and 5.' });
+    }
+    if (!comment || comment.trim() === '') {
+        return res.status(400).json({ error: 'Review comment cannot be empty.' });
+    }
+
+    let client;
+    try {
+        client = await pool.connect();
+        await client.query('BEGIN'); // Start transaction
+
+        // 1. Check if the book exists
+        const bookExists = await client.query('SELECT 1 FROM book WHERE book_id = $1', [bookId]);
+        if (bookExists.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Book not found.' });
+        }
+
+        // 2. Check if the customer has already reviewed this book (optional, but good practice)
+        const existingReview = await client.query(
+            'SELECT review_id FROM review WHERE book_id = $1 AND customer_id = $2',
+            [bookId, customerId]
+        );
+        if (existingReview.rows.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: 'You have already reviewed this book.' });
+        }
+
+        // 3. Insert the new review
+        await client.query(
+            `INSERT INTO review (book_id, customer_id, rating, comment, review_date)
+             VALUES ($1, $2, $3, $4, NOW())`,
+            [bookId, customerId, rating, comment]
+        );
+
+        // 4. Update the book's average rating and review count
+        await client.query(
+            `UPDATE book
+             SET
+                 average_rating = (SELECT AVG(rating) FROM review WHERE book_id = $1),
+                 review_count = (SELECT COUNT(review_id) FROM review WHERE book_id = $1)
+             WHERE book_id = $1`,
+            [bookId]
+        );
+
+        await client.query('COMMIT'); // Commit transaction
+        res.status(201).json({ message: 'Review submitted successfully.' });
+
+    } catch (err) {
+        await client.query('ROLLBACK'); // Rollback on error
+        console.error('Error submitting review:', err);
+        res.status(500).json({ error: 'Failed to submit review.' });
+    } finally {
+        if (client) {
+            client.release();
+        }
+    }
+});
+
+
+app.delete('/api/books/:bookId/reviews/:reviewId', authenticateToken, async (req, res) => {
+    const bookId = parseInt(req.params.bookId, 10);
+    const reviewId = parseInt(req.params.reviewId, 10);
+    const customerId = req.user.customerId; // Get customer_id from authenticated token
+
+    if (isNaN(bookId) || isNaN(reviewId)) {
+        return res.status(400).json({ error: 'Invalid book ID or review ID.' });
+    }
+
+    let client;
+    try {
+        client = await pool.connect();
+        await client.query('BEGIN'); // Start transaction
+
+        // 1. Verify the review exists and belongs to the authenticated customer and the specified book
+        const reviewCheckResult = await client.query(
+            'SELECT review_id FROM review WHERE review_id = $1 AND book_id = $2 AND customer_id = $3',
+            [reviewId, bookId, customerId]
+        );
+
+        if (reviewCheckResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            // Return 404 if not found, or 403 if found but doesn't belong to user
+            return res.status(404).json({ error: 'Review not found or you do not have permission to delete it.' });
+        }
+
+        // 2. Delete the review
+        await client.query('DELETE FROM review WHERE review_id = $1', [reviewId]);
+
+        // 3. Update the book's average rating and review count
+        // Recalculate average_rating and review_count after deletion
+        await client.query(
+            `UPDATE book
+             SET
+                 average_rating = COALESCE((SELECT AVG(rating) FROM review WHERE book_id = $1), 0),
+                 review_count = (SELECT COUNT(review_id) FROM review WHERE book_id = $1)
+             WHERE book_id = $1`,
+            [bookId]
+        );
+
+        await client.query('COMMIT'); // Commit transaction
+        res.json({ message: 'Review removed successfully.' });
+
+    } catch (err) {
+        await client.query('ROLLBACK'); // Rollback on error
+        console.error('Error removing review:', err);
+        res.status(500).json({ error: 'Failed to remove review.' });
+    } finally {
+        if (client) {
+            client.release();
+        }
+    }
+});
+
+// Order routes
+app.get('/api/orders', authenticateToken, async (req, res) => {
+    const customerId = req.user.customerId;
+    let client;
+
+    try {
+        client = await pool.connect();
+
+        const ordersResult = await client.query(`
+            SELECT 
+                o.order_id,
+                o.status,
+                o.order_date,
+                o.total_amount,
+                o.shipping_method,
+                o.tracking_number,
+                s.address,
+                s.city,
+                s.postal_code,
+                s.country,
+                s.shipped_date,
+                s.delivery_estimate
+            FROM "order" o
+            LEFT JOIN shipping s ON o.order_id = s.order_id
+            WHERE o.customer_id = $1
+            ORDER BY o.order_date DESC
+        `, [customerId]);
+
+        const orders = [];
+
+        for (const order of ordersResult.rows) {
+            const itemsResult = await client.query(`
+                SELECT 
+                    oi.order_item_id,
+                    oi.quantity,
+                    oi.item_price,
+                    b.title,
+                    b.image_url
+                FROM order_item oi
+                JOIN book b ON oi.book_id = b.book_id
+                WHERE oi.order_id = $1
+            `, [order.order_id]);
+
+            orders.push({
+                ...order,
+                items: itemsResult.rows,
+                shipping: order.address ? {
+                    address: order.address,
+                    city: order.city,
+                    postal_code: order.postal_code,
+                    country: order.country,
+                    shipped_date: order.shipped_date,
+                    delivery_estimate: order.delivery_estimate
+                } : null
+            });
+        }
+
+        res.json(orders);
+
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ error: 'Failed to fetch orders' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// Get single order
+app.get('/api/orders/:orderId', authenticateToken, async (req, res) => {
+    const customerId = req.user.customerId;
+    const orderId = parseInt(req.params.orderId);
+    let client;
+
+    try {
+        client = await pool.connect();
+
+        const orderResult = await client.query(`
+            SELECT 
+                o.order_id,
+                o.status,
+                o.order_date,
+                o.total_amount,
+                o.shipping_method,
+                o.tracking_number,
+                s.address,
+                s.city,
+                s.postal_code,
+                s.country,
+                s.shipped_date,
+                s.delivery_estimate
+            FROM "order" o
+            LEFT JOIN shipping s ON o.order_id = s.order_id
+            WHERE o.order_id = $1 AND o.customer_id = $2
+        `, [orderId, customerId]);
+
+        if (orderResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        const order = orderResult.rows[0];
+
+        const itemsResult = await client.query(`
+            SELECT 
+                oi.order_item_id,
+                oi.quantity,
+                oi.item_price,
+                b.title,
+                b.image_url
+            FROM order_item oi
+            JOIN book b ON oi.book_id = b.book_id
+            WHERE oi.order_id = $1
+        `, [orderId]);
+
+        res.json({
+            ...order,
+            items: itemsResult.rows,
+            shipping: order.address ? {
+                address: order.address,
+                city: order.city,
+                postal_code: order.postal_code,
+                country: order.country,
+                shipped_date: order.shipped_date,
+                delivery_estimate: order.delivery_estimate
+            } : null
+        });
+
+    } catch (error) {
+        console.error('Error fetching order:', error);
+        res.status(500).json({ error: 'Failed to fetch order' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// Create order
+app.post('/api/orders', authenticateToken, async (req, res) => {
+    const customerId = req.user.customerId;
+    const { items, shipping, total_amount } = req.body;
+    let client;
+
+    try {
+        client = await pool.connect();
+        await client.query('BEGIN');
+
+        // Create order
+        const orderResult = await client.query(`
+            INSERT INTO "order" (customer_id, status, order_date, total_amount, shipping_method)
+            VALUES ($1, 'pending', NOW(), $2, 'standard')
+            RETURNING order_id
+        `, [customerId, total_amount]);
+
+        const orderId = orderResult.rows[0].order_id;
+
+        // Add order items
+        for (const item of items) {
+            await client.query(`
+                INSERT INTO order_item (order_id, book_id, order_date, quantity, item_price)
+                VALUES ($1, $2, NOW(), $3, $4)
+            `, [orderId, item.book_id, item.quantity, item.price]);
+        }
+
+        // Add shipping information
+        await client.query(`
+            INSERT INTO shipping (order_id, address, city, postal_code, country, delivery_estimate)
+            VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '7 days')
+        `, [orderId, shipping.address, shipping.city, shipping.postal_code, shipping.country]);
+
+        // Clear cart
+        await client.query('DELETE FROM cart_item WHERE cart_id = (SELECT cart_id FROM cart WHERE customer_id = $1)', [customerId]);
+
+        await client.query('COMMIT');
+
+        res.status(201).json({ order_id: orderId, message: 'Order created successfully' });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error creating order:', error);
+        res.status(500).json({ error: 'Failed to create order' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// Cancel order
+app.post('/api/orders/:orderId/cancel', authenticateToken, async (req, res) => {
+    const customerId = req.user.customerId;
+    const orderId = parseInt(req.params.orderId);
+    const { reason, details } = req.body;
+    let client;
+
+    try {
+        client = await pool.connect();
+        await client.query('BEGIN');
+
+        // Verify order belongs to customer and can be cancelled
+        const orderResult = await client.query(`
+            SELECT status FROM "order" 
+            WHERE order_id = $1 AND customer_id = $2
+        `, [orderId, customerId]);
+
+        if (orderResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        const currentStatus = orderResult.rows[0].status;
+        if (currentStatus !== 'pending' && currentStatus !== 'processing') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Order cannot be cancelled at this stage' });
+        }
+
+        // Update order status
+        await client.query(`
+            UPDATE "order" 
+            SET status = 'cancelled' 
+            WHERE order_id = $1
+        `, [orderId]);
+
+        // Add cancellation record
+        await client.query(`
+            INSERT INTO order_cancellation (order_id, customer_id, cancelled_by, reason, status)
+            VALUES ($1, $2, 'customer', $3, 'approved')
+        `, [orderId, customerId, `${reason}${details ? ': ' + details : ''}`]);
+
+        await client.query('COMMIT');
+
+        res.json({ message: 'Order cancelled successfully' });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error cancelling order:', error);
+        res.status(500).json({ error: 'Failed to cancel order' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
 
 
 // --- STATIC FILE ROUTES ---

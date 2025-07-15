@@ -6,28 +6,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sign Up - Libri</title>
 
-  <!-- Elegant Fonts -->
   <link
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+Pro:wght@400;600&display=swap"
     rel="stylesheet" />
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="../css/signup.css" />
 </head>
 
 <body>
+  <!-- Notification Area - NEW -->
+  <div id="notification-area" class="notification-area"></div>
+
   <main class="signup-screen">
     <section class="signup-left">
-      <h2>Create an Account</h2>
+      <h2>Create Account</h2>
       <form id="signup" autocomplete="off" novalidate>
         <div class="form-group">
-          <input type="text" id="username" placeholder=" " required />
-          <label for="username">Username</label>
+          <input type="text" id="name" placeholder=" " required />
+          <label for="name">Full Name</label>
           <span class="error-msg" aria-live="polite"></span>
         </div>
 
         <div class="form-group">
           <input type="email" id="email" placeholder=" " required />
-          <label for="email">Email</label>
+          <label for="email">Email Address</label>
           <span class="error-msg" aria-live="polite"></span>
         </div>
 
@@ -38,12 +41,12 @@
         </div>
 
         <div class="form-group">
-          <input type="password" id="confirm" placeholder=" " required />
-          <label for="confirm">Confirm Password</label>
+          <input type="password" id="confirm-password" placeholder=" " required />
+          <label for="confirm-password">Confirm Password</label>
           <span class="error-msg" aria-live="polite"></span>
         </div>
 
-        <button type="submit" class="btn-primary">Sign Up</button>
+        <button type="submit" class="btn-primary">Create Account</button>
       </form>
       <div class="switch-form">
         Already have an account? <a href="signin.html">Sign In</a>
@@ -52,13 +55,12 @@
 
     <aside class="signup-right">
       <i class="fas fa-book-open cap-icon"></i>
-      <h2>Welcome Aboard!</h2>
-      <p>Join Libri and explore thousands of books curated just for you.</p>
+      <h2>Welcome to Libri</h2>
+      <p>Join thousands of readers discovering their next favorite book.</p>
     </aside>
   </main>
 
   <script src="../js/signup.js"></script>
-  <script src="../js/script.js"></script> <!-- Added this line for dark mode consistency -->
 </body>
 
 </html>
