@@ -554,3 +554,66 @@ footer .container {
         font-size: 1.3rem;
     }
 }
+
+/* Enhanced checkout button styles */
+.checkout-btn {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    padding: 1.2rem 2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    transition: all 0.3s ease;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.checkout-btn:hover:not(:disabled) {
+    background: linear-gradient(45deg, #218838, #1e7e34);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.checkout-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.checkout-btn:active {
+    transform: translateY(0);
+}
+
+/* Loading spinner animation */
+.checkout-btn .fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Dark mode checkout button */
+body.dark-mode .checkout-btn {
+    background: linear-gradient(45deg, #198754, #157347);
+    box-shadow: 0 4px 15px rgba(25, 135, 84, 0.3);
+}
+
+body.dark-mode .checkout-btn:hover:not(:disabled) {
+    background: linear-gradient(45deg, #146c43, #0f5132);
+    box-shadow: 0 6px 20px rgba(25, 135, 84, 0.4);
+}
+
+body.dark-mode .checkout-btn:disabled {
+    background: #495057;
+}

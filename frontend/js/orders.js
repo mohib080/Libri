@@ -1,409 +1,541 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = 'http://localhost:3000/api';
-    const ordersListContainer = document.getElementById('orders-list');
-    const emptyOrdersContainer = document.getElementById('empty-orders');
-    const notificationArea = document.getElementById('notification-area');
-    const filterButtons = document.querySelectorAll('.filter-btn');
+// Global variables
+let currentOrders = [];
+let currentFilter = 'all';
+const API_BASE_URL = 'http://localhost:3000/api';
+
+// DOM elements - Updated to match your HTML structure
+const ordersListContainer = document.getElementById('orders-list');
+const emptyOrdersContainer = document.getElementById('empty-orders');
+const orderModal = document.getElementById('order-modal-overlay');
+const orderModalBody = document.getElementById('order-modal-body');
+const orderModalClose = document.getElementById('modal-close-btn');
+const cancellationModal = document.getElementById('cancellation-modal-overlay');
+const cancellationModalClose = document.getElementById('cancellation-modal-close');
+const cancelCancellationBtn = document.getElementById('cancel-cancellation');
+const cancellationForm = document.getElementById('cancellation-form');
+const cancellationReasonSelect = document.getElementById('cancellation-reason');
+const cancellationDetailsTextarea = document.getElementById('cancellation-details');
+const filterButtons = document.querySelectorAll('.filter-btn');
+const notificationContainer = document.getElementById('notification-area');
+
+// Current order ID being cancelled
+let currentOrderIdToCancel = null;
+
+// Notification system
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+        <span>${message}</span>
+        <button class="notification-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
     
-    // Modal elements
-    const orderModal = document.getElementById('order-modal-overlay');
-    const orderModalBody = document.getElementById('order-modal-body');
-    const orderModalClose = document.getElementById('modal-close-btn');
-    const cancellationModal = document.getElementById('cancellation-modal-overlay');
-    const cancellationForm = document.getElementById('cancellation-form');
-    const cancellationModalClose = document.getElementById('cancellation-modal-close');
-    const cancelCancellationBtn = document.getElementById('cancel-cancellation');
-    
-    let currentOrders = [];
-    let currentFilter = 'all';
-    let currentOrderIdForCancellation = null;
-
-    // Authentication
-    function getAuthToken() {
-        return localStorage.getItem('token');
-    }
-
-    function checkAuthentication() {
-        const token = getAuthToken();
-        if (!token) {
-            window.location.href = 'signin.html';
-            return false;
-        }
-        return true;
-    }
-
-    // Notification system
-    function showNotification(message, type = 'success') {
-        if (!notificationArea) return;
-        
-        const notification = document.createElement('div');
-        notification.classList.add('notification', type);
-        notification.textContent = message;
-        notificationArea.appendChild(notification);
-
+    if (notificationContainer) {
+        notificationContainer.appendChild(notification);
         setTimeout(() => {
-            notification.classList.add('hide');
-            notification.addEventListener('transitionend', () => {
+            if (notification.parentElement) {
                 notification.remove();
-            }, { once: true });
-        }, 3000);
+            }
+        }, 5000);
     }
+}
 
-    // Format date
-    function formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+// Authentication helper
+function getAuthToken() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = 'signin.html';
+        return null;
+    }
+    return token;
+}
+
+// API call wrapper with error handling
+async function handleApiCall(apiCall, errorMessage) {
+    try {
+        const response = await apiCall();
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                window.location.href = 'signin.html';
+                return null;
+            }
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        showNotification(errorMessage, 'error');
+        return null;
+    }
+}
+
+// Fetch orders from API
+async function fetchOrders() {
+    const token = getAuthToken();
+    if (!token) return;
+
+    console.log('Fetching orders...'); // Debug log
+
+    // Show loading state
+    ordersListContainer.innerHTML = `
+        <div class="loading-message">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading your orders...</p>
+        </div>
+    `;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/orders`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-    }
 
-    // Format currency
-    function formatCurrency(amount) {
-        return `$${parseFloat(amount).toFixed(2)}`;
-    }
-
-    // Get status badge HTML
-    function getStatusBadge(status) {
-        const statusClasses = {
-            'pending': 'pending',
-            'processing': 'processing',
-            'shipped': 'shipped',
-            'delivered': 'delivered',
-            'cancelled': 'cancelled'
-        };
+        console.log('Response status:', response.status); // Debug log
         
-        return `<span class="order-status ${statusClasses[status] || 'pending'}">${status}</span>`;
-    }
-
-    // Get order actions based on status
-    function getOrderActions(order) {
-        const actions = [];
-        
-        actions.push(`
-            <button class="btn-primary" onclick="viewOrderDetails(${order.order_id})">
-                <i class="fas fa-eye"></i> View Details
-            </button>
-        `);
-        
-        if (order.status === 'pending' || order.status === 'processing') {
-            actions.push(`
-                <button class="btn-danger" onclick="showCancellationModal(${order.order_id})">
-                    <i class="fas fa-times"></i> Cancel Order
-                </button>
-            `);
+        if (!response.ok) {
+            console.error('Response not ok:', response.status, response.statusText);
+            throw new Error(`HTTP ${response.status}`);
         }
-        
-        if (order.status === 'shipped' && order.tracking_number) {
-            actions.push(`
-                <button class="btn-secondary" onclick="trackOrder('${order.tracking_number}')">
-                    <i class="fas fa-truck"></i> Track Order
-                </button>
-            `);
+
+        const data = await response.json();
+        console.log('Orders data received:', data); // Debug log
+
+        if (data && data.length > 0) {
+            currentOrders = data;
+            filterOrders(currentFilter);
+        } else {
+            console.log('No orders found');
+            renderOrders([]);
         }
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        showNotification('Failed to load orders', 'error');
         
-        return actions.join('');
+        // Show error state
+        ordersListContainer.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Failed to load orders. Please try again.</p>
+                <button onclick="fetchOrders()" class="btn-primary">Retry</button>
+            </div>
+        `;
+    }
+}
+
+// Utility functions
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+    }).format(amount);
+}
+
+function getStatusBadge(status) {
+    const statusMap = {
+        pending: { text: 'Pending', class: 'pending' },
+        processing: { text: 'Processing', class: 'processing' },
+        shipped: { text: 'Shipped', class: 'shipped' },
+        delivered: { text: 'Delivered', class: 'delivered' },
+        cancelled: { text: 'Cancelled', class: 'cancelled' }
+    };
+    
+    const statusInfo = statusMap[status] || { text: status, class: 'default' };
+    return `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
+}
+
+function getOrderActions(order) {
+    const actions = [];
+    
+    actions.push(`<button onclick="showOrderDetails(${order.order_id})" class="btn-outline">View Details</button>`);
+    
+    if (order.status === 'pending') {
+        actions.push(`<button onclick="showCancelModal(${order.order_id})" class="btn-danger">Cancel Order</button>`);
+    }
+    
+    if (order.status === 'delivered') {
+        actions.push(`<button onclick="reorderItems(${order.order_id})" class="btn-primary">Reorder</button>`);
+    }
+    
+    return actions.join(' ');
+}
+
+// Order filtering
+function filterOrders(filter) {
+    currentFilter = filter;
+    
+    // Update filter buttons
+    filterButtons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.status === filter) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Filter orders
+    let filteredOrders = currentOrders;
+    if (filter !== 'all') {
+        filteredOrders = currentOrders.filter(order => order.status === filter);
+    }
+    
+    renderOrders(filteredOrders);
+}
+
+// Render orders
+function renderOrders(orders) {
+    if (orders.length === 0) {
+        ordersListContainer.style.display = 'none';
+        emptyOrdersContainer.style.display = 'block';
+        return;
     }
 
-    // Render orders
-    function renderOrders(orders) {
-        if (orders.length === 0) {
-            ordersListContainer.style.display = 'none';
-            emptyOrdersContainer.style.display = 'block';
-            return;
-        }
-        
-        ordersListContainer.style.display = 'block';
-        emptyOrdersContainer.style.display = 'none';
-        
-        ordersListContainer.innerHTML = orders.map(order => `
-            <div class="order-card">
-                <div class="order-header">
-                    <div class="order-info">
-                        <h3>Order #${order.order_id}</h3>
-                        <p>Placed on ${formatDate(order.order_date)}</p>
-                    </div>
+    ordersListContainer.style.display = 'block';
+    emptyOrdersContainer.style.display = 'none';
+    
+    ordersListContainer.innerHTML = orders.map(order => `
+        <div class="order-card" data-order-id="${order.order_id}">
+            <div class="order-header">
+                <div class="order-info">
+                    <h3>Order #${order.order_id}</h3>
+                    <p class="order-date">Placed on ${formatDate(order.order_date)}</p>
+                </div>
+                <div class="order-status">
                     ${getStatusBadge(order.status)}
                 </div>
-                <div class="order-body">
-                    <div class="order-items">
-                        ${order.items.slice(0, 3).map(item => `
-                            <div class="order-item">
-                                <img src="${item.image_url || 'https://via.placeholder.com/60x80'}" 
-                                     alt="${item.title}">
-                                <div class="item-details">
-                                    <h4>${item.title}</h4>
-                                    <p>Quantity: ${item.quantity}</p>
-                                </div>
-                                <div class="item-price">${formatCurrency(item.item_price)}</div>
-                            </div>
-                        `).join('')}
-                        ${order.items.length > 3 ? `
-                            <div class="more-items">
-                                <p>+ ${order.items.length - 3} more items</p>
-                            </div>
-                        ` : ''}
-                    </div>
-                    <div class="order-summary">
-                        <div class="summary-row">
-                            <span>Total Items:</span>
-                            <span>${order.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
-                        </div>
-                        <div class="summary-row">
-                            <span>Total Amount:</span>
-                            <span>${formatCurrency(order.total_amount)}</span>
+            </div>
+            
+            <div class="order-items">
+                ${order.items.slice(0, 3).map(item => `
+                    <div class="order-item">
+                        <img src="${item.image_url}" alt="${item.title}" onerror="this.src='/images/default-book.jpg'">
+                        <div class="item-details">
+                            <h4>${item.title}</h4>
+                            <p>Quantity: ${item.quantity}</p>
+                            <p>Price: ${formatCurrency(item.item_price)}</p>
                         </div>
                     </div>
-                    <div class="order-actions">
-                        ${getOrderActions(order)}
-                    </div>
+                `).join('')}
+                ${order.items.length > 3 ? `
+                    <div class="more-items">+ ${order.items.length - 3} more items</div>
+                ` : ''}
+            </div>
+            
+            <div class="order-summary">
+                <div class="total-amount">
+                    <strong>Total: ${formatCurrency(order.total_amount)}</strong>
+                </div>
+                <div class="order-actions">
+                    ${getOrderActions(order)}
                 </div>
             </div>
-        `).join('');
+        </div>
+    `).join('');
+}
+
+// Show order details modal
+function showOrderDetails(orderId) {
+    const order = currentOrders.find(o => o.order_id === orderId);
+    if (!order) {
+        showNotification('Order not found', 'error');
+        return;
     }
 
-    // Fetch orders
-    async function fetchOrders() {
-        const token = getAuthToken();
-        if (!token) return;
-        
-        try {
-            const response = await fetch(`${API_BASE_URL}/orders`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to fetch orders');
-            }
-            
-            const orders = await response.json();
-            currentOrders = orders;
-            filterOrders(currentFilter);
-            
-        } catch (error) {
-            console.error('Error fetching orders:', error);
-            showNotification('Failed to load orders', 'error');
-        }
-    }
-
-    // Filter orders
-    function filterOrders(status) {
-        currentFilter = status;
-        
-        // Update active filter button
-        filterButtons.forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.status === status) {
-                btn.classList.add('active');
-            }
-        });
-        
-        // Filter orders
-        let filteredOrders = currentOrders;
-        if (status !== 'all') {
-            filteredOrders = currentOrders.filter(order => order.status === status);
-        }
-        
-        renderOrders(filteredOrders);
-    }
-
-    // View order details
-    window.viewOrderDetails = async function(orderId) {
-        const token = getAuthToken();
-        if (!token) return;
-        
-        try {
-            const response = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to fetch order details');
-            }
-            
-            const order = await response.json();
-            
-            orderModalBody.innerHTML = `
-                <div class="order-details">
-                    <div class="order-header-info">
-                        <h3>Order #${order.order_id}</h3>
-                        <p>Status: ${getStatusBadge(order.status)}</p>
-                        <p>Placed on: ${formatDate(order.order_date)}</p>
-                        ${order.tracking_number ? `<p>Tracking: ${order.tracking_number}</p>` : ''}
+    const modalContent = `
+        <div class="order-details">
+            <div class="order-summary-section">
+                <h3>Order #${order.order_id}</h3>
+                <div class="order-info-grid">
+                    <div class="info-item">
+                        <label>Status:</label>
+                        <span>${getStatusBadge(order.status)}</span>
                     </div>
-                    
-                    <div class="order-items-details">
-                        <h4>Items Ordered:</h4>
-                        ${order.items.map(item => `
-                            <div class="order-item">
-                                <img src="${item.image_url || 'https://via.placeholder.com/60x80'}" 
-                                     alt="${item.title}">
-                                <div class="item-details">
-                                    <h4>${item.title}</h4>
-                                    <p>Quantity: ${item.quantity}</p>
-                                    <p>Price: ${formatCurrency(item.item_price)}</p>
-                                </div>
-                                <div class="item-total">${formatCurrency(item.item_price * item.quantity)}</div>
-                            </div>
-                        `).join('')}
+                    <div class="info-item">
+                        <label>Order Date:</label>
+                        <span>${formatDate(order.order_date)}</span>
                     </div>
-                    
-                    <div class="order-summary">
-                        <div class="summary-row">
-                            <span>Subtotal:</span>
-                            <span>${formatCurrency(order.total_amount)}</span>
-                        </div>
-                        <div class="summary-row">
-                            <span>Shipping:</span>
-                            <span>Free</span>
-                        </div>
-                        <div class="summary-row">
-                            <span><strong>Total:</strong></span>
-                            <span><strong>${formatCurrency(order.total_amount)}</strong></span>
-                        </div>
+                    <div class="info-item">
+                        <label>Total Amount:</label>
+                        <span>${formatCurrency(order.total_amount)}</span>
                     </div>
-                    
-                    ${order.shipping ? `
-                        <div class="shipping-info">
-                            <h4>Shipping Information:</h4>
-                            <p>${order.shipping.address}</p>
-                            <p>${order.shipping.city}, ${order.shipping.postal_code}</p>
-                            <p>${order.shipping.country}</p>
-                            ${order.shipping.shipped_date ? `<p>Shipped: ${formatDate(order.shipping.shipped_date)}</p>` : ''}
-                            ${order.shipping.delivery_estimate ? `<p>Estimated Delivery: ${formatDate(order.shipping.delivery_estimate)}</p>` : ''}
+                    <div class="info-item">
+                        <label>Shipping Method:</label>
+                        <span>${order.shipping_method || 'Standard'}</span>
+                    </div>
+                    ${order.tracking_number ? `
+                        <div class="info-item">
+                            <label>Tracking Number:</label>
+                            <span>${order.tracking_number}</span>
                         </div>
                     ` : ''}
                 </div>
-            `;
+            </div>
             
-            orderModal.classList.add('active');
+            <div class="order-items-section">
+                <h3>Items Ordered</h3>
+                <div class="items-list">
+                    ${order.items.map(item => `
+                        <div class="item-row">
+                            <img src="${item.image_url}" alt="${item.title}" onerror="this.src='/images/default-book.jpg'">
+                            <div class="item-info">
+                                <h4>${item.title}</h4>
+                                <p>Quantity: ${item.quantity}</p>
+                                <p>Price: ${formatCurrency(item.item_price)}</p>
+                                <p><strong>Subtotal: ${formatCurrency(item.item_price * item.quantity)}</strong></p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
             
-        } catch (error) {
-            console.error('Error fetching order details:', error);
-            showNotification('Failed to load order details', 'error');
-        }
-    };
+            ${order.shipping ? `
+                <div class="shipping-section">
+                    <h3>Shipping Information</h3>
+                    <div class="shipping-details">
+                        <p><strong>Address:</strong> ${order.shipping.address}</p>
+                        <p><strong>City:</strong> ${order.shipping.city}, ${order.shipping.postal_code}</p>
+                        <p><strong>Country:</strong> ${order.shipping.country}</p>
+                        ${order.shipping.shipped_date ? `
+                            <p><strong>Shipped:</strong> ${formatDate(order.shipping.shipped_date)}</p>
+                        ` : ''}
+                        ${order.shipping.delivery_estimate ? `
+                            <p><strong>Estimated Delivery:</strong> ${formatDate(order.shipping.delivery_estimate)}</p>
+                        ` : ''}
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
 
-    // Show cancellation modal
-    window.showCancellationModal = function(orderId) {
-        currentOrderIdForCancellation = orderId;
-        cancellationModal.classList.add('active');
-    };
+    if (orderModalBody) {
+        orderModalBody.innerHTML = modalContent;
+        orderModal.style.display = 'flex';
+    }
+}
 
-    // Track order
-    window.trackOrder = function(trackingNumber) {
-        showNotification(`Tracking number: ${trackingNumber}`, 'info');
-        // In a real app, this would redirect to a tracking page or API
-    };
+// Show cancel order modal
+function showCancelModal(orderId) {
+    const order = currentOrders.find(o => o.order_id === orderId);
+    if (!order) {
+        showNotification('Order not found', 'error');
+        return;
+    }
 
-    // Handle order cancellation
-    cancellationForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const reason = document.getElementById('cancellation-reason').value;
-        const details = document.getElementById('cancellation-details').value;
-        
-        if (!reason) {
-            showNotification('Please select a reason for cancellation', 'error');
-            return;
-        }
-        
-        const token = getAuthToken();
-        if (!token) return;
-        
-        try {
-            const response = await fetch(`${API_BASE_URL}/orders/${currentOrderIdForCancellation}/cancel`, {
+    if (order.status !== 'pending') {
+        showNotification('Only pending orders can be cancelled', 'error');
+        return;
+    }
+
+    currentOrderIdToCancel = orderId;
+    
+    // Reset form
+    cancellationForm.reset();
+    
+    cancellationModal.style.display = 'flex';
+}
+
+// Cancel order
+async function cancelOrder(orderId, reason, details) {
+    const token = getAuthToken();
+    if (!token) return;
+
+    const data = await handleApiCall(
+        () => fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason, details })
+        }),
+        'Failed to cancel order'
+    );
+
+    if (data) {
+        showNotification('Order cancelled successfully', 'success');
+        cancellationModal.style.display = 'none';
+        currentOrderIdToCancel = null;
+        await fetchOrders(); // Refresh orders list
+    }
+}
+
+// Reorder items
+async function reorderItems(orderId) {
+    const token = getAuthToken();
+    if (!token) return;
+
+    const order = currentOrders.find(o => o.order_id === orderId);
+    if (!order) {
+        showNotification('Order not found', 'error');
+        return;
+    }
+
+    try {
+        // Add each item to cart
+        for (const item of order.items) {
+            const response = await fetch(`${API_BASE_URL}/cart/add`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    reason: reason,
-                    details: details
+                    bookId: item.book_id,
+                    quantity: item.quantity
                 })
             });
-            
+
             if (!response.ok) {
-                throw new Error('Failed to cancel order');
+                throw new Error(`Failed to add ${item.title} to cart`);
+            }
+        }
+
+        showNotification('Items added to cart successfully', 'success');
+        
+        // Redirect to cart page
+        setTimeout(() => {
+            window.location.href = 'cart.html';
+        }, 1500);
+
+    } catch (error) {
+        console.error('Error reordering items:', error);
+        showNotification('Some items could not be added to cart', 'error');
+    }
+}
+
+// Initialize modal handlers
+function initializeModalHandlers() {
+    // Order details modal
+    if (orderModalClose) {
+        orderModalClose.addEventListener('click', () => {
+            orderModal.style.display = 'none';
+        });
+    }
+
+    // Cancel order modal
+    if (cancellationModalClose) {
+        cancellationModalClose.addEventListener('click', () => {
+            cancellationModal.style.display = 'none';
+        });
+    }
+
+    if (cancelCancellationBtn) {
+        cancelCancellationBtn.addEventListener('click', () => {
+            cancellationModal.style.display = 'none';
+        });
+    }
+
+    // Cancellation form submission
+    if (cancellationForm) {
+        cancellationForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const reason = cancellationReasonSelect.value;
+            const details = cancellationDetailsTextarea.value;
+            
+            if (!reason) {
+                showNotification('Please select a cancellation reason', 'error');
+                return;
             }
             
-            showNotification('Order cancelled successfully', 'success');
-            cancellationModal.classList.remove('active');
-            
-            // Reset form
-            cancellationForm.reset();
-            
-            // Refresh orders
-            fetchOrders();
-            
-        } catch (error) {
-            console.error('Error cancelling order:', error);
-            showNotification('Failed to cancel order', 'error');
-        }
-    });
-
-    // Event listeners
-    filterButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            filterOrders(btn.dataset.status);
+            if (currentOrderIdToCancel) {
+                cancelOrder(currentOrderIdToCancel, reason, details);
+            }
         });
-    });
-
-    // Modal close handlers
-    orderModalClose.addEventListener('click', () => {
-        orderModal.classList.remove('active');
-    });
-
-    cancellationModalClose.addEventListener('click', () => {
-        cancellationModal.classList.remove('active');
-    });
-
-    cancelCancellationBtn.addEventListener('click', () => {
-        cancellationModal.classList.remove('active');
-    });
+    }
 
     // Close modals when clicking outside
-    [orderModal, cancellationModal].forEach(modal => {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.remove('active');
-            }
-        });
-    });
-
-    // Dark mode toggle
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    const body = document.body;
-
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark-mode') {
-        body.classList.add('dark-mode');
-        darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-    } else {
-        darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-    }
-
-    darkModeToggle.addEventListener('click', () => {
-        body.classList.toggle('dark-mode');
-        if (body.classList.contains('dark-mode')) {
-            localStorage.setItem('theme', 'dark-mode');
-            darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-        } else {
-            localStorage.setItem('theme', 'light-mode');
-            darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+    window.addEventListener('click', (event) => {
+        if (event.target === orderModal) {
+            orderModal.style.display = 'none';
+        }
+        if (event.target === cancellationModal) {
+            cancellationModal.style.display = 'none';
         }
     });
+}
 
-    // Initialize
-    if (checkAuthentication()) {
-        fetchOrders();
+// Initialize filter buttons
+function initializeFilterButtons() {
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const filter = button.dataset.status;
+            filterOrders(filter);
+        });
+    });
+}
+
+// Initialize cart counter
+async function updateCartCounter() {
+    const token = getAuthToken();
+    if (!token) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/cart`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            const cartData = await response.json();
+            const cartCount = cartData.items.reduce((total, item) => total + item.quantity, 0);
+            
+            const cartCountElement = document.getElementById('cart-item-count');
+            if (cartCountElement) {
+                cartCountElement.textContent = cartCount;
+            }
+        }
+    } catch (error) {
+        console.error('Error updating cart counter:', error);
     }
-});
+}
+
+// Initialize user menu
+function initializeUserMenu() {
+    const signoutLink = document.getElementById('signout-link');
+    if (signoutLink) {
+        signoutLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            window.location.href = 'signin.html';
+        });
+    }
+}
+
+// Initialize page
+function initializePage() {
+    // Check authentication
+    if (!getAuthToken()) {
+        return;
+    }
+
+    // Initialize all handlers
+    initializeModalHandlers();
+    initializeFilterButtons();
+    initializeUserMenu();
+
+    // Update cart counter
+    updateCartCounter();
+
+    // Load orders
+    fetchOrders();
+}
+
+// Page load event
+document.addEventListener('DOMContentLoaded', initializePage);
+
+// Export functions for global access
+window.showOrderDetails = showOrderDetails;
+window.showCancelModal = showCancelModal;
+window.reorderItems = reorderItems;
+window.filterOrders = filterOrders;
+window.fetchOrders = fetchOrders;

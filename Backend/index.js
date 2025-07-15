@@ -1039,7 +1039,120 @@ app.delete('/api/books/:bookId/reviews/:reviewId', authenticateToken, async (req
     }
 });
 
-// Order routes
+app.post('/api/orders', authenticateToken, async (req, res) => {
+    const customerId = req.user.customerId;
+    const { shipping } = req.body;
+    let client;
+
+    try {
+        client = await pool.connect();
+        await client.query('BEGIN');
+
+        console.log('Creating order for customer:', customerId); // Debug log
+
+        // 1. Get cart items and validate
+        const cartItems = await client.query(`
+            SELECT ci.book_id, ci.quantity, b.price, b.is_active, b.title
+            FROM cart_item ci
+            JOIN book b ON ci.book_id = b.book_id
+            WHERE ci.cart_id = (SELECT cart_id FROM cart WHERE customer_id = $1)
+        `, [customerId]);
+
+        console.log('Cart items found:', cartItems.rows.length); // Debug log
+
+        if (cartItems.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Cart is empty' });
+        }
+
+        // 2. Validate all books are active
+        const inactiveBooks = cartItems.rows.filter(item => !item.is_active);
+        if (inactiveBooks.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                error: 'Some books are no longer available',
+                unavailable_books: inactiveBooks.map(book => book.title)
+            });
+        }
+
+        // 3. Check inventory for each book
+        for (const item of cartItems.rows) {
+            const inventoryCheck = await client.query(
+                'SELECT quantity_in_stock FROM inventory WHERE book_id = $1',
+                [item.book_id]
+            );
+
+            if (inventoryCheck.rows.length === 0 ||
+                inventoryCheck.rows[0].quantity_in_stock < item.quantity) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({
+                    error: `Insufficient stock for "${item.title}"`,
+                    available_stock: inventoryCheck.rows[0]?.quantity_in_stock || 0,
+                    requested: item.quantity
+                });
+            }
+        }
+
+        // 4. Calculate total on server side
+        const serverTotal = cartItems.rows.reduce((sum, item) =>
+            sum + (parseFloat(item.price) * item.quantity), 0);
+
+        // 5. Create order
+        const orderResult = await client.query(`
+            INSERT INTO "order" (customer_id, status, order_date, total_amount, shipping_method)
+            VALUES ($1, 'pending', NOW(), $2, 'standard')
+            RETURNING order_id
+        `, [customerId, serverTotal]);
+
+        const orderId = orderResult.rows[0].order_id;
+        console.log('Order created with ID:', orderId); // Debug log
+
+        // 6. Add order items
+        for (const item of cartItems.rows) {
+            await client.query(`
+                INSERT INTO order_item (order_id, book_id, order_date, quantity, item_price)
+                VALUES ($1, $2, NOW(), $3, $4)
+            `, [orderId, item.book_id, item.quantity, item.price]);
+
+            // Update inventory
+            await client.query(`
+                UPDATE inventory 
+                SET quantity_in_stock = quantity_in_stock - $1,
+                    last_update = NOW()
+                WHERE book_id = $2
+            `, [item.quantity, item.book_id]);
+        }
+
+        // 7. Add shipping information
+        if (shipping) {
+            await client.query(`
+                INSERT INTO shipping (order_id, address, city, postal_code, country, delivery_estimate)
+                VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '7 days')
+            `, [orderId, shipping.address, shipping.city, shipping.postal_code, shipping.country]);
+        }
+
+        // 8. Clear cart properly
+        await client.query(`
+            DELETE FROM cart_item WHERE cart_id = (SELECT cart_id FROM cart WHERE customer_id = $1)
+        `, [customerId]);
+
+        await client.query('COMMIT');
+        res.status(201).json({
+            order_id: orderId,
+            message: 'Order created successfully',
+            total_amount: serverTotal.toFixed(2)
+        });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error creating order:', error);
+        res.status(500).json({ error: 'Failed to create order', details: error.message });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// Get orders (FIXED)
 app.get('/api/orders', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     let client;
@@ -1048,12 +1161,12 @@ app.get('/api/orders', authenticateToken, async (req, res) => {
         client = await pool.connect();
 
         const ordersResult = await client.query(`
-            SELECT 
+            SELECT
                 o.order_id,
                 o.status,
                 o.order_date,
                 o.total_amount,
-                o.shipping_method,
+                COALESCE(o.shipping_method, 'standard') as shipping_method,
                 o.tracking_number,
                 s.address,
                 s.city,
@@ -1068,22 +1181,27 @@ app.get('/api/orders', authenticateToken, async (req, res) => {
         `, [customerId]);
 
         const orders = [];
-
         for (const order of ordersResult.rows) {
             const itemsResult = await client.query(`
-                SELECT 
+                SELECT
                     oi.order_item_id,
+                    oi.book_id,
                     oi.quantity,
                     oi.item_price,
-                    b.title,
-                    b.image_url
+                    COALESCE(b.title, 'Unknown Book') as title,
+                    COALESCE(b.image_url, '/images/default-book.jpg') as image_url
                 FROM order_item oi
-                JOIN book b ON oi.book_id = b.book_id
+                LEFT JOIN book b ON oi.book_id = b.book_id
                 WHERE oi.order_id = $1
             `, [order.order_id]);
 
             orders.push({
-                ...order,
+                order_id: order.order_id,
+                status: order.status,
+                order_date: order.order_date,
+                total_amount: order.total_amount,
+                shipping_method: order.shipping_method,
+                tracking_number: order.tracking_number,
                 items: itemsResult.rows,
                 shipping: order.address ? {
                     address: order.address,
@@ -1097,7 +1215,6 @@ app.get('/api/orders', authenticateToken, async (req, res) => {
         }
 
         res.json(orders);
-
     } catch (error) {
         console.error('Error fetching orders:', error);
         res.status(500).json({ error: 'Failed to fetch orders' });
@@ -1106,124 +1223,8 @@ app.get('/api/orders', authenticateToken, async (req, res) => {
     }
 });
 
-// Get single order
-app.get('/api/orders/:orderId', authenticateToken, async (req, res) => {
-    const customerId = req.user.customerId;
-    const orderId = parseInt(req.params.orderId);
-    let client;
-
-    try {
-        client = await pool.connect();
-
-        const orderResult = await client.query(`
-            SELECT 
-                o.order_id,
-                o.status,
-                o.order_date,
-                o.total_amount,
-                o.shipping_method,
-                o.tracking_number,
-                s.address,
-                s.city,
-                s.postal_code,
-                s.country,
-                s.shipped_date,
-                s.delivery_estimate
-            FROM "order" o
-            LEFT JOIN shipping s ON o.order_id = s.order_id
-            WHERE o.order_id = $1 AND o.customer_id = $2
-        `, [orderId, customerId]);
-
-        if (orderResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Order not found' });
-        }
-
-        const order = orderResult.rows[0];
-
-        const itemsResult = await client.query(`
-            SELECT 
-                oi.order_item_id,
-                oi.quantity,
-                oi.item_price,
-                b.title,
-                b.image_url
-            FROM order_item oi
-            JOIN book b ON oi.book_id = b.book_id
-            WHERE oi.order_id = $1
-        `, [orderId]);
-
-        res.json({
-            ...order,
-            items: itemsResult.rows,
-            shipping: order.address ? {
-                address: order.address,
-                city: order.city,
-                postal_code: order.postal_code,
-                country: order.country,
-                shipped_date: order.shipped_date,
-                delivery_estimate: order.delivery_estimate
-            } : null
-        });
-
-    } catch (error) {
-        console.error('Error fetching order:', error);
-        res.status(500).json({ error: 'Failed to fetch order' });
-    } finally {
-        if (client) client.release();
-    }
-});
-
-// Create order
-app.post('/api/orders', authenticateToken, async (req, res) => {
-    const customerId = req.user.customerId;
-    const { items, shipping, total_amount } = req.body;
-    let client;
-
-    try {
-        client = await pool.connect();
-        await client.query('BEGIN');
-
-        // Create order
-        const orderResult = await client.query(`
-            INSERT INTO "order" (customer_id, status, order_date, total_amount, shipping_method)
-            VALUES ($1, 'pending', NOW(), $2, 'standard')
-            RETURNING order_id
-        `, [customerId, total_amount]);
-
-        const orderId = orderResult.rows[0].order_id;
-
-        // Add order items
-        for (const item of items) {
-            await client.query(`
-                INSERT INTO order_item (order_id, book_id, order_date, quantity, item_price)
-                VALUES ($1, $2, NOW(), $3, $4)
-            `, [orderId, item.book_id, item.quantity, item.price]);
-        }
-
-        // Add shipping information
-        await client.query(`
-            INSERT INTO shipping (order_id, address, city, postal_code, country, delivery_estimate)
-            VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '7 days')
-        `, [orderId, shipping.address, shipping.city, shipping.postal_code, shipping.country]);
-
-        // Clear cart
-        await client.query('DELETE FROM cart_item WHERE cart_id = (SELECT cart_id FROM cart WHERE customer_id = $1)', [customerId]);
-
-        await client.query('COMMIT');
-
-        res.status(201).json({ order_id: orderId, message: 'Order created successfully' });
-
-    } catch (error) {
-        await client.query('ROLLBACK');
-        console.error('Error creating order:', error);
-        res.status(500).json({ error: 'Failed to create order' });
-    } finally {
-        if (client) client.release();
-    }
-});
-
-// Cancel order
-app.post('/api/orders/:orderId/cancel', authenticateToken, async (req, res) => {
+// Cancel order (FIXED)
+app.put('/api/orders/:orderId/cancel', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     const orderId = parseInt(req.params.orderId);
     const { reason, details } = req.body;
@@ -1235,7 +1236,7 @@ app.post('/api/orders/:orderId/cancel', authenticateToken, async (req, res) => {
 
         // Verify order belongs to customer and can be cancelled
         const orderResult = await client.query(`
-            SELECT status FROM "order" 
+            SELECT status FROM "order"
             WHERE order_id = $1 AND customer_id = $2
         `, [orderId, customerId]);
 
@@ -1252,8 +1253,8 @@ app.post('/api/orders/:orderId/cancel', authenticateToken, async (req, res) => {
 
         // Update order status
         await client.query(`
-            UPDATE "order" 
-            SET status = 'cancelled' 
+            UPDATE "order"
+            SET status = 'cancelled'
             WHERE order_id = $1
         `, [orderId]);
 
@@ -1264,7 +1265,6 @@ app.post('/api/orders/:orderId/cancel', authenticateToken, async (req, res) => {
         `, [orderId, customerId, `${reason}${details ? ': ' + details : ''}`]);
 
         await client.query('COMMIT');
-
         res.json({ message: 'Order cancelled successfully' });
 
     } catch (error) {
@@ -1275,7 +1275,6 @@ app.post('/api/orders/:orderId/cancel', authenticateToken, async (req, res) => {
         if (client) client.release();
     }
 });
-
 
 
 // --- STATIC FILE ROUTES ---
