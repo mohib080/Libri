@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Libri - Online Bookshop</title>
-    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../css/user.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -21,11 +21,20 @@
                     <a href="#" id="categories-nav-link">Categories</a>
                     <a href="#">Contact</a>
                 </nav>
-                <a href="cart.html" class="cart-btn" id="cart-nav-btn"><i class="fas fa-shopping-cart"></i> Cart</a>
+                <a href="cart.html" class="cart-btn" id="cart-nav-btn" title="Cart"><i class="fas fa-shopping-cart"></i>
+                    <span id="cart-item-count" class="cart-count">0</span></a>
+                <a href="wishlist.html" class="wishlist-btn" id="wishlist-nav-btn" title="Wishlist"><i
+                        class="fas fa-heart"></i></a>
                 <div class="profile-container">
-                    <a href="#" class="profile-link" title="Profile">
+                    <a href="#" id="profile-link" class="profile-link" title="Profile">
                         <i class="fas fa-user-circle fa-2x"></i>
                     </a>
+                    <div class="profile-dropdown">
+                        <a href="profile.html">My Profile</a>
+                        <a href="order-history.html">Order History</a>
+                        <a href="settings.html">Settings</a>
+                        <a href="logout.html">Logout</a>
+                    </div>
                 </div>
                 <button id="dark-mode-toggle" class="dark-mode-btn">
                     <i class="fas fa-moon"></i>
