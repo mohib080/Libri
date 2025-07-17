@@ -228,6 +228,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    async function updateWishlistCount() {
+        const wishlistItemCountSpan = document.getElementById('wishlist-item-count');
+        const wishlistNavBtn = document.querySelector('.wishlist-btn');
+        if (!wishlistItemCountSpan || !wishlistNavBtn) return;
+
+        const token = getAuthToken();
+        if (!token) {
+            wishlistItemCountSpan.textContent = '0';
+            wishlistNavBtn.setAttribute('data-wishlist-count', '0');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/wishlist`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const wishlistData = await response.json();
+                const totalItems = wishlistData.items.length;
+
+                wishlistItemCountSpan.textContent = totalItems;
+                wishlistNavBtn.setAttribute('data-wishlist-count', totalItems.toString());
+
+                if (totalItems > 0) {
+                    wishlistItemCountSpan.style.animation = 'pulse 0.5s ease-in-out';
+                    setTimeout(() => {
+                        wishlistItemCountSpan.style.animation = '';
+                    }, 500);
+                }
+            }
+        } catch (error) {
+            console.error('Error updating wishlist count:', error);
+            wishlistItemCountSpan.textContent = '0';
+            wishlistNavBtn.setAttribute('data-wishlist-count', '0');
+        }
+    }
+
     // Enhanced add to cart functionality with INSTANT UI UPDATE
     async function addToCart(bookId, quantity = 1) {
         const token = getAuthToken();
@@ -338,6 +378,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 addToWishlistBtn.style.cursor = 'not-allowed';
                 addToWishlistBtn.style.opacity = '0.8';
                 addToWishlistBtn.style.transform = 'none';
+
+                updateWishlistCount();
 
             } else if (response.status === 409) {
                 showNotification('This book is already in your wishlist', 'info');
@@ -888,6 +930,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await fetchBookDetails(bookTitle);
         if (isLoggedIn) {
             updateCartCount();
+            updateWishlistCount();
         }
     } else {
         showNotification('No book specified in URL', 'error');

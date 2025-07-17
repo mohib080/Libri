@@ -142,6 +142,34 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    async function updateWishlistCount() {
+        const wishlistItemCountSpan = document.getElementById('wishlist-item-count');
+        if (!wishlistItemCountSpan) return;
+        const token = getAuthToken();
+        if (!token) {
+            wishlistItemCountSpan.textContent = '0';
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}/wishlist`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (response.ok) {
+                const wishlistData = await response.json();
+                const totalItems = wishlistData.items.length;
+                wishlistItemCountSpan.textContent = totalItems.toString();
+            } else {
+                console.error('Failed to fetch wishlist for count update:', response.statusText);
+                wishlistItemCountSpan.textContent = '0';
+            }
+        } catch (error) {
+            console.error('Error updating wishlist count:', error);
+            wishlistItemCountSpan.textContent = '0';
+        }
+    }
+
     async function checkCartStatusForBooks() {
         const token = getAuthToken();
         if (!token) {
@@ -361,6 +389,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     clickedButton.style.background = 'linear-gradient(45deg, #6c757d, #5a6268)'; // Grey gradient
                     clickedButton.style.cursor = 'not-allowed';
                 }
+                updateWishlistCount(); 
             } else if (response.status === 409) {
                 showNotification('This book is already in your wishlist.', 'info');
                 const clickedButton = document.querySelector(`.book-card button.add-to-wishlist-btn[data-book-id="${bookId}"]`);
@@ -539,9 +568,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    fetchBooks(); // Initial fetch of books
-    fetchAndPopulateCategories();
-    updateCartCount(); // Initial cart count update
+    // Initialize all data and counters
+    async function initializePageData() {
+        await Promise.all([
+            fetchBooks(),
+            fetchAndPopulateCategories(),
+            updateCartCount(),
+            updateWishlistCount()
+        ]);
+    }
+
+    initializePageData();
 
     const typingPlaceholder = document.getElementById('hero-search-box');
     const placeholderTexts = [

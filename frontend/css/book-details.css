@@ -1018,7 +1018,7 @@ body.dark-mode footer {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.cart-count {
+.cart-count, .wishlist-count {
     position: absolute;
     top: -8px;
     right: -8px;
