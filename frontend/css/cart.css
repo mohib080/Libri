@@ -617,3 +617,82 @@ body.dark-mode .checkout-btn:hover:not(:disabled) {
 body.dark-mode .checkout-btn:disabled {
     background: #495057;
 }
+
+/* Styles for the new Format Dropdown */
+.format-selection {
+    position: relative;
+    /* display: inline-block; - this can be removed if you want it to behave like a block element always */
+    display: block; /* Changed to block for full width behavior of its select child */
+    margin-top: 0.2rem; /* Adjusted to be "just under" - you can try 0rem if you want it touching */
+    width: 50%; /* Ensure the container itself takes full width */
+    text-align: center; /* Center the select box */
+}
+
+.format-selection select {
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.95rem;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%234A90E2%22%20d%3D%22M287%2C114.7L154.2%2C247.5c-4.4%2C4.4-11.4%2C4.4-15.8%2C0L5.4%2C114.7c-4.4-4.4-4.4-11.4%2C0-15.8c4.4-4.4%2C11.4-4.4%2C15.8%2C0l124%2C124l124-124c4.4-4.4%2C11.4-4.4%2C15.8%2C0C291.4%2C103.3%2C291.4%2C110.3%2C287%2C114.7z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    /* NEW: Make the select element fill its parent container */
+    width: 100%;
+    box-sizing: border-box; /* Ensures padding/border are included in the 100% width */
+}
+
+.format-selection select:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 8px rgba(var(--accent-color-rgb), 0.1);
+}
+
+.format-selection select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb), 0.3);
+}
+
+/* Dark mode adjustments for format dropdown */
+body.dark-mode .format-selection select {
+    background-color: #303030;
+    color: #e0e0e0;
+    border-color: #555;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%237c3aed%22%20d%3D%22M287%2C114.7L154.2%2C247.5c-4.4%2C4.4-11.4%2C4.4-15.8%2C0L5.4%2C114.7c-4.4-4.4-4.4-11.4%2C0-15.8c4.4-4.4%2C11.4-4.4%2C15.8%2C0l124%2C124l124-124c4.4-4.4%2C11.4-4.4%2C15.8%2C0C291.4%2C103.3%2C291.4%2C110.3%2C287%2C114.7z%22%2F%3E%3C%2Fsvg%3E');
+}
+
+body.dark-mode .format-selection select:hover {
+    border-color: var(--accent-color);
+}
+
+body.dark-mode .format-selection select:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb), 0.3);
+}
+
+/* Ensure .item-info correctly contains these elements */
+.item-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    justify-content: center; /* Center content vertically */
+    align-items: flex-start; /* Align text to the left */
+}
+
+/* Responsive adjustment for format selection */
+@media (max-width: 768px) {
+    .item-info {
+        align-items: center; /* Center text on small screens */
+    }
+    .format-selection {
+        margin-top: 0.8rem; /* More space on mobile */
+    }
+}

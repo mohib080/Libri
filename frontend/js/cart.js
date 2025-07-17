@@ -143,8 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Header button functionality
-    const cartBtn = document.querySelector('.cart-btn');
+    // Header button functionality (ensure these elements exist in your HTML)
+    // const cartBtn = document.querySelector('.cart-btn'); // Already handled by cart count update
     const wishlistBtn = document.querySelector('.icon-btn[href="wishlist.html"]');
     const profileLink = document.getElementById('profile-link');
     const ordersLink = document.getElementById('orders-link');
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const headerRow = cartItemsContainer.querySelector('.cart-header-row');
         const emptyCartMessageElement = cartItemsContainer.querySelector('.empty-cart-message');
 
-        // Clear existing cart items
+        // Clear existing cart items, but keep the header and empty message
         const existingCartItems = cartItemsContainer.querySelectorAll('.cart-item');
         existingCartItems.forEach(item => item.remove());
 
@@ -232,6 +232,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const cartItemElement = document.createElement('div');
             cartItemElement.classList.add('cart-item');
             cartItemElement.dataset.bookId = item.book_id;
+            // Store the original price (hardcover price) as a data attribute
+            cartItemElement.dataset.originalPrice = item.price;
+
             cartItemElement.innerHTML = `
                 <div class="item-details">
                     <img src="${item.image_url || 'https://via.placeholder.com/80x100/cccccc/333333?text=Book'}" alt="${item.title}">
@@ -241,6 +244,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="view-details-btn" onclick="window.location.href='book-details.html?name=${encodeURIComponent(item.title)}'">
                             <i class="fas fa-eye"></i> View Details
                         </button>
+                        <div class="format-selection">
+                            <select class="format-select" data-book-id="${item.book_id}">
+                                <option value="hardcover" data-price-multiplier="1" selected>Hardcover</option>
+                                <option value="paperback" data-price-multiplier="0.8">Paperback</option>
+                                <option value="ebook" data-price-multiplier="0.3">Ebook</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="item-price">$${parseFloat(item.price).toFixed(2)}</div>
@@ -283,10 +293,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateCartSummary(cart) {
-        const totalItems = cart.items ? cart.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
-        const totalAmount = cart.total_amount || '0.00';
+        // Recalculate total items and total amount based on currently displayed prices
+        let totalItems = 0;
+        let totalAmount = 0;
 
-        totalPriceElement.textContent = parseFloat(totalAmount).toFixed(2);
+        cartItemsContainer.querySelectorAll('.cart-item').forEach(itemElement => {
+            const quantity = parseInt(itemElement.querySelector('.quantity-controls input').value);
+            const currentPriceText = itemElement.querySelector('.item-price').textContent;
+            const currentPrice = parseFloat(currentPriceText.replace('$', ''));
+
+            totalItems += quantity;
+            totalAmount += currentPrice * quantity;
+        });
+
+        totalPriceElement.textContent = totalAmount.toFixed(2);
         itemsCountElement.textContent = totalItems;
 
         // Update cart count in header
@@ -328,6 +348,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             showNotification('Cart updated successfully!', 'success');
+            // Instead of fetching the whole cart, just update the local display
+            // and then update the summary. This avoids flickering.
+            // However, for simplicity and to ensure consistency with backend,
+            // we will re-fetch the cart here. If backend supported format,
+            // we'd update it there and then re-fetch.
             fetchCart();
         } catch (error) {
             console.error('Error updating cart item:', error);
@@ -359,14 +384,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             showNotification('Item removed from cart successfully!', 'success');
-            fetchCart();
+            fetchCart(); // Re-fetch cart to update display
         } catch (error) {
             console.error('Error removing cart item:', error);
             showNotification('Failed to remove item. Please try again.', 'error');
         }
     }
 
-    // Cart event listeners
+    // Cart event listeners (including new format selection)
     cartItemsContainer.addEventListener('click', (e) => {
         const target = e.target.closest('button');
         if (!target) return;
@@ -386,16 +411,43 @@ document.addEventListener('DOMContentLoaded', () => {
             if (newQuantity > 0) {
                 updateCartItem(bookId, newQuantity);
             } else {
-                if (confirm('Remove this item from cart?')) {
-                    removeCartItem(bookId);
-                }
+                // Use custom modal or notification instead of confirm()
+                showNotification('Click "Remove" to delete this item.', 'info');
             }
         } else if (target.classList.contains('remove-btn')) {
-            if (confirm('Are you sure you want to remove this item from your cart?')) {
-                removeCartItem(bookId);
-            }
+            // Use custom modal or notification instead of confirm()
+            showNotification('Removing item...', 'info');
+            removeCartItem(bookId);
         }
     });
+
+    // NEW: Event listener for format selection change
+    cartItemsContainer.addEventListener('change', (e) => {
+        const target = e.target;
+        if (target.classList.contains('format-select')) {
+            const selectedOption = target.options[target.selectedIndex];
+            const priceMultiplier = parseFloat(selectedOption.dataset.priceMultiplier);
+            const cartItemElement = target.closest('.cart-item');
+            const originalPrice = parseFloat(cartItemElement.dataset.originalPrice);
+            const quantity = parseInt(cartItemElement.querySelector('.quantity-controls input').value);
+
+            const newPricePerItem = originalPrice * priceMultiplier;
+            const newTotalItemPrice = newPricePerItem * quantity;
+
+            // Update displayed prices for this item
+            cartItemElement.querySelector('.item-price').textContent = `$${newPricePerItem.toFixed(2)}`;
+            cartItemElement.querySelector('.total-item-price').textContent = `$${newTotalItemPrice.toFixed(2)}`;
+
+            // Update the overall cart summary
+            updateCartSummary();
+
+            // IMPORTANT: If you want this format change to be persistent,
+            // you would need to send an update request to your backend here.
+            // Your current backend (index.js) does not support storing format.
+            showNotification(`Format changed to ${selectedOption.textContent}. Price updated.`, 'info');
+        }
+    });
+
 
     // Checkout functionality
     // Enhanced checkout functionality with orders page redirect
@@ -463,6 +515,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Add this checkout function to your existing cart.js
+// Note: This function is duplicated from the DOMContentLoaded block in your original cart.js.
+// It's better to have one unified checkout logic. I've kept the one inside DOMContentLoaded
+// and commented out the global one for clarity.
+/*
 async function proceedToCheckout() {
     const token = getAuthToken();
     if (!token) return;
@@ -517,4 +573,4 @@ async function proceedToCheckout() {
 if (checkoutBtn) {
     checkoutBtn.addEventListener('click', proceedToCheckout);
 }
-
+*/

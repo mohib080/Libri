@@ -99,7 +99,7 @@ nav a:hover {
     background: none;
     border: none;
     color: white;
-    font-size: 1.2rem; /* New base font size for icons */
+    font-size: 1.3rem; /* New base font size for icons */
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 4px; /* From new snippet */
@@ -128,7 +128,7 @@ nav a:hover {
     border-radius: 4px; /* Consistent with new .icon-btn */
 }
 .cart-btn i {
-    font-size: 1.5rem; /* Kept slightly larger cart icon */
+    font-size: 1.3rem; /* Kept slightly larger cart icon */
 }
 
 
@@ -169,42 +169,38 @@ nav a:hover {
 }
 
 .profile-link i {
-    font-size: 2.2em; /* Kept icon size */
+    font-size: 1.3em; /* Kept icon size */
     color: inherit; /* Inherit color from parent .icon-btn styles */
 }
 
 .profile-dropdown {
-    display: none; /* Controlled by JS */
+    display: none; /* Initially hide the dropdown */
     position: absolute;
-    top: calc(100% + 10px); /* Position slightly below the profile icon */
-    right: 0; /* From new snippet */
-    background-color: white; /* From new snippet */
-    min-width: 160px; /* From new snippet */
-    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2); /* From new snippet */
-    z-index: 1000; /* From new snippet */
-    border-radius: 8px; /* From new snippet */
-    overflow: hidden; /* From new snippet */
-    border: 1px solid #ddd; /* From new snippet */
-    opacity: 0; /* For fade in effect */
-    transform: translateY(10px); /* For slide in effect */
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    padding: 0; /* Resetting padding to match new snippet's <a> padding */
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    /* Adjust positioning based on your layout */
+    right: 0; /* Align to the right of the container */
+    top: 100%; /* Position below the profile icon */
+    border-radius: 5px;
+    overflow: hidden; /* Ensures rounded corners apply to children */
+}
+
+.profile-dropdown.active {
+    display: block; /* Show the dropdown when active */
 }
 
 .profile-dropdown a {
-    color: #333; /* From new snippet */
-    padding: 12px 16px; /* From new snippet */
+    color: black;
+    padding: 12px 16px;
     text-decoration: none;
     display: block;
-    white-space: nowrap;
-    transition: background-color 0.3s ease; /* From new snippet */
-    margin: 0; /* Ensure no extra margin */
+    text-align: left;
 }
 
 .profile-dropdown a:hover {
-    background-color: #4f46e5; /* From new snippet */
-    color: white; /* From new snippet */
-    transform: none; /* Override previous transform on hover */
+    background-color: #ddd;
 }
 
 

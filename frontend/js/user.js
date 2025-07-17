@@ -36,39 +36,40 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const profileContainer = document.querySelector('.profile-container');
+
     if (profileContainer) {
-        profileContainer.innerHTML = `
-            <div class="profile">
-                <img src="https://www.gravatar.com/avatar/default?s=40&d=mp" alt="Profile" class="profile-img">
-                <div class="profile-dropdown">
-                    <a href="profile.html">Profile</a>
-                    <a href="#">Orders</a>
-                    <a href="wishlist.html">Wishlist</a>
-                    <a href="#" id="logout-link">Logout</a>
-                </div>
-            </div>
-        `;
-        const profileDiv = profileContainer.querySelector('.profile');
-        if (profileDiv) {
-            profileDiv.addEventListener('mouseover', () => {
-                const dropdown = profileContainer.querySelector('.profile-dropdown');
-                if (dropdown) dropdown.style.display = 'block';
+        const profileDropdown = profileContainer.querySelector('.profile-dropdown');
+
+        if (profileDropdown) {
+            // Attach mouseover and mouseout directly to the profileContainer
+            profileContainer.addEventListener('mouseover', () => {
+                profileDropdown.classList.add('active'); // Add the 'active' class to show dropdown
             });
-            profileDiv.addEventListener('mouseout', () => {
-                const dropdown = profileContainer.querySelector('.profile-dropdown');
-                if (dropdown) dropdown.style.display = 'none';
+
+            profileContainer.addEventListener('mouseout', () => {
+                profileDropdown.classList.remove('active'); // Remove the 'active' class to hide dropdown
             });
         }
-        // Logout
-        const logoutLink = document.getElementById('logout-link');
+
+        const logoutLink = profileDropdown ? profileDropdown.querySelector('a[href="logout.html"]') : null;
         if (logoutLink) {
             logoutLink.addEventListener('click', function (e) {
-                e.preventDefault();
-                localStorage.removeItem('token');
-                localStorage.removeItem('customer');
-                window.location.href = 'index.html';
+                e.preventDefault(); // Prevent default link behavior
+                localStorage.removeItem('token'); // Clear token
+                localStorage.removeItem('customer'); // Clear customer data
+                window.location.href = 'index.html'; // Redirect to home page
             });
         }
+    }
+    // Logout
+    const logoutLink = document.getElementById('logout-link');
+    if (logoutLink) {
+        logoutLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('customer');
+            window.location.href = 'index.html';
+        });
     }
 
     const API_BASE_URL = 'http://localhost:3000/api';
