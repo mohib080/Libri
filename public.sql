@@ -12,7 +12,7 @@
  Target Server Version : 170005 (170005)
  File Encoding         : 65001
 
- Date: 05/07/2025 12:51:10
+ Date: 18/07/2025 13:32:53
 */
 
 
@@ -304,23 +304,25 @@ CREATE TABLE "public"."book" (
   "language" varchar(50) COLLATE "pg_catalog"."default",
   "category_id" int4,
   "sub_category_id" int4,
-  "is_featured" bool DEFAULT false
+  "is_featured" bool DEFAULT false,
+  "average_rating" numeric(3,2) DEFAULT 0.00,
+  "review_count" int4 DEFAULT 0
 )
 ;
 
 -- ----------------------------
 -- Records of book
 -- ----------------------------
-INSERT INTO "public"."book" VALUES (10, 3, 'To Kill a Mockingbird', 'A novel about the serious issues of rape and racial inequality.', 'https://via.placeholder.com/180x260?text=Mockingbird', 12.99, 't', '9780061120084', 'Harper Perennial', '2006-05-23 00:00:00', 'English', NULL, NULL, 'f');
-INSERT INTO "public"."book" VALUES (1, 1, 'The Silent Patient', 'A psychological thriller about a woman''s act of violence.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 13.99, 't', '9781250301697', 'Celadon Books', '2019-02-05 00:00:00', 'English', NULL, NULL, 'f');
-INSERT INTO "public"."book" VALUES (2, 2, 'Atomic Habits', 'An easy & proven way to build good habits & break bad ones.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 16.49, 't', '9780735211292', 'Penguin Publishing', '2018-10-16 00:00:00', 'English', NULL, NULL, 'f');
-INSERT INTO "public"."book" VALUES (3, 1, 'The Alchemist', 'A fable about following your dream.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 10.99, 't', '9780061122415', 'HarperOne', '1993-05-01 00:00:00', 'English', NULL, NULL, 'f');
-INSERT INTO "public"."book" VALUES (4, 3, 'A Promised Land', 'Barack Obama’s presidential memoir.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 22.00, 't', '9781524763169', 'Crown Publishing', '2020-11-17 00:00:00', 'English', NULL, NULL, 'f');
-INSERT INTO "public"."book" VALUES (5, 1, 'Ikigai', 'The Japanese secret to a long and happy life.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 11.99, 't', '9780143130727', 'Penguin Books', '2017-08-29 00:00:00', 'English', NULL, NULL, 'f');
-INSERT INTO "public"."book" VALUES (6, 2, 'Rich Dad Poor Dad', 'What the rich teach their kids about money.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 9.49, 't', '9781612680194', 'Plata Publishing', '2011-04-01 00:00:00', 'English', NULL, NULL, 'f');
-INSERT INTO "public"."book" VALUES (7, 3, 'The Psychology of Money', 'Timeless lessons on wealth, greed, and happiness.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 14.00, 't', '9780857197689', 'Harriman House', '2020-09-01 00:00:00', 'English', NULL, NULL, 'f');
-INSERT INTO "public"."book" VALUES (8, 2, '1984', 'A dystopian social science fiction novel and cautionary tale.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 8.99, 't', '9780451524935', 'Signet Classic', '1950-07-01 00:00:00', 'English', NULL, NULL, 'f');
-INSERT INTO "public"."book" VALUES (9, 1, 'Sapiens', 'A brief history of humankind.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 17.49, 't', '9780062316097', 'Harper', '2015-02-10 00:00:00', 'English', NULL, NULL, 'f');
+INSERT INTO "public"."book" VALUES (2, 2, 'Atomic Habits', 'An easy & proven way to build good habits & break bad ones.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 16.49, 't', '9780735211292', 'Penguin Publishing', '2018-10-16 00:00:00', 'English', NULL, NULL, 'f', 4.00, 1);
+INSERT INTO "public"."book" VALUES (3, 1, 'The Alchemist', 'A fable about following your dream.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 10.99, 't', '9780061122415', 'HarperOne', '1993-05-01 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
+INSERT INTO "public"."book" VALUES (1, 1, 'The Silent Patient', 'A psychological thriller about a woman''s act of violence.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 13.99, 't', '9781250301697', 'Celadon Books', '2019-02-05 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
+INSERT INTO "public"."book" VALUES (4, 3, 'A Promised Land', 'Barack Obama’s presidential memoir.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 22.00, 't', '9781524763169', 'Crown Publishing', '2020-11-17 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
+INSERT INTO "public"."book" VALUES (5, 1, 'Ikigai', 'The Japanese secret to a long and happy life.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 11.99, 't', '9780143130727', 'Penguin Books', '2017-08-29 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
+INSERT INTO "public"."book" VALUES (6, 2, 'Rich Dad Poor Dad', 'What the rich teach their kids about money.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 9.49, 't', '9781612680194', 'Plata Publishing', '2011-04-01 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
+INSERT INTO "public"."book" VALUES (7, 3, 'The Psychology of Money', 'Timeless lessons on wealth, greed, and happiness.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 14.00, 't', '9780857197689', 'Harriman House', '2020-09-01 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
+INSERT INTO "public"."book" VALUES (8, 2, '1984', 'A dystopian social science fiction novel and cautionary tale.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 8.99, 't', '9780451524935', 'Signet Classic', '1950-07-01 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
+INSERT INTO "public"."book" VALUES (9, 1, 'Sapiens', 'A brief history of humankind.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 17.49, 't', '9780062316097', 'Harper', '2015-02-10 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
+INSERT INTO "public"."book" VALUES (10, 3, 'To Kill a Mockingbird', 'A novel about the serious issues of rape and racial inequality.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 12.99, 't', '9780061120084', 'Harper Perennial', '2006-05-23 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
 
 -- ----------------------------
 -- Table structure for book_author
@@ -434,6 +436,10 @@ CREATE TABLE "public"."cart" (
 -- ----------------------------
 -- Records of cart
 -- ----------------------------
+INSERT INTO "public"."cart" VALUES (3, 6, '2025-07-15 20:59:54.891959', '2025-07-15 20:59:54.891959');
+INSERT INTO "public"."cart" VALUES (4, 8, '2025-07-15 23:06:24.344894', '2025-07-15 23:06:24.344894');
+INSERT INTO "public"."cart" VALUES (1, 3, '2025-07-05 18:32:03.173854', '2025-07-18 05:27:07.239777');
+INSERT INTO "public"."cart" VALUES (2, 7, '2025-07-13 15:30:18.952162', '2025-07-13 15:30:18.952162');
 
 -- ----------------------------
 -- Table structure for cart_item
@@ -450,6 +456,8 @@ CREATE TABLE "public"."cart_item" (
 -- ----------------------------
 -- Records of cart_item
 -- ----------------------------
+INSERT INTO "public"."cart_item" VALUES (32, 1, 3, 1);
+INSERT INTO "public"."cart_item" VALUES (33, 1, 2, 1);
 
 -- ----------------------------
 -- Table structure for chat_message
@@ -507,9 +515,12 @@ CREATE TABLE "public"."customer" (
 -- ----------------------------
 -- Records of customer
 -- ----------------------------
-INSERT INTO "public"."customer" VALUES (1, 'John Doe', 'john.doe@example.com', 'dummy_hash', NULL, NULL, '2025-06-24 02:04:42.815147', '2025-06-24 02:04:42.815147', 'customer', NULL, 't');
 INSERT INTO "public"."customer" VALUES (4, 'mohib080', 'mohibul.sawrav2004@gmail.com', '$2b$10$toBBByEj1LrBcRY4TILZkulC2cEjkvXDPxGDb9m46PilGjqQ1G2gK', NULL, NULL, '2025-07-01 22:56:45.063885', '2025-07-01 22:56:45.063885', 'customer', NULL, 'f');
-INSERT INTO "public"."customer" VALUES (3, 'mohib080', '2205018@ugrad.cse.buet.ac.bd', '$2b$10$RfOVcY9RIcmrXJ3GZty4Oep21SVA3Kj2rY5wcYCen/6/SCF30hVki', NULL, NULL, '2025-07-01 22:53:03.887927', '2025-07-04 17:57:38.658515', 'customer', '2025-07-04 18:20:48.292125', 'f');
+INSERT INTO "public"."customer" VALUES (8, 'Cristiano Ronaldo', 'sawrav124@gmail.com', '$2b$10$9cdzyxT3Px56eTkJ4IuUUOs41b3bq0pBrVKZEO9D/Wi2gU2/5cU4m', NULL, NULL, '2025-07-15 23:06:22.116455', '2025-07-15 23:06:22.116455', 'customer', NULL, 'f');
+INSERT INTO "public"."customer" VALUES (5, 'r', '2205007@ugrad.cse.buet.ac.bd', '$2b$10$v76HTKVs2QtlHEip1iRk3esnbWlUtHLFOg6TrtOKxlnNOzPx4WO12', NULL, NULL, '2025-07-13 15:12:30.156238', '2025-07-13 15:12:30.156238', 'customer', NULL, 'f');
+INSERT INTO "public"."customer" VALUES (7, 'saber', '2205017@ugrad.cse.buet.ac.bd', '$2b$10$SGjls5kb.SzOFSRk3R3ywuY4lunIonf9mqUuEmL4UBI5r323XbM6K', NULL, NULL, '2025-07-13 15:30:02.152869', '2025-07-13 15:30:02.152869', 'customer', '2025-07-13 15:30:17.314285', 'f');
+INSERT INTO "public"."customer" VALUES (3, 'Mohibul Sawrav', '2205018@ugrad.cse.buet.ac.bd', '$2b$10$RfOVcY9RIcmrXJ3GZty4Oep21SVA3Kj2rY5wcYCen/6/SCF30hVki', '+8801864316100', 'Dhaka, Bangladesh', '2025-07-01 22:53:03.887927', '2025-07-10 13:12:24.734777', 'customer', '2025-07-18 05:06:17.992841', 'f');
+INSERT INTO "public"."customer" VALUES (6, 'shafin', '2205001@ugrad.cse.buet.ac.bd', '$2b$10$VTUSxXumJnwlI8ptdABbIOj9eZX9GBlglShYL4WAtME.SIAFSoXmG', NULL, NULL, '2025-07-13 15:26:50.075573', '2025-07-13 15:26:50.075573', 'customer', '2025-07-15 20:59:53.333532', 'f');
 
 -- ----------------------------
 -- Table structure for format
@@ -667,10 +678,7 @@ CREATE TABLE "public"."review" (
 -- ----------------------------
 -- Records of review
 -- ----------------------------
-INSERT INTO "public"."review" VALUES (1, 1, 1, 4.5, 'Fantastic thriller, kept me on the edge of my seat!', '2025-06-24 02:04:59.873939');
-INSERT INTO "public"."review" VALUES (2, 2, 1, 5.0, 'Life-changing book on habit formation. Highly recommend!', '2025-06-23 02:04:59.873939');
-INSERT INTO "public"."review" VALUES (3, 3, 1, 4.0, 'A beautiful story about finding your destiny. A bit slow at times.', '2025-06-22 02:04:59.873939');
-INSERT INTO "public"."review" VALUES (4, 1, 1, 3.0, 'It was okay, not my usual genre.', '2025-06-21 02:04:59.873939');
+INSERT INTO "public"."review" VALUES (15, 2, 3, 4.0, 'nice', '2025-07-15 20:59:18.291643');
 
 -- ----------------------------
 -- Table structure for shipping
@@ -750,6 +758,10 @@ CREATE TABLE "public"."wishlist" (
 -- ----------------------------
 -- Records of wishlist
 -- ----------------------------
+INSERT INTO "public"."wishlist" VALUES (1, 3, NULL, '2025-07-12 20:47:22.521085');
+INSERT INTO "public"."wishlist" VALUES (2, 7, NULL, '2025-07-13 15:30:18.956092');
+INSERT INTO "public"."wishlist" VALUES (3, 6, NULL, '2025-07-15 20:59:54.895749');
+INSERT INTO "public"."wishlist" VALUES (4, 8, NULL, '2025-07-15 23:06:24.347098');
 
 -- ----------------------------
 -- Table structure for wishlist_item
@@ -768,23 +780,27 @@ CREATE TABLE "public"."wishlist_item" (
 -- ----------------------------
 
 -- ----------------------------
--- Function structure for remove_from_cart_on_order
+-- Function structure for update_book_ratings
 -- ----------------------------
-DROP FUNCTION IF EXISTS "public"."remove_from_cart_on_order"();
-CREATE FUNCTION "public"."remove_from_cart_on_order"()
+DROP FUNCTION IF EXISTS "public"."update_book_ratings"();
+CREATE FUNCTION "public"."update_book_ratings"()
   RETURNS "pg_catalog"."trigger" AS $BODY$
-            BEGIN
-                DELETE FROM cart_item
-                WHERE book_id = NEW.book_id
-                  AND cart_id IN (
-                      SELECT cart_id FROM cart
-                      WHERE customer_id = (
-                          SELECT customer_id FROM "order" WHERE order_id = NEW.order_id
-                      )
-                  );
-                RETURN NEW;
-            END;
-            $BODY$
+BEGIN
+    UPDATE book 
+    SET 
+        average_rating = COALESCE(
+            (SELECT AVG(rating) FROM review WHERE book_id = COALESCE(NEW.book_id, OLD.book_id)), 
+            0.00
+        ),
+        review_count = COALESCE(
+            (SELECT COUNT(*) FROM review WHERE book_id = COALESCE(NEW.book_id, OLD.book_id)), 
+            0
+        )
+    WHERE book_id = COALESCE(NEW.book_id, OLD.book_id);
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
 
@@ -814,14 +830,14 @@ SELECT setval('"public"."book_category_category_id_seq"', 1, false);
 -- ----------------------------
 ALTER SEQUENCE "public"."cart_cart_id_seq"
 OWNED BY "public"."cart"."cart_id";
-SELECT setval('"public"."cart_cart_id_seq"', 1, false);
+SELECT setval('"public"."cart_cart_id_seq"', 4, true);
 
 -- ----------------------------
 -- Alter sequences owned by
 -- ----------------------------
 ALTER SEQUENCE "public"."cart_item_cart_item_id_seq"
 OWNED BY "public"."cart_item"."cart_item_id";
-SELECT setval('"public"."cart_item_cart_item_id_seq"', 1, false);
+SELECT setval('"public"."cart_item_cart_item_id_seq"', 33, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -842,7 +858,7 @@ SELECT setval('"public"."chat_session_session_id_seq"', 1, false);
 -- ----------------------------
 ALTER SEQUENCE "public"."customer_customer_id_seq"
 OWNED BY "public"."customer"."customer_id";
-SELECT setval('"public"."customer_customer_id_seq"', 4, true);
+SELECT setval('"public"."customer_customer_id_seq"', 8, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -905,7 +921,7 @@ SELECT setval('"public"."recommendation_recommendation_id_seq"', 1, false);
 -- ----------------------------
 ALTER SEQUENCE "public"."review_review_id_seq"
 OWNED BY "public"."review"."review_id";
-SELECT setval('"public"."review_review_id_seq"', 4, true);
+SELECT setval('"public"."review_review_id_seq"', 15, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -933,14 +949,14 @@ SELECT setval('"public"."supplier_supplier_id_seq"', 1, false);
 -- ----------------------------
 ALTER SEQUENCE "public"."wishlist_item_wishlist_item_id_seq"
 OWNED BY "public"."wishlist_item"."wishlist_item_id";
-SELECT setval('"public"."wishlist_item_wishlist_item_id_seq"', 1, false);
+SELECT setval('"public"."wishlist_item_wishlist_item_id_seq"', 16, true);
 
 -- ----------------------------
 -- Alter sequences owned by
 -- ----------------------------
 ALTER SEQUENCE "public"."wishlist_wishlist_id_seq"
 OWNED BY "public"."wishlist"."wishlist_id";
-SELECT setval('"public"."wishlist_wishlist_id_seq"', 1, false);
+SELECT setval('"public"."wishlist_wishlist_id_seq"', 4, true);
 
 -- ----------------------------
 -- Primary Key structure for table author
@@ -1063,13 +1079,6 @@ ALTER TABLE "public"."order" ADD CONSTRAINT "order_pkey" PRIMARY KEY ("order_id"
 ALTER TABLE "public"."order_cancellation" ADD CONSTRAINT "order_cancellation_pkey" PRIMARY KEY ("cancellation_id");
 
 -- ----------------------------
--- Triggers structure for table order_item
--- ----------------------------
-CREATE TRIGGER "trg_remove_from_cart" AFTER INSERT ON "public"."order_item"
-FOR EACH ROW
-EXECUTE PROCEDURE "public"."remove_from_cart_on_order"();
-
--- ----------------------------
 -- Checks structure for table order_item
 -- ----------------------------
 ALTER TABLE "public"."order_item" ADD CONSTRAINT "order_item_quantity_check" CHECK (quantity > 0);
@@ -1093,6 +1102,19 @@ ALTER TABLE "public"."payment_method" ADD CONSTRAINT "payment_method_pkey" PRIMA
 -- Primary Key structure for table recommendation
 -- ----------------------------
 ALTER TABLE "public"."recommendation" ADD CONSTRAINT "recommendation_pkey" PRIMARY KEY ("recommendation_id");
+
+-- ----------------------------
+-- Triggers structure for table review
+-- ----------------------------
+CREATE TRIGGER "trg_update_book_ratings_delete" AFTER DELETE ON "public"."review"
+FOR EACH ROW
+EXECUTE PROCEDURE "public"."update_book_ratings"();
+CREATE TRIGGER "trg_update_book_ratings_insert" AFTER INSERT ON "public"."review"
+FOR EACH ROW
+EXECUTE PROCEDURE "public"."update_book_ratings"();
+CREATE TRIGGER "trg_update_book_ratings_update" AFTER UPDATE ON "public"."review"
+FOR EACH ROW
+EXECUTE PROCEDURE "public"."update_book_ratings"();
 
 -- ----------------------------
 -- Checks structure for table review

@@ -237,12 +237,13 @@ app.get('/api/subcategories', async (req, res) => {
     try {
         client = await pool.connect();
         const { categoryId } = req.query;
-        let query = `SELECT sub_category_id, category_id, sub_category_name FROM sub_category ORDER BY sub_category_name`;
+        let query = `SELECT sub_category_id, category_id, sub_category_name FROM sub_category`;
         const queryParams = [];
         if (categoryId) {
             query += ` WHERE category_id = $1`;
             queryParams.push(parseInt(categoryId, 10));
         }
+        query += ` ORDER BY sub_category_name`; // Always add ORDER BY at the end
         const result = await client.query(query, queryParams);
         res.json(result.rows);
     } catch (err) {
@@ -254,7 +255,6 @@ app.get('/api/subcategories', async (req, res) => {
         }
     }
 });
-
 app.get('/api/books/:bookId/reviews', async (req, res) => {
     const bookId = parseInt(req.params.bookId, 10);
 
