@@ -1169,7 +1169,6 @@ WHERE
     }
 });
 
-// Get orders (FIXED)
 app.get('/api/orders', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     let client;

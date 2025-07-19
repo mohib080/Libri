@@ -464,48 +464,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                // Show loading state
-                checkoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-                checkoutBtn.disabled = true;
+                // Store cart data in localStorage for shipping page
+                const cartItems = Array.from(cartItemsContainer.querySelectorAll('.cart-item')).map(item => ({
+                    bookId: item.dataset.bookId,
+                    title: item.querySelector('.item-info h3').textContent,
+                    quantity: parseInt(item.querySelector('.quantity-controls input').value),
+                    price: parseFloat(item.querySelector('.item-price').textContent.replace('$', '')),
+                    format: item.querySelector('.format-select').value
+                }));
 
-                // Call the order creation endpoint
-                const response = await fetch(`${API_BASE_URL}/orders`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        shipping: {
-                            address: '123 Default St', // You should get these from a form
-                            city: 'Default City',
-                            postal_code: '12345',
-                            country: 'USA'
-                        }
-                    })
-                });
+                localStorage.setItem('checkoutData', JSON.stringify({
+                    items: cartItems,
+                    totalAmount: parseFloat(totalPriceElement.textContent),
+                    itemsCount: parseInt(itemsCountElement.textContent)
+                }));
 
-                const data = await response.json();
-
-                if (response.ok) {
-                    showNotification('Order placed successfully!', 'success');
-                    localStorage.setItem('orderSuccess', 'true');
-                    localStorage.setItem('lastOrderId', data.order_id);
-
-                    setTimeout(() => {
-                        window.location.href = 'orders.html';
-                    }, 2000);
-                } else {
-                    throw new Error(data.error || 'Failed to create order');
-                }
+                // Redirect to shipping page
+                window.location.href = 'shipping.html';
 
             } catch (error) {
-                console.error('Checkout error:', error);
-                showNotification(error.message || 'Checkout failed. Please try again.', 'error');
-                
-                // Reset button state
-                checkoutBtn.innerHTML = 'Proceed to Checkout';
-                checkoutBtn.disabled = false;
+                console.error('Error preparing checkout:', error);
+                showNotification('Failed to proceed to checkout. Please try again.', 'error');
             }
         });
     }

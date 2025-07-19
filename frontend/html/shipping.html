@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipping Information</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Inter font and general body styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem;
+            /* Add some padding for smaller screens */
+        }
+
+        /* Hide element initially */
+        .hidden {
+            display: none;
+        }
+
+        /* Input and select common styling */
+        .form-input-field {
+            @apply mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-base bg-white text-gray-700;
+        }
+    </style>
+    <script src="/js/shipping.js" defer></script>
+</head>
+
+<body>
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-5xl mx-auto border border-gray-200
+                grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Left Column: Shipping Details Form -->
+        <div>
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-8 text-center lg:text-left">Shipping Details</h1>
+
+            <form id="shippingForm">
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-semibold mb-3">
+                        Choose Delivery Option:
+                    </label>
+                    <div class="flex flex-col space-y-4">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="address_option" value="profile" checked
+                                class="form-radio h-5 w-5 text-indigo-600 border-gray-300 rounded-full focus:ring-indigo-500"
+                                id="profileAddressRadio">
+                            <span class="ml-3 text-lg text-gray-800">Use Profile Address</span>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="address_option" value="custom"
+                                class="form-radio h-5 w-5 text-indigo-600 border-gray-300 rounded-full focus:ring-indigo-500"
+                                id="customAddressRadio">
+                            <span class="ml-3 text-lg text-gray-800">Use Custom Address</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Custom Address Input Fields Section - Initially Hidden -->
+                <div id="customAddressSection" class="hidden mb-6 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Custom Address Information</h2>
+
+                    <div class="mb-4">
+                        <label for="fullName" class="block text-gray-700 text-sm font-semibold mb-2">Full Name</label>
+                        <input type="text" id="fullName" name="fullName" placeholder="John Doe" class="form-input-field"
+                            required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="phoneNumber" class="block text-gray-700 text-sm font-semibold mb-2">Phone
+                            Number</label>
+                        <input type="tel" id="phoneNumber" name="phoneNumber" placeholder="+1234567890"
+                            class="form-input-field" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="addressBox" class="block text-gray-700 text-sm font-semibold mb-2">Address</label>
+                        <textarea id="addressBox" name="addressBox" rows="3" placeholder="123 Main St, Apt 4B"
+                            class="form-input-field" required></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="city" class="block text-gray-700 text-sm font-semibold mb-2">City</label>
+                            <input type="text" id="city" name="city" placeholder="New York" class="form-input-field"
+                                required>
+                        </div>
+                        <div>
+                            <label for="postalCode" class="block text-gray-700 text-sm font-semibold mb-2">Postal
+                                Code</label>
+                            <input type="text" id="postalCode" name="postalCode" placeholder="10001"
+                                class="form-input-field" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="country" class="block text-gray-700 text-sm font-semibold mb-2">Country</label>
+                        <input type="text" id="country" name="country" placeholder="United States"
+                            class="form-input-field" required>
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg
+                               hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50
+                               font-bold text-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg">
+                    Confirm order
+                </button>
+            </form>
+        </div>
+
+        <!-- Right Column: Checkout Summary & Payment Methods -->
+        <div class="mt-8 lg:mt-0 p-6 bg-gray-50 rounded-xl border border-gray-200 shadow-inner">
+            <h2 class="text-2xl font-extrabold text-gray-900 mb-6 text-center lg:text-left">Order Summary</h2>
+
+            <!-- Checkout Summary Table -->
+            <div class="mb-8">
+                <table class="min-w-full bg-white rounded-lg overflow-hidden shadow-md" id="orderSummaryTable">
+                    <thead class="bg-gray-100 border-b border-gray-200">
+                        <tr>
+                            <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Item</th>
+                            <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600">Qty</th>
+                            <th class="py-3 px-4 text-right text-sm font-semibold text-gray-600">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Items will be dynamically inserted here -->
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" class="py-3 px-4 text-right font-bold text-gray-900">Subtotal:</td>
+                            <td class="py-3 px-4 text-right font-bold text-gray-900" id="subtotalAmount">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" class="py-3 px-4 text-right font-bold text-gray-900">Shipping:</td>
+                            <td class="py-3 px-4 text-right font-bold text-gray-900" id="shippingAmount">$5.00</td>
+                        </tr>
+                        <tr class="bg-indigo-50">
+                            <td colspan="2" class="py-3 px-4 text-right text-lg font-extrabold text-indigo-700">Total:
+                            </td>
+                            <td class="py-3 px-4 text-right text-lg font-extrabold text-indigo-700" id="totalAmount">
+                                $0.00</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Payment Method Options -->
+            <div>
+                <h2 class="text-2xl font-extrabold text-gray-900 mb-6 text-center lg:text-left">Select Payment Method
+                </h2>
+                <div class="flex flex-col space-y-4">
+                    <label
+                        class="inline-flex items-center cursor-pointer p-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-indigo-400 transition duration-200 ease-in-out">
+                        <input type="radio" name="payment_method" value="cod" checked
+                            class="form-radio h-5 w-5 text-indigo-600 border-gray-300 rounded-full focus:ring-indigo-500">
+                        <span class="ml-3 text-lg text-gray-800 font-medium">Cash on Delivery (COD)</span>
+                    </label>
+                    <label
+                        class="inline-flex items-center cursor-pointer p-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-indigo-400 transition duration-200 ease-in-out">
+                        <input type="radio" name="payment_method" value="online_banking"
+                            class="form-radio h-5 w-5 text-indigo-600 border-gray-300 rounded-full focus:ring-indigo-500">
+                        <span class="ml-3 text-lg text-gray-800 font-medium">Online Banking (e.g., Bkash, Nagad)</span>
+                    </label>
+                    <label
+                        class="inline-flex items-center cursor-pointer p-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:border-indigo-400 transition duration-200 ease-in-out">
+                        <input type="radio" name="payment_method" value="card"
+                            class="form-radio h-5 w-5 text-indigo-600 border-gray-300 rounded-full focus:ring-indigo-500">
+                        <span class="ml-3 text-lg text-gray-800 font-medium">Debit/Credit Card</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get references to the radio buttons and the custom address section
+        const profileAddressRadio = document.getElementById('profileAddressRadio');
+        const customAddressRadio = document.getElementById('customAddressRadio');
+        const customAddressSection = document.getElementById('customAddressSection');
+
+        // Function to toggle the visibility of the custom address section
+        function toggleCustomAddressSection() {
+            if (customAddressRadio.checked) {
+                // If 'Use Custom Address' is selected, show the section
+                customAddressSection.classList.remove('hidden');
+                // Make custom address fields required when visible
+                customAddressSection.querySelectorAll('input, textarea').forEach(field => {
+                    field.setAttribute('required', 'true');
+                });
+            } else {
+                // Otherwise, hide the section
+                customAddressSection.classList.add('hidden');
+                // Remove required attribute when hidden
+                customAddressSection.querySelectorAll('input, textarea').forEach(field => {
+                    field.removeAttribute('required');
+                });
+            }
+        }
+
+        // Add event listeners to both radio buttons
+        profileAddressRadio.addEventListener('change', toggleCustomAddressSection);
+        customAddressRadio.addEventListener('change', toggleCustomAddressSection);
+
+        // Initial call to set the correct state when the page loads
+        document.addEventListener('DOMContentLoaded', toggleCustomAddressSection);
+    </script>
+</body>
+
+</html>
