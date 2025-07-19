@@ -69,9 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const token = localStorage.getItem('token');
-            // Get the cart items from localStorage
             const checkoutData = JSON.parse(localStorage.getItem('checkoutData') || '{}');
-            
+
             const response = await fetch(`${API_BASE_URL}/orders`, {
                 method: 'POST',
                 headers: {
@@ -84,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         bookId: item.bookId,
                         quantity: item.quantity,
                         price: item.price,
-                        format: item.format
+                        formatId: item.formatId // Use formatId instead of format
                     })),
                     totalAmount: checkoutData.totalAmount
                 })
@@ -105,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error creating order:', error);
-            alert('Failed to create order. Please try again.');
+            showNotification('Failed to create order. Please try again.', 'error');
         }
     });
 });

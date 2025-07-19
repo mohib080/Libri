@@ -32,7 +32,7 @@ function showNotification(message, type = 'info') {
             <i class="fas fa-times"></i>
         </button>
     `;
-    
+
     if (notificationContainer) {
         notificationContainer.appendChild(notification);
         setTimeout(() => {
@@ -94,7 +94,7 @@ async function fetchOrders() {
         });
 
         console.log('Response status:', response.status); // Debug log
-        
+
         if (!response.ok) {
             console.error('Response not ok:', response.status, response.statusText);
             throw new Error(`HTTP ${response.status}`);
@@ -113,7 +113,7 @@ async function fetchOrders() {
     } catch (error) {
         console.error('Error fetching orders:', error);
         showNotification('Failed to load orders', 'error');
-        
+
         // Show error state
         ordersListContainer.innerHTML = `
             <div class="error-message">
@@ -150,31 +150,31 @@ function getStatusBadge(status) {
         delivered: { text: 'Delivered', class: 'delivered' },
         cancelled: { text: 'Cancelled', class: 'cancelled' }
     };
-    
+
     const statusInfo = statusMap[status] || { text: status, class: 'default' };
     return `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
 }
 
 function getOrderActions(order) {
     const actions = [];
-    
+
     actions.push(`<button onclick="showOrderDetails(${order.order_id})" class="btn-outline">View Details</button>`);
-    
+
     if (order.status === 'pending') {
         actions.push(`<button onclick="showCancelModal(${order.order_id})" class="btn-danger">Cancel Order</button>`);
     }
-    
+
     if (order.status === 'delivered') {
         actions.push(`<button onclick="reorderItems(${order.order_id})" class="btn-primary">Reorder</button>`);
     }
-    
+
     return actions.join(' ');
 }
 
 // Order filtering
 function filterOrders(filter) {
     currentFilter = filter;
-    
+
     // Update filter buttons
     filterButtons.forEach(btn => {
         btn.classList.remove('active');
@@ -182,13 +182,13 @@ function filterOrders(filter) {
             btn.classList.add('active');
         }
     });
-    
+
     // Filter orders
     let filteredOrders = currentOrders;
     if (filter !== 'all') {
         filteredOrders = currentOrders.filter(order => order.status === filter);
     }
-    
+
     renderOrders(filteredOrders);
 }
 
@@ -202,7 +202,7 @@ function renderOrders(orders) {
 
     ordersListContainer.style.display = 'block';
     emptyOrdersContainer.style.display = 'none';
-    
+
     ordersListContainer.innerHTML = orders.map(order => `
         <div class="order-card" data-order-id="${order.order_id}">
             <div class="order-header">
@@ -220,9 +220,9 @@ function renderOrders(orders) {
                     <div class="order-item">
                         <img src="${item.image_url}" alt="${item.title}" onerror="this.src='/images/default-book.jpg'">
                         <div class="item-details">
-                            <h4>${item.title}</h4>
+                            <h4>${item.title} ${item.format_name ? `(${item.format_name})` : ''}</h4>
                             <p>Quantity: ${item.quantity}</p>
-                            <p>Price: ${formatCurrency(item.item_price)}</p>
+                            
                         </div>
                     </div>
                 `).join('')}
@@ -288,7 +288,7 @@ function showOrderDetails(orderId) {
                         <div class="item-row">
                             <img src="${item.image_url}" alt="${item.title}" onerror="this.src='/images/default-book.jpg'">
                             <div class="item-info">
-                                <h4>${item.title}</h4>
+                                <h4>${item.title} ${item.format_name ? `(${item.format_name})` : ''}</h4>
                                 <p>Quantity: ${item.quantity}</p>
                                 <p>Price: ${formatCurrency(item.item_price)}</p>
                                 <p><strong>Subtotal: ${formatCurrency(item.item_price * item.quantity)}</strong></p>
@@ -337,10 +337,10 @@ function showCancelModal(orderId) {
     }
 
     currentOrderIdToCancel = orderId;
-    
+
     // Reset form
     cancellationForm.reset();
-    
+
     cancellationModal.style.display = 'flex';
 }
 
@@ -401,7 +401,7 @@ async function reorderItems(orderId) {
         }
 
         showNotification('Items added to cart successfully', 'success');
-        
+
         // Redirect to cart page
         setTimeout(() => {
             window.location.href = 'cart.html';
@@ -439,15 +439,15 @@ function initializeModalHandlers() {
     if (cancellationForm) {
         cancellationForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            
+
             const reason = cancellationReasonSelect.value;
             const details = cancellationDetailsTextarea.value;
-            
+
             if (!reason) {
                 showNotification('Please select a cancellation reason', 'error');
                 return;
             }
-            
+
             if (currentOrderIdToCancel) {
                 cancelOrder(currentOrderIdToCancel, reason, details);
             }
@@ -488,7 +488,7 @@ async function updateCartCounter() {
         if (response.ok) {
             const cartData = await response.json();
             const cartCount = cartData.items.reduce((total, item) => total + item.quantity, 0);
-            
+
             const cartCountElement = document.getElementById('cart-item-count');
             if (cartCountElement) {
                 cartCountElement.textContent = cartCount;

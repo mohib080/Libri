@@ -506,6 +506,7 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
             cartId = cartResult.rows[0].cart_id;
         }
 
+        // Update the cart items query in the GET /api/cart endpoint
         const cartItemsResult = await client.query(`
             SELECT
                 crt.cart_item_id,
@@ -514,8 +515,11 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
                 b.image_url,
                 b.price,
                 crt.quantity,
+                crt.format_id,
+                f.format_name,
+                f.factor,
                 au.name AS author,
-                (b.price * crt.quantity) AS total_item_price
+                (b.price * crt.quantity * f.factor) AS total_item_price
             FROM
                 cart_item crt
             JOIN
@@ -524,6 +528,8 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
                 book_author ba ON b.book_id = ba.book_id
             JOIN
                 author au ON au.author_id = ba.author_id
+            LEFT JOIN
+                format f ON crt.format_id = f.format_id
             WHERE
                 crt.cart_id = $1
             ORDER BY
@@ -1048,75 +1054,19 @@ app.delete('/api/books/:bookId/reviews/:reviewId', authenticateToken, async (req
 
 app.post('/api/orders', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
-    const { shipping } = req.body;
+    const { shipping, items } = req.body; // Get items from request body
     let client;
 
     try {
         client = await pool.connect();
         await client.query('BEGIN');
 
-        console.log('Creating order for customer:', customerId); // Debug log
+        // 1. Calculate total with format-adjusted prices from frontend
+        const serverTotal = items.reduce((sum, item) =>
+            sum + (parseFloat(item.price) * item.quantity), 0
+        );
 
-        // 1. Get cart items and validate
-        const cartItems = await client.query(`
-            SELECT
-    ci.book_id,
-    ci.quantity,
-    b.price,
-    b.is_active,    
-    b.title
-FROM
-    cart_item ci
-JOIN
-    book b ON ci.book_id = b.book_id
-JOIN
-     cart crt on crt.cart_id=ci.cart_id
-JOIN
-    customer c ON c.customer_id = crt.customer_id
-WHERE
-    ci.cart_id = (SELECT cart_id FROM cart WHERE customer_id = $1);
-        `, [customerId]);
-
-        console.log('Cart items found:', cartItems.rows.length); // Debug log
-
-        if (cartItems.rows.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ error: 'Cart is empty' });
-        }
-
-        // 2. Validate all books are active
-        const inactiveBooks = cartItems.rows.filter(item => !item.is_active);
-        if (inactiveBooks.length > 0) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({
-                error: 'Some books are no longer available',
-                unavailable_books: inactiveBooks.map(book => book.title)
-            });
-        }
-
-        // 3. Check inventory for each book
-        for (const item of cartItems.rows) {
-            const inventoryCheck = await client.query(
-                'SELECT quantity_in_stock FROM inventory WHERE book_id = $1',
-                [item.book_id]
-            );
-
-            if (inventoryCheck.rows.length === 0 ||
-                inventoryCheck.rows[0].quantity_in_stock < item.quantity) {
-                await client.query('ROLLBACK');
-                return res.status(400).json({
-                    error: `Insufficient stock for "${item.title}"`,
-                    available_stock: inventoryCheck.rows[0]?.quantity_in_stock || 0,
-                    requested: item.quantity
-                });
-            }
-        }
-
-        // 4. Calculate total on server side
-        const serverTotal = cartItems.rows.reduce((sum, item) =>
-            sum + (parseFloat(item.price) * item.quantity), 0);
-
-        // 5. Create order
+        // 2. Create order
         const orderResult = await client.query(`
             INSERT INTO "order" (customer_id, status, order_date, total_amount, shipping_method)
             VALUES ($1, 'pending', NOW(), $2, 'standard')
@@ -1124,14 +1074,26 @@ WHERE
         `, [customerId, serverTotal]);
 
         const orderId = orderResult.rows[0].order_id;
-        console.log('Order created with ID:', orderId); // Debug log
 
-        // 6. Add order items
-        for (const item of cartItems.rows) {
+        // 3. Add order items with format
+        for (const item of items) {
             await client.query(`
-                INSERT INTO order_item (order_id, book_id, order_date, quantity, item_price)
-                VALUES ($1, $2, NOW(), $3, $4)
-            `, [orderId, item.book_id, item.quantity, item.price]);
+                INSERT INTO order_item (
+                    order_id, 
+                    book_id, 
+                    order_date, 
+                    quantity, 
+                    item_price,
+                    format_id
+                )
+                VALUES ($1, $2, NOW(), $3, $4, $5)
+            `, [
+                orderId,
+                item.bookId,
+                item.quantity,
+                item.price,
+                item.formatId // Use formatId instead of format
+            ]);
 
             // Update inventory
             await client.query(`
@@ -1139,10 +1101,10 @@ WHERE
                 SET quantity_in_stock = quantity_in_stock - $1,
                     last_update = NOW()
                 WHERE book_id = $2
-            `, [item.quantity, item.book_id]);
+            `, [item.quantity, item.bookId]);
         }
 
-        // 7. Add shipping information
+        // 4. Add shipping information
         if (shipping) {
             await client.query(`
                 INSERT INTO shipping (order_id, address, city, postal_code, country, delivery_estimate)
@@ -1150,7 +1112,7 @@ WHERE
             `, [orderId, shipping.address, shipping.city, shipping.postal_code, shipping.country]);
         }
 
-        // 8. Clear cart properly
+        // 5. Clear cart properly
         await client.query(`
             DELETE FROM cart_item WHERE cart_id = (SELECT cart_id FROM cart WHERE customer_id = $1)
         `, [customerId]);
@@ -1206,12 +1168,16 @@ app.get('/api/orders', authenticateToken, async (req, res) => {
                     oi.book_id,
                     oi.quantity,
                     oi.item_price,
+                    oi.format_id,
+                    f.format_name,
+                    f.factor,
                     COALESCE(b.title, 'Unknown Book') as title,
                     COALESCE(b.image_url, '/images/default-book.jpg') as image_url
                 FROM order_item oi
                 LEFT JOIN book b ON oi.book_id = b.book_id
+                LEFT JOIN format f ON oi.format_id = f.format_id
                 WHERE oi.order_id = $1
-            `, [order.order_id]);
+`, [order.order_id]);
 
             orders.push({
                 order_id: order.order_id,
