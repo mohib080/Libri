@@ -1057,10 +1057,22 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
 
         // 1. Get cart items and validate
         const cartItems = await client.query(`
-            SELECT ci.book_id, ci.quantity, b.price, b.is_active, b.title
-            FROM cart_item ci
-            JOIN book b ON ci.book_id = b.book_id
-            WHERE ci.cart_id = (SELECT cart_id FROM cart WHERE customer_id = $1)
+            SELECT
+    ci.book_id,
+    ci.quantity,
+    b.price,
+    b.is_active,    
+    b.title
+FROM
+    cart_item ci
+JOIN
+    book b ON ci.book_id = b.book_id
+JOIN
+     cart crt on crt.cart_id=ci.cart_id
+JOIN
+    customer c ON c.customer_id = crt.customer_id
+WHERE
+    ci.cart_id = (SELECT cart_id FROM cart WHERE customer_id = $1);
         `, [customerId]);
 
         console.log('Cart items found:', cartItems.rows.length); // Debug log

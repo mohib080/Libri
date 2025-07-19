@@ -464,43 +464,45 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                // Fetch current cart to verify items exist
-                const cartResponse = await fetch(`${API_BASE_URL}/cart`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!cartResponse.ok) {
-                    throw new Error('Failed to fetch cart');
-                }
-
-                const cartData = await cartResponse.json();
-
-                if (!cartData.items || cartData.items.length === 0) {
-                    showNotification('Your cart is empty. Add items before checkout.', 'info');
-                    return;
-                }
-
                 // Show loading state
                 checkoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
                 checkoutBtn.disabled = true;
 
-                // Simulate order processing (you can replace this with actual order creation)
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Call the order creation endpoint
+                const response = await fetch(`${API_BASE_URL}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        shipping: {
+                            address: '123 Default St', // You should get these from a form
+                            city: 'Default City',
+                            postal_code: '12345',
+                            country: 'USA'
+                        }
+                    })
+                });
 
-                // Show success message
-                showNotification('Redirecting to orders page...', 'success');
+                const data = await response.json();
 
-                // Redirect to orders page after brief delay
-                setTimeout(() => {
-                    window.location.href = 'orders.html';
-                }, 1500);
+                if (response.ok) {
+                    showNotification('Order placed successfully!', 'success');
+                    localStorage.setItem('orderSuccess', 'true');
+                    localStorage.setItem('lastOrderId', data.order_id);
+
+                    setTimeout(() => {
+                        window.location.href = 'orders.html';
+                    }, 2000);
+                } else {
+                    throw new Error(data.error || 'Failed to create order');
+                }
 
             } catch (error) {
                 console.error('Checkout error:', error);
-                showNotification('Checkout failed. Please try again.', 'error');
-
+                showNotification(error.message || 'Checkout failed. Please try again.', 'error');
+                
                 // Reset button state
                 checkoutBtn.innerHTML = 'Proceed to Checkout';
                 checkoutBtn.disabled = false;
@@ -569,6 +571,6 @@ async function proceedToCheckout() {
     }
 }
 
-if (checkoutBtn) {
-    checkoutBtn.addEventListener('click', proceedToCheckout);
-}
+// if (checkoutBtn) {
+//     checkoutBtn.addEventListener('click', proceedToCheckout);
+// }
