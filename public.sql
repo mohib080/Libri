@@ -12,7 +12,7 @@
  Target Server Version : 170005 (170005)
  File Encoding         : 65001
 
- Date: 18/07/2025 13:32:53
+ Date: 19/07/2025 16:15:05
 */
 
 
@@ -43,6 +43,17 @@ CACHE 1;
 -- ----------------------------
 DROP SEQUENCE IF EXISTS "public"."book_category_category_id_seq";
 CREATE SEQUENCE "public"."book_category_category_id_seq" 
+INCREMENT 1
+MINVALUE  1
+MAXVALUE 2147483647
+START 1
+CACHE 1;
+
+-- ----------------------------
+-- Sequence structure for book_format_book_format_id_seq
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "public"."book_format_book_format_id_seq";
+CREATE SEQUENCE "public"."book_format_book_format_id_seq" 
 INCREMENT 1
 MINVALUE  1
 MAXVALUE 2147483647
@@ -292,11 +303,9 @@ INSERT INTO "public"."author" VALUES (11, 'Harper Lee', 'American novelist.', 'h
 DROP TABLE IF EXISTS "public"."book";
 CREATE TABLE "public"."book" (
   "book_id" int4 NOT NULL DEFAULT nextval('book_book_id_seq'::regclass),
-  "format_id" int4,
   "title" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "description" text COLLATE "pg_catalog"."default",
   "image_url" text COLLATE "pg_catalog"."default",
-  "price" numeric(10,2) NOT NULL,
   "is_active" bool DEFAULT true,
   "isbn" varchar(20) COLLATE "pg_catalog"."default",
   "publisher" varchar(255) COLLATE "pg_catalog"."default",
@@ -306,23 +315,25 @@ CREATE TABLE "public"."book" (
   "sub_category_id" int4,
   "is_featured" bool DEFAULT false,
   "average_rating" numeric(3,2) DEFAULT 0.00,
-  "review_count" int4 DEFAULT 0
+  "review_count" int4 DEFAULT 0,
+  "format_id" int4,
+  "price" numeric(10,2)
 )
 ;
 
 -- ----------------------------
 -- Records of book
 -- ----------------------------
-INSERT INTO "public"."book" VALUES (2, 2, 'Atomic Habits', 'An easy & proven way to build good habits & break bad ones.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 16.49, 't', '9780735211292', 'Penguin Publishing', '2018-10-16 00:00:00', 'English', NULL, NULL, 'f', 4.00, 1);
-INSERT INTO "public"."book" VALUES (3, 1, 'The Alchemist', 'A fable about following your dream.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 10.99, 't', '9780061122415', 'HarperOne', '1993-05-01 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
-INSERT INTO "public"."book" VALUES (1, 1, 'The Silent Patient', 'A psychological thriller about a woman''s act of violence.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 13.99, 't', '9781250301697', 'Celadon Books', '2019-02-05 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
-INSERT INTO "public"."book" VALUES (4, 3, 'A Promised Land', 'Barack Obama’s presidential memoir.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 22.00, 't', '9781524763169', 'Crown Publishing', '2020-11-17 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
-INSERT INTO "public"."book" VALUES (5, 1, 'Ikigai', 'The Japanese secret to a long and happy life.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 11.99, 't', '9780143130727', 'Penguin Books', '2017-08-29 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
-INSERT INTO "public"."book" VALUES (6, 2, 'Rich Dad Poor Dad', 'What the rich teach their kids about money.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 9.49, 't', '9781612680194', 'Plata Publishing', '2011-04-01 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
-INSERT INTO "public"."book" VALUES (7, 3, 'The Psychology of Money', 'Timeless lessons on wealth, greed, and happiness.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 14.00, 't', '9780857197689', 'Harriman House', '2020-09-01 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
-INSERT INTO "public"."book" VALUES (8, 2, '1984', 'A dystopian social science fiction novel and cautionary tale.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 8.99, 't', '9780451524935', 'Signet Classic', '1950-07-01 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
-INSERT INTO "public"."book" VALUES (9, 1, 'Sapiens', 'A brief history of humankind.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 17.49, 't', '9780062316097', 'Harper', '2015-02-10 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
-INSERT INTO "public"."book" VALUES (10, 3, 'To Kill a Mockingbird', 'A novel about the serious issues of rape and racial inequality.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 12.99, 't', '9780061120084', 'Harper Perennial', '2006-05-23 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0);
+INSERT INTO "public"."book" VALUES (1, 'The Silent Patient', 'A psychological thriller about a woman''s act of violence.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9781250301697', 'Celadon Books', '2019-02-05 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 3, 14.99);
+INSERT INTO "public"."book" VALUES (2, 'Atomic Habits', 'An easy & proven way to build good habits & break bad ones.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9780735211292', 'Penguin Publishing', '2018-10-16 00:00:00', 'English', NULL, NULL, 'f', 4.00, 1, 2, 20.00);
+INSERT INTO "public"."book" VALUES (3, 'The Alchemist', 'A fable about following your dream.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9780061122415', 'HarperOne', '1993-05-01 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 1, 12.50);
+INSERT INTO "public"."book" VALUES (4, 'A Promised Land', 'Barack Obama’s presidential memoir.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9781524763169', 'Crown Publishing', '2020-11-17 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 2, 35.00);
+INSERT INTO "public"."book" VALUES (5, 'Ikigai', 'The Japanese secret to a long and happy life.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9780143130727', 'Penguin Books', '2017-08-29 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 1, 11.99);
+INSERT INTO "public"."book" VALUES (6, 'Rich Dad Poor Dad', 'What the rich teach their kids about money.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9781612680194', 'Plata Publishing', '2011-04-01 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 1, 15.00);
+INSERT INTO "public"."book" VALUES (7, 'The Psychology of Money', 'Timeless lessons on wealth, greed, and happiness.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9780857197689', 'Harriman House', '2020-09-01 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 1, 16.50);
+INSERT INTO "public"."book" VALUES (8, '1984', 'A dystopian social science fiction novel and cautionary tale.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9780451524935', 'Signet Classic', '1950-07-01 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 1, 9.99);
+INSERT INTO "public"."book" VALUES (9, 'Sapiens', 'A brief history of humankind.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9780062316097', 'Harper', '2015-02-10 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 1, 22.00);
+INSERT INTO "public"."book" VALUES (10, 'To Kill a Mockingbird', 'A novel about the serious issues of rape and racial inequality.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9780061120084', 'Harper Perennial', '2006-05-23 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 1, 10.00);
 
 -- ----------------------------
 -- Table structure for book_author
@@ -368,6 +379,21 @@ INSERT INTO "public"."book_category" VALUES (2, 'Non-Fiction', 'Books based on f
 INSERT INTO "public"."book_category" VALUES (3, 'Science Fiction & Fantasy', 'Genre of speculative fiction.');
 INSERT INTO "public"."book_category" VALUES (4, 'Biography & Memoir', 'Life stories of individuals.');
 INSERT INTO "public"."book_category" VALUES (5, 'Self-Help', 'Books designed to help with self-improvement.');
+
+-- ----------------------------
+-- Table structure for book_format
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."book_format";
+CREATE TABLE "public"."book_format" (
+  "book_format_id" int4 NOT NULL DEFAULT nextval('book_format_book_format_id_seq'::regclass),
+  "book_id" int4 NOT NULL,
+  "format_id" int4 NOT NULL
+)
+;
+
+-- ----------------------------
+-- Records of book_format
+-- ----------------------------
 
 -- ----------------------------
 -- Table structure for book_recommendation
@@ -436,9 +462,9 @@ CREATE TABLE "public"."cart" (
 -- ----------------------------
 -- Records of cart
 -- ----------------------------
+INSERT INTO "public"."cart" VALUES (1, 3, '2025-07-05 18:32:03.173854', '2025-07-19 16:11:04.376719');
 INSERT INTO "public"."cart" VALUES (3, 6, '2025-07-15 20:59:54.891959', '2025-07-15 20:59:54.891959');
 INSERT INTO "public"."cart" VALUES (4, 8, '2025-07-15 23:06:24.344894', '2025-07-15 23:06:24.344894');
-INSERT INTO "public"."cart" VALUES (1, 3, '2025-07-05 18:32:03.173854', '2025-07-18 05:27:07.239777');
 INSERT INTO "public"."cart" VALUES (2, 7, '2025-07-13 15:30:18.952162', '2025-07-13 15:30:18.952162');
 
 -- ----------------------------
@@ -456,8 +482,7 @@ CREATE TABLE "public"."cart_item" (
 -- ----------------------------
 -- Records of cart_item
 -- ----------------------------
-INSERT INTO "public"."cart_item" VALUES (32, 1, 3, 1);
-INSERT INTO "public"."cart_item" VALUES (33, 1, 2, 1);
+INSERT INTO "public"."cart_item" VALUES (42, 1, 2, 1);
 
 -- ----------------------------
 -- Table structure for chat_message
@@ -519,8 +544,8 @@ INSERT INTO "public"."customer" VALUES (4, 'mohib080', 'mohibul.sawrav2004@gmail
 INSERT INTO "public"."customer" VALUES (8, 'Cristiano Ronaldo', 'sawrav124@gmail.com', '$2b$10$9cdzyxT3Px56eTkJ4IuUUOs41b3bq0pBrVKZEO9D/Wi2gU2/5cU4m', NULL, NULL, '2025-07-15 23:06:22.116455', '2025-07-15 23:06:22.116455', 'customer', NULL, 'f');
 INSERT INTO "public"."customer" VALUES (5, 'r', '2205007@ugrad.cse.buet.ac.bd', '$2b$10$v76HTKVs2QtlHEip1iRk3esnbWlUtHLFOg6TrtOKxlnNOzPx4WO12', NULL, NULL, '2025-07-13 15:12:30.156238', '2025-07-13 15:12:30.156238', 'customer', NULL, 'f');
 INSERT INTO "public"."customer" VALUES (7, 'saber', '2205017@ugrad.cse.buet.ac.bd', '$2b$10$SGjls5kb.SzOFSRk3R3ywuY4lunIonf9mqUuEmL4UBI5r323XbM6K', NULL, NULL, '2025-07-13 15:30:02.152869', '2025-07-13 15:30:02.152869', 'customer', '2025-07-13 15:30:17.314285', 'f');
-INSERT INTO "public"."customer" VALUES (3, 'Mohibul Sawrav', '2205018@ugrad.cse.buet.ac.bd', '$2b$10$RfOVcY9RIcmrXJ3GZty4Oep21SVA3Kj2rY5wcYCen/6/SCF30hVki', '+8801864316100', 'Dhaka, Bangladesh', '2025-07-01 22:53:03.887927', '2025-07-10 13:12:24.734777', 'customer', '2025-07-18 05:06:17.992841', 'f');
 INSERT INTO "public"."customer" VALUES (6, 'shafin', '2205001@ugrad.cse.buet.ac.bd', '$2b$10$VTUSxXumJnwlI8ptdABbIOj9eZX9GBlglShYL4WAtME.SIAFSoXmG', NULL, NULL, '2025-07-13 15:26:50.075573', '2025-07-13 15:26:50.075573', 'customer', '2025-07-15 20:59:53.333532', 'f');
+INSERT INTO "public"."customer" VALUES (3, 'Mohibul Sawrav', '2205018@ugrad.cse.buet.ac.bd', '$2b$10$RfOVcY9RIcmrXJ3GZty4Oep21SVA3Kj2rY5wcYCen/6/SCF30hVki', '+8801864316100', 'Dhaka, Bangladesh', '2025-07-01 22:53:03.887927', '2025-07-10 13:12:24.734777', 'customer', '2025-07-19 16:10:59.399478', 'f');
 
 -- ----------------------------
 -- Table structure for format
@@ -556,6 +581,16 @@ CREATE TABLE "public"."inventory" (
 -- ----------------------------
 -- Records of inventory
 -- ----------------------------
+INSERT INTO "public"."inventory" VALUES (1, 1, NULL, 10, 100, '2025-07-19 16:03:08.857704');
+INSERT INTO "public"."inventory" VALUES (2, 2, NULL, 10, 100, '2025-07-19 16:10:13.165745');
+INSERT INTO "public"."inventory" VALUES (3, 3, NULL, 10, 100, '2025-07-19 16:10:13.167177');
+INSERT INTO "public"."inventory" VALUES (4, 4, NULL, 10, 100, '2025-07-19 16:10:13.168841');
+INSERT INTO "public"."inventory" VALUES (5, 5, NULL, 10, 100, '2025-07-19 16:10:13.171125');
+INSERT INTO "public"."inventory" VALUES (6, 6, NULL, 10, 100, '2025-07-19 16:10:13.172911');
+INSERT INTO "public"."inventory" VALUES (7, 7, NULL, 10, 100, '2025-07-19 16:10:13.174217');
+INSERT INTO "public"."inventory" VALUES (8, 8, NULL, 10, 100, '2025-07-19 16:10:13.174846');
+INSERT INTO "public"."inventory" VALUES (9, 9, NULL, 10, 100, '2025-07-19 16:10:13.175438');
+INSERT INTO "public"."inventory" VALUES (10, 10, NULL, 10, 100, '2025-07-19 16:10:13.175947');
 
 -- ----------------------------
 -- Table structure for order
@@ -604,7 +639,8 @@ CREATE TABLE "public"."order_item" (
   "book_id" int4,
   "order_date" timestamp(6) DEFAULT CURRENT_TIMESTAMP,
   "quantity" int4 NOT NULL,
-  "item_price" numeric(10,2) NOT NULL
+  "item_price" numeric(10,2) NOT NULL,
+  "format_id" int4
 )
 ;
 
@@ -778,6 +814,7 @@ CREATE TABLE "public"."wishlist_item" (
 -- ----------------------------
 -- Records of wishlist_item
 -- ----------------------------
+INSERT INTO "public"."wishlist_item" VALUES (18, 1, 2, '2025-07-19 15:36:24.364828');
 
 -- ----------------------------
 -- Function structure for update_book_ratings
@@ -828,6 +865,13 @@ SELECT setval('"public"."book_category_category_id_seq"', 1, false);
 -- ----------------------------
 -- Alter sequences owned by
 -- ----------------------------
+ALTER SEQUENCE "public"."book_format_book_format_id_seq"
+OWNED BY "public"."book_format"."book_format_id";
+SELECT setval('"public"."book_format_book_format_id_seq"', 1, false);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
 ALTER SEQUENCE "public"."cart_cart_id_seq"
 OWNED BY "public"."cart"."cart_id";
 SELECT setval('"public"."cart_cart_id_seq"', 4, true);
@@ -837,7 +881,7 @@ SELECT setval('"public"."cart_cart_id_seq"', 4, true);
 -- ----------------------------
 ALTER SEQUENCE "public"."cart_item_cart_item_id_seq"
 OWNED BY "public"."cart_item"."cart_item_id";
-SELECT setval('"public"."cart_item_cart_item_id_seq"', 33, true);
+SELECT setval('"public"."cart_item_cart_item_id_seq"', 42, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -949,7 +993,7 @@ SELECT setval('"public"."supplier_supplier_id_seq"', 1, false);
 -- ----------------------------
 ALTER SEQUENCE "public"."wishlist_item_wishlist_item_id_seq"
 OWNED BY "public"."wishlist_item"."wishlist_item_id";
-SELECT setval('"public"."wishlist_item_wishlist_item_id_seq"', 16, true);
+SELECT setval('"public"."wishlist_item_wishlist_item_id_seq"', 18, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -987,6 +1031,16 @@ ALTER TABLE "public"."book_category" ADD CONSTRAINT "book_category_category_name
 -- Primary Key structure for table book_category
 -- ----------------------------
 ALTER TABLE "public"."book_category" ADD CONSTRAINT "book_category_pkey" PRIMARY KEY ("category_id");
+
+-- ----------------------------
+-- Uniques structure for table book_format
+-- ----------------------------
+ALTER TABLE "public"."book_format" ADD CONSTRAINT "book_format_book_id_format_id_key" UNIQUE ("book_id", "format_id");
+
+-- ----------------------------
+-- Primary Key structure for table book_format
+-- ----------------------------
+ALTER TABLE "public"."book_format" ADD CONSTRAINT "book_format_pkey" PRIMARY KEY ("book_format_id");
 
 -- ----------------------------
 -- Primary Key structure for table book_recommendation
@@ -1165,14 +1219,20 @@ ALTER TABLE "public"."wishlist_item" ADD CONSTRAINT "wishlist_item_pkey" PRIMARY
 -- Foreign Keys structure for table book
 -- ----------------------------
 ALTER TABLE "public"."book" ADD CONSTRAINT "book_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "public"."book_category" ("category_id") ON DELETE SET NULL ON UPDATE NO ACTION;
-ALTER TABLE "public"."book" ADD CONSTRAINT "book_format_id_fkey" FOREIGN KEY ("format_id") REFERENCES "public"."format" ("format_id") ON DELETE SET NULL ON UPDATE NO ACTION;
 ALTER TABLE "public"."book" ADD CONSTRAINT "book_sub_category_id_fkey" FOREIGN KEY ("sub_category_id") REFERENCES "public"."sub_category" ("sub_category_id") ON DELETE SET NULL ON UPDATE NO ACTION;
+ALTER TABLE "public"."book" ADD CONSTRAINT "fk_format_id" FOREIGN KEY ("format_id") REFERENCES "public"."format" ("format_id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- ----------------------------
 -- Foreign Keys structure for table book_author
 -- ----------------------------
 ALTER TABLE "public"."book_author" ADD CONSTRAINT "book_author_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "public"."author" ("author_id") ON DELETE CASCADE ON UPDATE NO ACTION;
 ALTER TABLE "public"."book_author" ADD CONSTRAINT "book_author_book_id_fkey" FOREIGN KEY ("book_id") REFERENCES "public"."book" ("book_id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- ----------------------------
+-- Foreign Keys structure for table book_format
+-- ----------------------------
+ALTER TABLE "public"."book_format" ADD CONSTRAINT "book_format_book_id_fkey" FOREIGN KEY ("book_id") REFERENCES "public"."book" ("book_id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "public"."book_format" ADD CONSTRAINT "book_format_format_id_fkey" FOREIGN KEY ("format_id") REFERENCES "public"."format" ("format_id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- ----------------------------
 -- Foreign Keys structure for table book_recommendation
@@ -1234,6 +1294,7 @@ ALTER TABLE "public"."order_cancellation" ADD CONSTRAINT "order_cancellation_ord
 -- Foreign Keys structure for table order_item
 -- ----------------------------
 ALTER TABLE "public"."order_item" ADD CONSTRAINT "order_item_book_id_fkey" FOREIGN KEY ("book_id") REFERENCES "public"."book" ("book_id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "public"."order_item" ADD CONSTRAINT "order_item_format_id_fkey" FOREIGN KEY ("format_id") REFERENCES "public"."format" ("format_id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 ALTER TABLE "public"."order_item" ADD CONSTRAINT "order_item_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "public"."order" ("order_id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- ----------------------------

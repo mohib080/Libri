@@ -518,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Note: This function is duplicated from the DOMContentLoaded block in your original cart.js.
 // It's better to have one unified checkout logic. I've kept the one inside DOMContentLoaded
 // and commented out the global one for clarity.
-/*
+
 async function proceedToCheckout() {
     const token = getAuthToken();
     if (!token) return;
@@ -569,8 +569,6 @@ async function proceedToCheckout() {
     }
 }
 
-// Make sure to connect this function to your checkout button
 if (checkoutBtn) {
     checkoutBtn.addEventListener('click', proceedToCheckout);
 }
-*/
