@@ -547,6 +547,8 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
     }
 });
 
+
+//cart adding route
 app.post('/api/cart/add', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     const { bookId, quantity } = req.body;
