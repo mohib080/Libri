@@ -514,11 +514,16 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
                 b.image_url,
                 b.price,
                 crt.quantity,
+                au.name AS author,
                 (b.price * crt.quantity) AS total_item_price
             FROM
                 cart_item crt
             JOIN
                 book b ON crt.book_id = b.book_id
+            JOIN
+                book_author ba ON b.book_id = ba.book_id
+            JOIN
+                author au ON au.author_id = ba.author_id
             WHERE
                 crt.cart_id = $1
             ORDER BY
