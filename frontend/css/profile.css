@@ -80,10 +80,84 @@ nav {
     color: var(--accent-color);
 }
 
+/* Profile dropdown styling */
 .profile-container {
+    position: relative;
     display: flex;
     align-items: center;
-    position: relative;
+}
+
+.profile {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.profile-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.profile-container:hover .profile-img {
+    border-color: var(--accent-color);
+}
+
+
+.profile-dropdown {
+    display: none;
+    position: absolute;
+    top: 55px;
+    /* Adjust based on nav height */
+    right: 0;
+    background: var(--light-card-bg);
+    border-radius: 8px;
+    box-shadow: var(--light-card-shadow);
+    min-width: 160px;
+    z-index: 1000;
+    padding: 10px 0;
+    border: 1px solid var(--light-border);
+}
+
+body.dark-mode .profile-dropdown {
+    background: var(--dark-card-bg);
+    box-shadow: var(--dark-card-shadow);
+    border: 1px solid var(--dark-border);
+}
+
+.profile-dropdown a {
+    color: var(--light-text);
+    padding: 10px 20px;
+    text-decoration: none;
+    display: block;
+    font-size: 0.95rem;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+body.dark-mode .profile-dropdown a {
+    color: var(--dark-text);
+}
+
+.profile-dropdown a:hover {
+    background-color: var(--light-input-bg);
+    color: var(--accent-color);
+}
+
+body.dark-mode .profile-dropdown a:hover {
+    background-color: var(--dark-input-bg);
+}
+
+.profile-dropdown a.active {
+    background-color: var(--accent-color);
+    color: #fff;
+}
+
+.profile-dropdown a.active:hover {
+    background-color: var(--accent-color-hover);
+    color: #fff;
 }
 
 /* Profile Card */
@@ -175,6 +249,12 @@ body.dark-mode .avatar-upload-label {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
 .profile-info h2 {
     margin: 8px 0 4px 0;
     /* Adjusted margins */
@@ -189,15 +269,41 @@ body.dark-mode .profile-info h2 {
 }
 
 .profile-info p {
-    margin: 0 0 20px 0;
+    margin: 4px 0;
     /* Adjusted margin */
     font-size: 1.05rem;
     /* Slightly smaller for emphasis on name */
     color: var(--light-secondary-text);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
 }
 
 body.dark-mode .profile-info p {
     color: var(--dark-secondary-text);
+}
+
+.profile-info p i {
+    color: var(--accent-color);
+    width: 20px;
+    min-width: 20px;
+    text-align: center;
+}
+
+#profile-verified.verified {
+    color: green;
+    font-weight: 500;
+}
+
+#profile-verified.unverified {
+    color: red;
+    font-weight: 500;
+}
+
+#profile-last-login {
+    font-style: italic;
+    font-size: 0.95rem;
+    /* Slightly smaller for less emphasis */
 }
 
 .profile-actions {
@@ -206,6 +312,8 @@ body.dark-mode .profile-info p {
     /* Allow wrapping on smaller screens */
     gap: 1rem;
     /* Increased gap */
+    margin-top: 1.5rem;
+    /* Space above buttons */
 }
 
 .profile-actions button {
@@ -265,7 +373,13 @@ body.dark-mode .profile-details {
     /* Bolder heading */
     font-size: 1.6rem;
     margin-bottom: 1.5rem;
+    color: var(--light-text);
 }
+
+body.dark-mode .profile-details h3 {
+    color: var(--dark-text);
+}
+
 
 .profile-details form {
     display: flex;
@@ -281,6 +395,11 @@ body.dark-mode .profile-details {
     gap: 0.5rem;
     /* Increased gap between label text and input */
     font-weight: 500;
+    color: var(--light-text);
+}
+
+body.dark-mode .profile-details label {
+    color: var(--dark-text);
 }
 
 .profile-details input[type="text"],
@@ -316,12 +435,21 @@ body.dark-mode .profile-details input:focus {
     box-shadow: 0 0 0 3px rgba(71, 104, 242, 0.4);
 }
 
+.profile-details .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    /* Align buttons to the right */
+    gap: 0.8rem;
+    /* Space between buttons */
+    margin-top: 1.5rem;
+    /* Space above form action buttons */
+}
+
+
 .profile-details button[type="submit"] {
     background: var(--accent-color);
     color: #fff;
     border: none;
-    margin-top: 1.2rem;
-    /* More space above save button */
     padding: 0.7rem 1.6rem;
     border-radius: 8px;
     font-size: 1rem;
@@ -345,7 +473,6 @@ body.dark-mode .profile-details input:focus {
     background: var(--light-button-cancel-bg);
     color: var(--light-text);
     border: none;
-    margin-left: 0.8rem;
     padding: 0.7rem 1.4rem;
     border-radius: 8px;
     font-size: 1rem;
@@ -410,6 +537,8 @@ body.dark-mode .profile-details button[type="button"]:hover {
 
     .profile-info p {
         font-size: 1rem;
+        justify-content: center;
+        /* Center icons and text */
     }
 
     .profile-actions {
@@ -422,73 +551,13 @@ body.dark-mode .profile-details button[type="button"]:hover {
         /* Full width buttons */
         justify-content: center;
     }
-}
-/* Add these new rules or update your existing profile.css with the enhancements */
 
-.profile-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-}
+    .profile-details .form-actions {
+        flex-direction: column;
+        gap: 0.6rem;
+    }
 
-.profile-info p {
-    font-size: 1.05rem;
-    margin: 4px 0;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    color: var(--light-secondary-text);
-}
-
-body.dark-mode .profile-info p {
-    color: var(--dark-secondary-text);
-}
-
-.profile-info p i {
-    color: var(--accent-color);
-    width: 20px;
-    min-width: 20px;
-    text-align: center;
-}
-
-#profile-verified.verified {
-    color: green;
-    font-weight: 500;
-}
-
-#profile-verified.unverified {
-    color: red;
-    font-weight: 500;
-}
-
-#profile-last-login {
-    font-style: italic;
-}
-
-/* Edit Profile Inputs */
-.profile-details input[type="text"],
-.profile-details input[type="email"],
-.profile-details input[type="password"] {
-    padding: 0.7rem 0.9rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: 0.2s ease-in-out;
-    background: var(--light-input-bg);
-    color: var(--light-input-text);
-}
-
-body.dark-mode .profile-details input {
-    background: var(--dark-input-bg);
-    color: var(--dark-input-text);
-    border: 1px solid var(--dark-border);
-}
-
-.profile-details label {
-    font-weight: 500;
-    color: var(--light-text);
-}
-
-body.dark-mode .profile-details label {
-    color: var(--dark-text);
+    .profile-details .form-actions button {
+        width: 100%;
+    }
 }
