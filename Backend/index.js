@@ -1061,10 +1061,11 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
         client = await pool.connect();
         await client.query('BEGIN');
 
-        // 1. Calculate total with format-adjusted prices from frontend
-        const serverTotal = items.reduce((sum, item) =>
+        const itemsTotal = items.reduce((sum, item) =>
             sum + (parseFloat(item.price) * item.quantity), 0
         );
+        const shippingCost = 5.00;
+        const serverTotal = itemsTotal + shippingCost;
 
         // 2. Create order
         const orderResult = await client.query(`
