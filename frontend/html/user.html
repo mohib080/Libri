@@ -21,35 +21,36 @@
                     <a href="#" id="categories-nav-link">Categories</a>
                     <a href="#">Contact</a>
                 </nav>
+                <!-- Seller Button Added Here -->
+                <a href="seller-login.html" class="seller-btn" title="Seller Login">
+                    <i class="fas fa-store"></i> Seller
+                </a>
                 <a href="cart.html" class="cart-btn" id="cart-nav-btn" title="Cart"><i class="fas fa-shopping-cart"></i>
                     <span id="cart-item-count" class="cart-count">0</span></a>
                 <a href="wishlist.html" class="wishlist-btn" id="wishlist-nav-btn" title="Wishlist"><i
-                        class="fas fa-heart"></i><span id="wishlist-item-count" class="wishlist-count">0</span></a>
+                        class="fas fa-heart"></i> <span id="wishlist-item-count" class="wishlist-count">0</span></a>
+                <button id="dark-mode-toggle" class="dark-mode-btn" title="Toggle Dark Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
                 <div class="profile-container">
-                    <a href="#" id="profile-link" class="profile-link" title="Profile">
-                        <i class="fas fa-user-circle"></i>
-                    </a>
+                    <a href="#" class="profile-link" id="profile-nav-btn" title="Profile"><i
+                            class="fas fa-user-circle"></i></a>
                     <div class="profile-dropdown">
                         <a href="profile.html">My Profile</a>
                         <a href="orders.html">My Orders</a>
-                        <a href="settings.html">Settings</a>
-                        <a href="logout.html">Logout</a>
+                        <a href="logout.html" id="logout-link">Logout</a>
                     </div>
                 </div>
-                <button id="dark-mode-toggle" class="dark-mode-btn">
-                    <i class="fas fa-moon"></i>
-                </button>
             </div>
         </div>
     </header>
 
     <section class="hero">
         <div class="container">
-            <h2>Your Gateway to Every Book Imaginable</h2>
-            <p>Explore the best collection of books, eBooks, and more—all in one place.</p>
-
+            <h2>Your Journey to Knowledge Starts Here</h2>
+            <p>Discover millions of books, from bestsellers to hidden gems. Find your next great read with Libri.</p>
             <div class="hero-search">
-                <input type="text" id="hero-search-box" class="typing-placeholder" placeholder="" autocomplete="off" />
+                <input type="text" id="hero-search-box" placeholder="" autocomplete="off" />
                 <button type="submit" style="display:none;">Search</button>
             </div>
         </div>

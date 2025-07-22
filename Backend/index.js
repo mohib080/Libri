@@ -421,7 +421,16 @@ function authenticateToken(req, res, next) {
         req.user = user;
         next();
     });
+
 }
+
+const isSeller = (req, res, next) => {
+    // This check relies on the JWT payload having a 'supplierId' or 'isSeller' flag
+    if (!req.user || !req.user.isSeller) {
+        return res.status(403).json({ error: 'Forbidden: Requires seller privileges' });
+    }
+    next();
+};
 
 // --- PROFILE API (secured) ---
 app.get('/api/profile', authenticateToken, async (req, res) => {
@@ -1260,6 +1269,159 @@ app.put('/api/orders/:orderId/cancel', authenticateToken, async (req, res) => {
         if (client) client.release();
     }
 });
+
+
+// POST /api/seller/signup - Handles new seller registration and immediate login
+app.post('/api/seller/signup', async (req, res) => {
+    const { fullName, email, password } = req.body;
+
+    if (!fullName || !email || !password) {
+        return res.status(400).json({ error: 'Full name, email, and password are required' });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Insert the new supplier and get their details back
+        const newSupplierResult = await pool.query(
+            `INSERT INTO supplier (supplier_name, email, hashed_password) 
+             VALUES ($1, $2, $3) RETURNING supplier_id, supplier_name, email`,
+            [fullName, email, hashedPassword]
+        );
+
+        const newSupplier = newSupplierResult.rows[0];
+
+        // --- ADD THIS SECTION TO AUTOMATICALLY LOG IN ---
+        // Create a JWT payload for the new seller
+        const payload = {
+            supplierId: newSupplier.supplier_id,
+            name: newSupplier.supplier_name,
+            email: newSupplier.email,
+            isSeller: true // Flag to identify this token type
+        };
+
+        // Sign the token
+        const token = jwt.sign(payload, 'your_secret_key', { expiresIn: '1h' }); // Use process.env.JWT_SECRET in production
+
+        // Send back the token and user info
+        res.status(201).json({
+            message: 'Account created and logged in successfully!',
+            token,
+            user: {
+                supplierId: newSupplier.supplier_id,
+                name: newSupplier.supplier_name
+            }
+        });
+
+    } catch (err) {
+        console.error('Seller signup error:', err);
+        if (err.code === '23505') { // Unique constraint violation (email)
+            return res.status(409).json({ error: 'A supplier account with this email already exists.' });
+        }
+        res.status(500).json({ error: 'Failed to create seller account' });
+    }
+});
+
+
+
+app.post('/api/seller/login', async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const result = await pool.query('SELECT * FROM supplier WHERE email = $1', [email]);
+        const supplier = result.rows[0];
+
+        if (!supplier) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const isValidPassword = await bcrypt.compare(password, supplier.hashed_password);
+        if (!isValidPassword) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // Create a JWT payload specifically for sellers
+        const payload = {
+            supplierId: supplier.supplier_id,
+            name: supplier.supplier_name,
+            email: supplier.email,
+            isSeller: true // Flag to identify this token type
+        };
+
+        const token = jwt.sign(payload, 'your_secret_key', { expiresIn: '1h' });
+
+        res.json({
+            message: 'Login successful',
+            token,
+            user: { // Send user info to the frontend
+                supplierId: supplier.supplier_id,
+                name: supplier.supplier_name
+            }
+        });
+
+    } catch (err) {
+        console.error('Seller login error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
+// POST /api/seller/books - Adds a new book to the database and inventory
+app.post('/api/seller/books', authenticateToken, isSeller, async (req, res) => {
+    const { title, format, description, price, isbn, publisher, publicationDate, quantity, authorName } = req.body;
+    const supplierId = req.user.supplierId; // Get supplier ID from the JWT
+    let client;
+
+    try {
+        client = await pool.connect();
+        await client.query('BEGIN');
+
+        // Step 1: Check if author exists, if not, create one.
+        let authorResult = await client.query('SELECT author_id FROM author WHERE name = $1', [authorName]);
+        let authorId;
+        if (authorResult.rows.length === 0) {
+            const newAuthorResult = await client.query('INSERT INTO author (name) VALUES ($1) RETURNING author_id', [authorName]);
+            authorId = newAuthorResult.rows[0].author_id;
+        } else {
+            authorId = authorResult.rows[0].author_id;
+        }
+
+        // Step 2: Insert the new book into the 'book' table
+        const bookResult = await client.query(
+            `INSERT INTO book (title, description, price, isbn, publisher, publication_date, format_id) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING book_id`,
+            [title, description, price, isbn, publisher, publicationDate, format]
+        );
+        const newBookId = bookResult.rows[0].book_id;
+
+        // Step 3: Link book to author
+        await client.query('INSERT INTO book_author (book_id, author_id) VALUES ($1, $2)', [newBookId, authorId]);
+
+        // Step 4: Add the book to the 'inventory' table
+        await client.query(
+            'INSERT INTO inventory (book_id, quantity_in_stock) VALUES ($1, $2)',
+            [newBookId, quantity]
+        );
+
+        // Step 5: Link the book to the supplier in 'book_supply'
+        await client.query(
+            'INSERT INTO book_supply (book_id, supplier_id) VALUES ($1, $2)',
+            [newBookId, supplierId]
+        );
+
+        await client.query('COMMIT');
+        res.status(201).json({ message: 'Book added to inventory successfully!', bookId: newBookId });
+
+    } catch (err) {
+        if (client) await client.query('ROLLBACK');
+        console.error('Error adding book:', err);
+        res.status(500).json({ error: 'Failed to add book to inventory' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+
 
 
 // --- STATIC FILE ROUTES ---
