@@ -1,6 +1,9 @@
+console.log("Script running!");
+
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOMContentLoaded fired!");
     const token = localStorage.getItem('token');
-    
+
     // Security check: Redirect to login if not a valid seller
     let isSeller = false;
     if (token) {
@@ -20,20 +23,42 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    const bookForm = document.getElementById('bookForm');
+    const bookForm = document.getElementById('bookInfoForm');
+
+    const paymentMethodSelect = document.getElementById('payment-method');
+    const cardNumber = document.getElementById('card-number');
+    const cardHolderName = document.getElementById('card-holder-name');
+    const expiryDate = document.getElementById('expiry-date');
+    const cvv = document.getElementById('cvv');
+    const cardFields = [cardNumber, cardHolderName, expiryDate, cvv];
+
+    function updateCardFieldRequirements() {
+        if (paymentMethodSelect.value === 'credit-debit') {
+            cardFields.forEach(field => field.required = true);
+        } else {
+            cardFields.forEach(field => field.required = false);
+        }
+    }
+
+    paymentMethodSelect.addEventListener('change', updateCardFieldRequirements);
+    // Run it once immediately in case the user loads with COD selected
+    updateCardFieldRequirements();
+
+
 
     bookForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+        console.log("Form submit event triggered!");
+
         const formData = {
-            title: document.getElementById('title').value,
-            authorName: document.getElementById('author').value,
+            title: document.getElementById('book-title').value,
+            authorName: document.getElementById('author-name').value,
             format: document.getElementById('format').value,
             description: document.getElementById('description').value,
             price: document.getElementById('price').value,
             isbn: document.getElementById('isbn').value,
             publisher: document.getElementById('publisher').value,
-            publicationDate: document.getElementById('publicationDate').value,
+            publicationDate: document.getElementById('publication-date').value,
             quantity: document.getElementById('quantity').value
         };
 
@@ -46,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify(formData)
             });
-            
+
             const data = await response.json();
             if (!response.ok) throw new Error(data.error);
 

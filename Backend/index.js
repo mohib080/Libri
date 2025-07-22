@@ -1366,27 +1366,33 @@ app.post('/api/seller/login', async (req, res) => {
 });
 
 
-// POST /api/seller/books - Adds a new book to the database and inventory
+
 app.post('/api/seller/books', authenticateToken, isSeller, async (req, res) => {
     const { title, format, description, price, isbn, publisher, publicationDate, quantity, authorName } = req.body;
-    const supplierId = req.user.supplierId; // Get supplier ID from the JWT
+    const supplierId = req.user.supplierId;
     let client;
 
     try {
         client = await pool.connect();
         await client.query('BEGIN');
 
-        // Step 1: Check if author exists, if not, create one.
-        let authorResult = await client.query('SELECT author_id FROM author WHERE name = $1', [authorName]);
+        // Step 1: Check if author exists; if not, create one.
+        let authorResult = await client.query(
+            'SELECT author_id FROM author WHERE name = $1',
+            [authorName]
+        );
         let authorId;
         if (authorResult.rows.length === 0) {
-            const newAuthorResult = await client.query('INSERT INTO author (name) VALUES ($1) RETURNING author_id', [authorName]);
+            const newAuthorResult = await client.query(
+                'INSERT INTO author (name) VALUES ($1) RETURNING author_id',
+                [authorName]
+            );
             authorId = newAuthorResult.rows[0].author_id;
         } else {
             authorId = authorResult.rows[0].author_id;
         }
 
-        // Step 2: Insert the new book into the 'book' table
+        // Step 2: Insert the new book
         const bookResult = await client.query(
             `INSERT INTO book (title, description, price, isbn, publisher, publication_date, format_id) 
              VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING book_id`,
@@ -1394,16 +1400,19 @@ app.post('/api/seller/books', authenticateToken, isSeller, async (req, res) => {
         );
         const newBookId = bookResult.rows[0].book_id;
 
-        // Step 3: Link book to author
-        await client.query('INSERT INTO book_author (book_id, author_id) VALUES ($1, $2)', [newBookId, authorId]);
-
-        // Step 4: Add the book to the 'inventory' table
+        // Step 3: Link book to author **(fix is here)**
         await client.query(
-            'INSERT INTO inventory (book_id, quantity_in_stock) VALUES ($1, $2)',
-            [newBookId, quantity]
+            'INSERT INTO book_author (book_id, author_id) VALUES ($1, $2)',
+            [newBookId, authorId]
         );
 
-        // Step 5: Link the book to the supplier in 'book_supply'
+        // Step 4: Add to inventory
+        await client.query(
+            'INSERT INTO inventory (book_id, quantity_in_stock,format_id) VALUES ($1, $2, $3)',
+            [newBookId, quantity, format]
+        );
+
+        // Step 5: Link book to supplier
         await client.query(
             'INSERT INTO book_supply (book_id, supplier_id) VALUES ($1, $2)',
             [newBookId, supplierId]
@@ -1411,7 +1420,6 @@ app.post('/api/seller/books', authenticateToken, isSeller, async (req, res) => {
 
         await client.query('COMMIT');
         res.status(201).json({ message: 'Book added to inventory successfully!', bookId: newBookId });
-
     } catch (err) {
         if (client) await client.query('ROLLBACK');
         console.error('Error adding book:', err);

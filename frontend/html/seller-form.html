@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book Information Entry</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -236,7 +235,10 @@
             <!-- COD Details (hidden by default) -->
             <div id="codDetails" class="space-y-6 hidden">
                 <p class="text-gray-600 text-sm">No additional details required for Cash on Delivery.</p>
-            </div>
+            </div>\
+
+            <div id="notification" style="display:none;"></div>
+
 
             <!-- Credit/Debit Card Details (hidden by default) -->
             <div id="creditDebitDetails" class="space-y-6 hidden">
@@ -281,137 +283,7 @@
         </div>
     </div>
 
-    <!-- REMOVE your old <script> tag and REPLACE it with this one -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const token = localStorage.getItem('token');
-
-            // Security Check: Verify the user is a logged-in seller.
-            let isSeller = false;
-            if (token) {
-                try {
-                    // Decode the JWT to check the payload
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    if (payload.isSeller) {
-                        isSeller = true;
-                    }
-                } catch (e) {
-                    // If token is malformed, treat as not logged in
-                    isSeller = false;
-                }
-            }
-
-            // If not a valid seller, redirect to the login page.
-            if (!isSeller) {
-                localStorage.clear(); // Clear any invalid credentials
-                window.location.href = 'seller-login.html';
-                return; // Stop executing the rest of the script
-            }
-
-            // --- Get all the necessary DOM elements ---
-            const bookInfoForm = document.getElementById('bookInfoForm');
-            const paymentMethodSelect = document.getElementById('payment-method');
-            const bankAccountDetails = document.getElementById('bankAccountDetails');
-            const codDetails = document.getElementById('codDetails');
-            const creditDebitDetails = document.getElementById('creditDebitDetails');
-            const myModal = document.getElementById('myModal');
-            const modalMessage = document.getElementById('modalMessage');
-            const closeButton = document.querySelector('.close-button');
-
-            // Function to display a custom modal message
-            function showModalMessage(message, isSuccess) {
-                modalMessage.textContent = message;
-                // Optional: change color based on success/error
-                modalMessage.style.color = isSuccess ? '#16a34a' : '#dc2626';
-                myModal.style.display = 'flex';
-            }
-
-            // --- Event Listeners ---
-
-            // Close modal when close button (X) is clicked
-            closeButton.addEventListener('click', () => {
-                myModal.style.display = 'none';
-            });
-
-            // Close modal if user clicks outside of it
-            window.addEventListener('click', (event) => {
-                if (event.target == myModal) {
-                    myModal.style.display = 'none';
-                }
-            });
-
-            // Event listener for payment method selection change (keeps your UI logic)
-            paymentMethodSelect.addEventListener('change', (event) => {
-                bankAccountDetails.classList.add('hidden');
-                codDetails.classList.add('hidden');
-                creditDebitDetails.classList.add('hidden');
-
-                const selectedMethod = event.target.value;
-                if (selectedMethod === 'bank-account') {
-                    bankAccountDetails.classList.remove('hidden');
-                } else if (selectedMethod === 'cod') {
-                    codDetails.classList.remove('hidden');
-                } else if (selectedMethod === 'credit-debit') {
-                    creditDebitDetails.classList.remove('hidden');
-                }
-            });
-
-            // --- Main Form Submission Handler ---
-            bookInfoForm.addEventListener('submit', async (event) => {
-                event.preventDefault(); // Prevent the form from reloading the page
-
-                // Create a data object with values from the form
-                const formData = {
-                    title: document.getElementById('book-title').value,
-                    authorName: document.getElementById('author-name').value,
-                    quantity: parseInt(document.getElementById('quantity').value, 10),
-                    format: parseInt(document.getElementById('format').value, 10),
-                    description: document.getElementById('description').value,
-                    price: parseFloat(document.getElementById('price').value),
-                    isbn: document.getElementById('isbn').value,
-                    publisher: document.getElementById('publisher').value,
-                    publicationDate: document.getElementById('publication-date').value
-                };
-
-                // Basic validation
-                if (!formData.title || !formData.authorName || !formData.quantity || !formData.format) {
-                    showModalMessage('Please fill out all required fields.', false);
-                    return;
-                }
-
-                try {
-                    // Send the data to your backend API
-                    const response = await fetch('http://localhost:3000/api/seller/books', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}` // Include the auth token
-                        },
-                        body: JSON.stringify(formData)
-                    });
-
-                    const result = await response.json();
-
-                    if (!response.ok) {
-                        // If the server returns an error, display it
-                        throw new Error(result.error || 'An unknown error occurred.');
-                    }
-
-                    // Show a success message and reset the form
-                    showModalMessage(result.message, true);
-                    bookInfoForm.reset();
-                    // Hide payment details sections after reset
-                    bankAccountDetails.classList.add('hidden');
-                    codDetails.classList.add('hidden');
-                    creditDebitDetails.classList.add('hidden');
-
-                } catch (error) {
-                    // Show any network or server errors to the user
-                    showModalMessage(error.message, false);
-                }
-            });
-        });
-    </script>
+    <script src="../js/seller-form.js"></script>
 
 </body>
 
