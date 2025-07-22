@@ -820,3 +820,21 @@ body.dark-mode .clear-filters-btn:hover {
     /* Adjust padding for mobile button */
   }
 }
+
+
+/* Add this to your styles.css file */
+.admin-btn {
+    background-color: #4A5568; /* A different color, e.g., dark gray */
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 10px;
+    transition: background-color 0.3s;
+}
+
+.admin-btn:hover {
+    background-color: #2D3748; /* Darker gray on hover */
+}
+

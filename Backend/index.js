@@ -432,6 +432,15 @@ const isSeller = (req, res, next) => {
     next();
 };
 
+const isAdmin = (req, res, next) => {
+    // Assumes authenticateToken has attached user info to req.user
+    if (req.user && req.user.isAdmin) {
+        next(); // User is an admin, proceed to the next middleware/route handler
+    } else {
+        res.status(403).json({ error: 'Forbidden: Access is restricted to administrators.' });
+    }
+};
+
 // --- PROFILE API (secured) ---
 app.get('/api/profile', authenticateToken, async (req, res) => {
     try {
@@ -1426,6 +1435,41 @@ app.post('/api/seller/books', authenticateToken, isSeller, async (req, res) => {
         res.status(500).json({ error: 'Failed to add book to inventory' });
     } finally {
         if (client) client.release();
+    }
+});
+
+// --- ADMIN ROUTES ---
+
+// Example: Get dashboard statistics
+app.get('/api/admin/stats', authenticateToken, isAdmin, async (req, res) => {
+    // In a real app, you would query your database for these stats
+    try {
+        const salesData = { totalSales: 12345, totalOrders: 456, totalUsers: 789, totalBooks: 1234 };
+        res.json(salesData);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch admin statistics' });
+    }
+});
+
+// Example: Get all users
+app.get('/api/admin/users', authenticateToken, isAdmin, async (req, res) => {
+    // Query your database for all users and sellers
+    try {
+        const users = await pool.query('SELECT user_id, full_name, email, role FROM users'); // Adjust table/column names
+        res.json(users.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
+
+// Example: Get all books
+app.get('/api/admin/books', authenticateToken, isAdmin, async (req, res) => {
+    // Query your database for book and inventory info
+    try {
+        const books = await pool.query('SELECT b.book_id, b.title, a.name as author, i.price, i.quantity_in_stock FROM book b JOIN inventory i ON b.book_id = i.book_id JOIN book_author ba ON b.book_id = ba.book_id JOIN author a ON ba.author_id = a.author_id');
+        res.json(books.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch books' });
     }
 });
 
