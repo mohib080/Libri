@@ -1468,38 +1468,142 @@ app.post('/api/admin/login', async (req, res) => {
 });
 
 
-// Example: Get dashboard statistics
-app.get('/api/admin/stats', authenticateToken, isAdmin, async (req, res) => {
-    // In a real app, you would query your database for these stats
+app.get('/api/admin/total-users', authenticateToken, isAdmin, async (req, res) => {
     try {
-        const salesData = { totalSales: 12345, totalOrders: 456, totalUsers: 789, totalBooks: 1234 };
-        res.json(salesData);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch admin statistics' });
+        const result = await pool.query('SELECT COUNT(*) AS total_users FROM customer');
+        res.json({ totalUsers: parseInt(result.rows[0].total_users, 10) });
+    } catch (err) {
+        console.error('Count users error:', err);
+        res.status(500).json({ error: 'Failed to get total users' });
     }
 });
 
-// Example: Get all users
-app.get('/api/admin/users', authenticateToken, isAdmin, async (req, res) => {
-    // Query your database for all users and sellers
+app.get('/api/admin/total-orders', authenticateToken, isAdmin, async (req, res) => {
     try {
-        const users = await pool.query('SELECT user_id, full_name, email, role FROM users'); // Adjust table/column names
-        res.json(users.rows);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch users' });
+        const result = await pool.query('SELECT COUNT(*) AS total_orders FROM "order" WHERE status = \'completed\'');
+        res.json({ totalOrders: parseInt(result.rows[0].total_orders, 10) });
+    } catch (err) {
+        console.error('Count orders error:', err);
+        res.status(500).json({ error: 'Failed to get total orders' });
     }
 });
 
-// Example: Get all books
+app.get('/api/admin/total-books-in-stock', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(DISTINCT book_id) AS unique_books FROM inventory WHERE quantity_in_stock > 0');
+        res.json({ booksInStock: parseInt(result.rows[0].unique_books, 10) });
+    } catch (err) {
+        console.error('Count books in stock error:', err);
+        res.status(500).json({ error: 'Failed to get books in stock' });
+    }
+});
+app.get('/api/admin/total-sales', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COALESCE(SUM(total_amount), 0) AS total_sales FROM "order" WHERE status=\'completed\'');
+        res.json({ totalSales: parseFloat(result.rows[0].total_sales) });
+    } catch (err) {
+        console.error('Count total sales error:', err);
+        res.status(500).json({ error: 'Failed to get total sales' });
+    }
+});
+
 app.get('/api/admin/books', authenticateToken, isAdmin, async (req, res) => {
-    // Query your database for book and inventory info
     try {
-        const books = await pool.query('SELECT b.book_id, b.title, a.name as author, i.price, i.quantity_in_stock FROM book b JOIN inventory i ON b.book_id = i.book_id JOIN book_author ba ON b.book_id = ba.book_id JOIN author a ON ba.author_id = a.author_id');
-        res.json(books.rows);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch books' });
+        // Adjust these joins/fields for your schema as needed.
+        const result = await pool.query(`
+            SELECT
+    b.book_id,
+    b.title,
+    STRING_AGG(DISTINCT a.name, ', ') AS authors,
+    b.price,
+    COALESCE(SUM(i.quantity_in_stock), 0) AS total_stock,
+    bc.category_name,
+    sc.sub_category_name,
+    COALESCE(AVG(r.rating), 0)::numeric(3, 2) AS average_rating,
+    COUNT(r.review_id) AS review_count
+FROM book b
+LEFT JOIN book_author ba ON b.book_id = ba.book_id
+LEFT JOIN author a ON ba.author_id = a.author_id
+LEFT JOIN inventory i ON b.book_id = i.book_id
+LEFT JOIN book_sub_category bsc ON b.book_id = bsc.book_id
+LEFT JOIN sub_category sc ON bsc.sub_category_id = sc.sub_category_id
+LEFT JOIN book_category bc ON sc.category_id = bc.category_id
+LEFT JOIN review r ON b.book_id = r.book_id
+GROUP BY b.book_id, b.title, b.price, bc.category_name, sc.sub_category_name
+ORDER BY b.title;
+`
+        );
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Admin books load error:', err);
+        res.status(500).json({ error: 'Failed to fetch admin books' });
     }
 });
+
+// Add this route to your Express app (index.js)
+
+app.get('/api/admin/orders', authenticateToken, isAdmin, async (req, res) => {
+    let client;
+    try {
+        client = await pool.connect();
+        const result = await client.query(`
+            SELECT
+                o.order_id,
+                o.order_date,
+                o.total_amount,
+                o.status,
+                o.tracking_number,
+                c.name AS customer_name
+            FROM
+                "order" o
+            JOIN
+                customer c ON o.customer_id = c.customer_id
+            ORDER BY
+                o.order_date DESC;
+        `);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching admin orders:', err);
+        res.status(500).json({ error: 'Failed to retrieve orders.' });
+    } finally {
+        if (client) {
+            client.release();
+        }
+    }
+});
+
+// Route to get ONLY customers
+app.get('/api/admin/customers', authenticateToken, isAdmin, async (req, res) => {
+    let client;
+    try {
+        client = await pool.connect();
+        const result = await client.query('SELECT customer_id, name, email FROM customer ORDER BY customer_id');
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching customers:', err);
+        res.status(500).json({ error: 'Failed to retrieve customers.' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// Route to get ONLY sellers
+app.get('/api/admin/sellers', authenticateToken, isAdmin, async (req, res) => {
+    let client;
+    try {
+        client = await pool.connect();
+
+        const result = await client.query('SELECT supplier_id,supplier_name, email FROM supplier ORDER BY supplier_id');
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching sellers:', err);
+        res.status(500).json({ error: 'Failed to retrieve sellers.' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+
 
 
 
