@@ -1440,6 +1440,34 @@ app.post('/api/seller/books', authenticateToken, isSeller, async (req, res) => {
 
 // --- ADMIN ROUTES ---
 
+app.post('/api/admin/login', async (req, res) => {
+    const { email, secretCode } = req.body;
+    if (!email || !secretCode) {
+        return res.status(400).json({ error: 'Email and secret code are required.' });
+    }
+    let client;
+    try {
+        client = await pool.connect();
+        const result = await client.query(
+            'SELECT admin_id, email FROM admin WHERE email = $1 AND secret_code = $2',
+            [email, secretCode]
+        );
+        if (result.rows.length === 0) {
+            return res.status(401).json({ error: 'Invalid email or secret code.' });
+        }
+        // If you want to issue a JWT for admin session:
+        const payload = { adminId: result.rows[0].admin_id, email: result.rows[0].email, isAdmin: true };
+        const token = jwt.sign(payload, 'your_secret_key', { expiresIn: '2h' });
+        res.json({ message: 'Admin login successful', token });
+    } catch (err) {
+        console.error('Admin login error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+
 // Example: Get dashboard statistics
 app.get('/api/admin/stats', authenticateToken, isAdmin, async (req, res) => {
     // In a real app, you would query your database for these stats

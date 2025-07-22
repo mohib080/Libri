@@ -34,14 +34,14 @@ document.addEventListener('DOMContentLoaded', () => {
         books: document.getElementById('books-content'),
         orders: document.getElementById('orders-content'),
     };
-    
+
     const logoutButton = document.getElementById('logout-button');
 
     // --- Navigation Logic ---
     function showSection(sectionName) {
         Object.values(sections).forEach(section => section.classList.add('hidden'));
         Object.values(links).forEach(link => link.classList.remove('active'));
-        
+
         sections[sectionName].classList.remove('hidden');
         links[sectionName].classList.add('active');
     }
@@ -60,15 +60,15 @@ document.addEventListener('DOMContentLoaded', () => {
         showSection('books');
         loadBooks();
     });
-    
+
     links.orders.addEventListener('click', () => {
         showSection('orders');
         loadOrders();
     });
-    
+
     logoutButton.addEventListener('click', () => {
         localStorage.clear();
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
     });
 
     // --- Data Fetching and Rendering ---
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <tr><td class="py-2">102</td><td>To Kill a Mockingbird</td><td>Harper Lee</td><td>$12.50</td><td>30</td><td><button class="text-indigo-600">Edit</button></td></tr>
         `;
     }
-    
+
     async function loadOrders() {
         // Fetch from /api/admin/orders
         const ordersTableBody = document.getElementById('orders-table-body');

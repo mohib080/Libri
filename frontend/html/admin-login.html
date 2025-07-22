@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Libri</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* Login Container Styling */
+        .login-container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            /* Dark gray text */
+            margin-bottom: 30px;
+        }
+
+        /* Form Group Styling */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4b5563;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            /* Important for padding */
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            /* Indigo focus color */
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+
+        /* Button Styling */
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #4f46e5;
+            /* Indigo */
+            color: #ffffff;
+            font-weight: 600;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #4338ca;
+            /* Darker Indigo */
+        }
+
+        /* Notification Styling */
+        #notification {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: none;
+            /* Hidden by default */
+        }
+
+        .error {
+            background-color: #fee2e2;
+            /* Light red */
+            color: #b91c1c;
+            /* Dark red */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container">
+        <h2>Admin Portal</h2>
+        <form id="adminLoginForm">
+            <div class="form-group">
+                <label for="adminEmail">Email</label>
+                <input type="email" id="adminEmail" required />
+            </div>
+            <div class="form-group">
+                <label for="adminSecretCode">Secret Code</label>
+                <input type="password" id="adminSecretCode" required />
+            </div>
+            <button type="submit">Login</button>
+        </form>
+        <div id="notification"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('adminLoginForm');
+            const notificationDiv = document.getElementById('notification');
+
+            loginForm.addEventListener('submit', (event) => {
+                event.preventDefault(); // Stop the form from submitting the traditional way
+
+                const email = document.getElementById('adminEmail').value;
+                const password = document.getElementById('adminPassword').value;
+                const secretCode = document.getElementById('adminSecretCode').value;
+
+                // --- !!! SECURITY WARNING !!! ---
+                // These credentials are hard-coded for demonstration only.
+                // In a real application, this check MUST be done on a secure backend server.
+                const CORRECT_EMAIL = 'admin@libri.com';
+                const CORRECT_SECRET_CODE = 'secret-admin-code';
+
+                if (email === CORRECT_EMAIL && secretCode === CORRECT_SECRET_CODE) {
+                    // --- Login Successful ---
+
+                    // 1. Create a fake JWT token for the admin page to use.
+                    // The admin page checks for a token with "isAdmin: true".
+                    const payload = { isAdmin: true, name: 'Admin User' };
+                    // In a real app, the server creates this. Here, we simulate it.
+                    const fakeToken = 'header.' + btoa(JSON.stringify(payload)) + '.signature';
+
+                    // 2. Store the token in localStorage.
+                    localStorage.setItem('token', fakeToken);
+
+                    // 3. Redirect to the admin dashboard.
+                    window.location.href = 'admin.html';
+
+                } else {
+                    // --- Login Failed ---
+                    notificationDiv.textContent = 'Invalid credentials or secret code.';
+                    notificationDiv.className = 'error'; // Apply error styling
+                    notificationDiv.style.display = 'block'; // Show the notification
+                }
+            });
+        });
+
+        document.getElementById('adminLoginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const email = document.getElementById('adminEmail').value;
+            const secretCode = document.getElementById('adminSecretCode').value;
+            const notification = document.getElementById('notification');
+
+            const response = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, secretCode })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                notification.textContent = 'Login successful!';
+                notification.style.color = 'green';
+                // Store token for secure admin section
+                localStorage.setItem('token', data.token);
+                // Redirect to admin dashboard
+                window.location.href = 'admin.html';
+            } else {
+                notification.textContent = data.error;
+                notification.style.color = 'red';
+            }
+        });
+
+    </script>
+
+</body>
+
+</html>

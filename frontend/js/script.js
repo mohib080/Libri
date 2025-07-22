@@ -1,4 +1,3 @@
-
 localStorage.removeItem('token');
 localStorage.removeItem('customer');
 // --- 1. AUTH REDIRECT LOGIC ---

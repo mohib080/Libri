@@ -38,19 +38,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const profileContainer = document.querySelector('.profile-container');
     const adminBtn = document.getElementById('admin-btn'); // Get the admin button
 
-// --- NEW LOGIC TO SHOW/HIDE ADMIN BUTTON ---
-const token = localStorage.getItem('token');
-if (token && adminBtn) {
-    try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload.isAdmin) {
-            adminBtn.style.display = 'inline-block'; // Show the button
-        }
-    } catch (e) {
-        console.error("Failed to parse token for admin check.", e);
-    }
-}
-
     if (profileContainer) {
         const profileDropdown = profileContainer.querySelector('.profile-dropdown');
 
