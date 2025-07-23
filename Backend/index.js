@@ -1603,6 +1603,165 @@ app.get('/api/admin/sellers', authenticateToken, isAdmin, async (req, res) => {
     }
 });
 
+// Get all notifications for admin
+app.get('/api/admin/notifications', authenticateToken, isAdmin, async (req, res) => {
+    let client;
+    try {
+        client = await pool.connect();
+        const result = await client.query(`
+            SELECT 
+                notification_id,
+                type,
+                title,
+                message,
+                data,
+                is_read,
+                created_at
+            FROM admin_notifications 
+            ORDER BY created_at DESC
+            LIMIT 50
+        `);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching notifications:', err);
+        res.status(500).json({ error: 'Failed to fetch notifications' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// Get unread notification count
+app.get('/api/admin/notifications/count', authenticateToken, isAdmin, async (req, res) => {
+    let client;
+    try {
+        client = await pool.connect();
+        const result = await client.query(`
+            SELECT COUNT(*) as unread_count 
+            FROM admin_notifications 
+            WHERE is_read = FALSE
+        `);
+        res.json({ unreadCount: parseInt(result.rows[0].unread_count, 10) });
+    } catch (err) {
+        console.error('Error fetching notification count:', err);
+        res.status(500).json({ error: 'Failed to fetch notification count' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// Mark notification as read
+app.put('/api/admin/notifications/:id/read', authenticateToken, isAdmin, async (req, res) => {
+    const notificationId = parseInt(req.params.id, 10);
+    let client;
+    try {
+        client = await pool.connect();
+        await client.query(`
+            UPDATE admin_notifications 
+            SET is_read = TRUE 
+            WHERE notification_id = $1
+        `, [notificationId]);
+        res.json({ message: 'Notification marked as read' });
+    } catch (err) {
+        console.error('Error marking notification as read:', err);
+        res.status(500).json({ error: 'Failed to mark notification as read' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// Mark all notifications as read
+app.put('/api/admin/notifications/read-all', authenticateToken, isAdmin, async (req, res) => {
+    let client;
+    try {
+        client = await pool.connect();
+        await client.query('UPDATE admin_notifications SET is_read = TRUE WHERE is_read = FALSE');
+        res.json({ message: 'All notifications marked as read' });
+    } catch (err) {
+        console.error('Error marking all notifications as read:', err);
+        res.status(500).json({ error: 'Failed to mark all notifications as read' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+
+// Get user notifications
+app.get('/api/user/notifications', authenticateToken, async (req, res) => {
+    let client;
+    try {
+        const customerId = req.user.customerId || req.user.userId;
+        client = await pool.connect();
+
+        const result = await client.query(`
+            SELECT 
+                notification_id,
+                type,
+                title,
+                message,
+                order_id,
+                is_read,
+                created_at
+            FROM user_notifications 
+            WHERE customer_id = $1
+            ORDER BY created_at DESC
+            LIMIT 20
+        `, [customerId]);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching user notifications:', err);
+        res.status(500).json({ error: 'Failed to fetch notifications' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// Get unread notification count
+app.get('/api/user/notifications/count', authenticateToken, async (req, res) => {
+    let client;
+    try {
+        const customerId = req.user.customerId || req.user.userId;
+        client = await pool.connect();
+
+        const result = await client.query(`
+            SELECT COUNT(*) as unread_count 
+            FROM user_notifications 
+            WHERE customer_id = $1 AND is_read = FALSE
+        `, [customerId]);
+
+        res.json({ unreadCount: parseInt(result.rows[0].unread_count, 10) });
+    } catch (err) {
+        console.error('Error fetching notification count:', err);
+        res.status(500).json({ error: 'Failed to fetch notification count' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// Mark notification as read
+app.put('/api/user/notifications/:id/read', authenticateToken, async (req, res) => {
+    const notificationId = parseInt(req.params.id, 10);
+    const customerId = req.user.customerId || req.user.userId;
+
+    let client;
+    try {
+        client = await pool.connect();
+        await client.query(`
+            UPDATE user_notifications 
+            SET is_read = TRUE 
+            WHERE notification_id = $1 AND customer_id = $2
+        `, [notificationId, customerId]);
+
+        res.json({ message: 'Notification marked as read' });
+    } catch (err) {
+        console.error('Error marking notification as read:', err);
+        res.status(500).json({ error: 'Failed to mark notification as read' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+
 
 
 

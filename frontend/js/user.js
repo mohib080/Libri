@@ -83,6 +83,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const cartItemCountSpan = document.getElementById('cart-item-count');
     const notificationArea = document.getElementById('notification-area');
 
+    // Notification elements
+    const notificationBtn = document.getElementById('notification-btn');
+    const notificationDropdown = document.getElementById('notification-dropdown');
+    const notificationCount = document.getElementById('notification-count');
+    const notificationList = document.getElementById('notification-list');
+    const markAllReadBtn = document.getElementById('mark-all-read');
+
     if (cartNavBtn) {
         cartNavBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -169,6 +176,170 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Error updating wishlist count:', error);
             wishlistItemCountSpan.textContent = '0';
         }
+    }
+
+    // --- NOTIFICATION SYSTEM ---
+    async function updateNotificationCount() {
+        const token = getAuthToken();
+        if (!token || !notificationCount) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/user/notifications/count`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const count = data.unreadCount;
+
+                if (count > 0) {
+                    notificationCount.textContent = count;
+                    notificationCount.style.display = 'flex';
+                } else {
+                    notificationCount.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Error updating notification count:', error);
+        }
+    }
+
+    async function loadNotifications() {
+        const token = getAuthToken();
+        if (!token || !notificationList) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/user/notifications`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const notifications = await response.json();
+                displayNotifications(notifications);
+            }
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+            if (notificationList) {
+                notificationList.innerHTML = '<div class="no-notifications">Error loading notifications</div>';
+            }
+        }
+    }
+
+    function displayNotifications(notifications) {
+        if (!notificationList) return;
+
+        if (notifications.length === 0) {
+            notificationList.innerHTML = '<div class="no-notifications">No notifications yet</div>';
+            if (markAllReadBtn) {
+                markAllReadBtn.disabled = true;
+                markAllReadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            return;
+        }
+
+        const hasUnread = notifications.some(n => !n.is_read);
+        if (markAllReadBtn) {
+            markAllReadBtn.disabled = !hasUnread;
+            if (hasUnread) {
+                markAllReadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                markAllReadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        notificationList.innerHTML = notifications.map(notification => `
+            <div class="notification-item ${!notification.is_read ? 'unread' : ''}" data-id="${notification.notification_id}">
+                <div class="notification-title">${notification.title}</div>
+                <div class="notification-message">${notification.message}</div>
+                <div class="notification-time">${new Date(notification.created_at).toLocaleString()}</div>
+            </div>
+        `).join('');
+
+        // Add click handlers
+        document.querySelectorAll('.notification-item').forEach(item => {
+            item.addEventListener('click', async () => {
+                const notificationId = item.dataset.id;
+                await markNotificationAsRead(notificationId);
+                item.classList.remove('unread');
+                updateNotificationCount();
+
+                // Check if we need to disable the button after marking one as read
+                const remainingUnread = document.querySelectorAll('.notification-item.unread');
+                if (remainingUnread.length === 0 && markAllReadBtn) {
+                    markAllReadBtn.disabled = true;
+                    markAllReadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        });
+    }
+
+    async function markNotificationAsRead(notificationId) {
+        const token = getAuthToken();
+        if (!token) return;
+
+        try {
+            await fetch(`${API_BASE_URL}/user/notifications/${notificationId}/read`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+        }
+    }
+
+    async function markAllNotificationsAsRead() {
+        const token = getAuthToken();
+        if (!token) return;
+
+        try {
+            // Hide count and disable button immediately
+            if (notificationCount) {
+                notificationCount.style.display = 'none';
+            }
+            if (markAllReadBtn) {
+                markAllReadBtn.disabled = true;
+                markAllReadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            // Mark all as read on server
+            const notifications = document.querySelectorAll('.notification-item.unread');
+            for (const item of notifications) {
+                await markNotificationAsRead(item.dataset.id);
+            }
+
+            // Reload notifications
+            loadNotifications();
+
+        } catch (error) {
+            console.error('Error marking all notifications as read:', error);
+            updateNotificationCount(); // Restore count on error
+        }
+    }
+
+    // Event listeners for notification system
+    if (notificationBtn && notificationDropdown) {
+        notificationBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = notificationDropdown.classList.contains('show');
+
+            if (isVisible) {
+                notificationDropdown.classList.remove('show');
+            } else {
+                notificationDropdown.classList.add('show');
+                loadNotifications();
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!notificationBtn.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                notificationDropdown.classList.remove('show');
+            }
+        });
+    }
+
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', markAllNotificationsAsRead);
     }
 
     async function checkCartStatusForBooks() {
@@ -308,7 +479,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-
     async function addToCart(bookId, quantity = 1) {
         const token = getAuthToken();
         if (!token) {
@@ -390,7 +560,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     clickedButton.style.background = 'linear-gradient(45deg, #6c757d, #5a6268)'; // Grey gradient
                     clickedButton.style.cursor = 'not-allowed';
                 }
-                updateWishlistCount(); 
+                updateWishlistCount();
             } else if (response.status === 409) {
                 showNotification('This book is already in your wishlist.', 'info');
                 const clickedButton = document.querySelector(`.book-card button.add-to-wishlist-btn[data-book-id="${bookId}"]`);
@@ -411,7 +581,6 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Error adding to wishlist:', error);
         }
     }
-
 
     function displayBooks(books) {
         if (!bookGrid) return;
@@ -575,11 +744,17 @@ document.addEventListener('DOMContentLoaded', function () {
             fetchBooks(),
             fetchAndPopulateCategories(),
             updateCartCount(),
-            updateWishlistCount()
+            updateWishlistCount(),
+            updateNotificationCount() // Add notification count to initialization
         ]);
     }
 
     initializePageData();
+
+    // Check for new notifications periodically (every 30 seconds)
+    if (getAuthToken()) {
+        setInterval(updateNotificationCount, 30000);
+    }
 
     const typingPlaceholder = document.getElementById('hero-search-box');
     const placeholderTexts = [

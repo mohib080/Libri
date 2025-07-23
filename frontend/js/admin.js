@@ -115,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const sellersTableBody = document.getElementById('sellers-table-body');
         sellersTableBody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-gray-500">Loading sellers...</td></tr>`;
         try {
-            const token = localStorage.getItem('token');
             const response = await fetch('/api/admin/sellers', { headers: { 'Authorization': `Bearer ${token}` } });
             if (!response.ok) throw new Error('Failed to fetch sellers');
             const sellers = await response.json();
@@ -137,7 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
             sellersTableBody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-red-600">${err.message}</td></tr>`;
         }
     }
-
 
     async function loadBooks() {
         const booksTableBody = document.getElementById('books-table-body');
@@ -198,6 +196,162 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Failed to load orders:', err);
             ordersTableBody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-red-600">Error: ${err.message}</td></tr>`;
         }
+    }
+
+    // --- NOTIFICATION SYSTEM ---
+    // Notification elements
+    const notificationBtn = document.getElementById('notification-btn');
+    const notificationDropdown = document.getElementById('notification-dropdown');
+    const notificationBadge = document.getElementById('notification-badge');
+    const notificationsList = document.getElementById('notifications-list');
+    const markAllReadBtn = document.getElementById('mark-all-read');
+
+    // Only initialize notification system if elements exist
+    if (notificationBtn && notificationDropdown && notificationBadge && notificationsList && markAllReadBtn) {
+
+        // Notification functions
+        async function loadNotifications() {
+            try {
+                const response = await fetch('/api/admin/notifications', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch notifications');
+                const notifications = await response.json();
+
+                displayNotifications(notifications);
+                updateNotificationCount();
+            } catch (err) {
+                console.error('Error loading notifications:', err);
+            }
+        }
+
+        async function updateNotificationCount() {
+            try {
+                const response = await fetch('/api/admin/notifications/count', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch notification count');
+                const data = await response.json();
+
+                const count = data.unreadCount;
+                if (count > 0) {
+                    notificationBadge.textContent = count;
+                    notificationBadge.classList.remove('hidden');
+                } else {
+                    notificationBadge.classList.add('hidden');
+                }
+            } catch (err) {
+                console.error('Error updating notification count:', err);
+            }
+        }
+
+        function displayNotifications(notifications) {
+            if (notifications.length === 0) {
+                notificationsList.innerHTML = '<div class="p-4 text-center text-gray-500">No notifications</div>';
+                // Disable the button when there are no notifications
+                markAllReadBtn.disabled = true;
+                markAllReadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            // Check if there are any unread notifications
+            const hasUnreadNotifications = notifications.some(notification => !notification.is_read);
+
+            // Enable/disable the button based on unread notifications
+            if (hasUnreadNotifications) {
+                markAllReadBtn.disabled = false;
+                markAllReadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                markAllReadBtn.disabled = true;
+                markAllReadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            notificationsList.innerHTML = notifications.map(notification => `
+        <div class="notification-item ${!notification.is_read ? 'unread' : ''}" data-id="${notification.notification_id}">
+            <div class="notification-title">${notification.title}</div>
+            <div class="notification-message">${notification.message}</div>
+            <div class="notification-time">${new Date(notification.created_at).toLocaleString()}</div>
+        </div>
+    `).join('');
+
+            // Add click handlers to mark notifications as read
+            document.querySelectorAll('.notification-item').forEach(item => {
+                item.addEventListener('click', async () => {
+                    const notificationId = item.dataset.id;
+                    await markNotificationAsRead(notificationId);
+                    item.classList.remove('unread');
+                    updateNotificationCount();
+
+                    // Check if we need to disable the button after marking one as read
+                    const remainingUnread = document.querySelectorAll('.notification-item.unread');
+                    if (remainingUnread.length === 0) {
+                        markAllReadBtn.disabled = true;
+                        markAllReadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                });
+            });
+        }
+        async function markNotificationAsRead(notificationId) {
+            try {
+                await fetch(`/api/admin/notifications/${notificationId}/read`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            } catch (err) {
+                console.error('Error marking notification as read:', err);
+            }
+        }
+
+        async function markAllNotificationsAsRead() {
+            try {
+                // Immediately hide the badge and disable the button for instant feedback
+                notificationBadge.classList.add('hidden');
+                markAllReadBtn.disabled = true;
+                markAllReadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+                await fetch('/api/admin/notifications/read-all', {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                // Update both the notification list AND the counter
+                loadNotifications(); // Reload to update UI
+                updateNotificationCount(); // Update the badge counter
+
+            } catch (err) {
+                console.error('Error marking all notifications as read:', err);
+                // If there's an error, restore the badge and button state
+                updateNotificationCount();
+                loadNotifications(); // This will restore the correct button state
+            }
+        }
+
+
+
+        // Event listeners
+        notificationBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            notificationDropdown.classList.toggle('hidden');
+            if (!notificationDropdown.classList.contains('hidden')) {
+                loadNotifications();
+            }
+        });
+
+        markAllReadBtn.addEventListener('click', markAllNotificationsAsRead);
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!notificationBtn.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                notificationDropdown.classList.add('hidden');
+            }
+        });
+
+        // Load notifications on page load and periodically
+        updateNotificationCount();
+        setInterval(updateNotificationCount, 10000); // Check every 10 seconds
+
+    } else {
+        console.log('Notification elements not found - notification system disabled');
     }
 
     // Initial load
