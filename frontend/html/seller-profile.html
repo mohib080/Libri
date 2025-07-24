@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Profile - BookWise</title>
+    <!-- Link to your new CSS file -->
+    <link rel="stylesheet" href="../css/seller-profile.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="profile-container">
+        <!-- In seller-profile.html -->
+        <header class="profile-header">
+            <a href="seller-dashboard.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+            <p id="welcome-message"></p>
+
+            <h1>My Profile</h1>
+        </header>
+
+        <!-- Notification Area -->
+        <div id="notification" class="notification hidden"></div>
+
+        <main class="profile-grid">
+            <!-- Profile Information Card -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-user-edit"></i>
+                    <h2>Profile Information</h2>
+                </div>
+                <div class="card-body">
+                    <form id="profile-form">
+                        <div class="form-group">
+                            <label for="fullName">Full Name</label>
+                            <input type="text" id="fullName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="tel" id="phone" placeholder="e.g., +1 123 456 7890">
+                        </div>
+                        <div class="form-group">
+                            <label for="address">Address</label>
+                            <textarea id="address" rows="3" placeholder="Your business or contact address"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Change Password Card -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-key"></i>
+                    <h2>Change Password</h2>
+                </div>
+                <div class="card-body">
+                    <form id="password-form">
+                        <div class="form-group">
+                            <label for="current-password">Current Password</label>
+                            <input type="password" id="current-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-password">New Password</label>
+                            <input type="password" id="new-password" required minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm-password">Confirm New Password</label>
+                            <input type="password" id="confirm-password" required minlength="6">
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Update Password</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/seller-profile.js"></script>
+</body>
+
+</html>

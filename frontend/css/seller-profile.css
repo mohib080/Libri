@@ -1,0 +1,191 @@
+/* --- Global Styles & Variables --- */
+:root {
+    --primary-color: #4f46e5;
+    --primary-hover: #4338ca;
+    --bg-color: #f3f4f6;
+    --card-bg: #ffffff;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    --shadow-color: rgba(0, 0, 0, 0.05);
+    --success-bg: #dcfce7;
+    --success-text: #166534;
+    --error-bg: #fee2e2;
+    --error-text: #991b1b;
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+}
+
+/* --- Layout & Header --- */
+.profile-container {
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+}
+
+.profile-header {
+    margin-bottom: 2rem;
+}
+
+.profile-header h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin: 0.5rem 0 0 0;
+}
+
+.back-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.back-link i {
+    margin-right: 0.5rem;
+}
+
+/* --- Grid Layout for Cards --- */
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+}
+
+/* --- Card Styling --- */
+.card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    overflow: hidden;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.card-header i {
+    font-size: 1.25rem;
+    color: var(--primary-color);
+    margin-right: 1rem;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* --- Form Styling --- */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    /* Important */
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.form-group textarea {
+    resize: vertical;
+}
+
+/* --- Button Styling --- */
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.btn-secondary {
+    background-color: var(--text-secondary);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #4b5563;
+    /* Darker grey */
+}
+
+/* --- Notification Styling --- */
+.notification {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+}
+
+.notification.hidden {
+    display: none;
+}
+
+.notification.success {
+    background-color: var(--success-bg);
+    color: var(--success-text);
+}
+
+.notification.error {
+    background-color: var(--error-bg);
+    color: var(--error-text);
+}
+
+
+#welcome-message {
+    font-size: 1.2rem;          /* Make it slightly larger than normal text */
+    color: var(--text-secondary); /* Use a softer, secondary text color */
+    margin-top: 1rem;           /* Add space above */
+    margin-bottom: 0.25rem;     /* Reduce space below, before the H1 */
+    font-weight: 500;
+}
+
+/* This targets the seller's name inside the message */
+#welcome-message strong {
+    color: var(--primary-color); /* Make the name stand out with your theme color */
+    font-weight: 600;
+}
