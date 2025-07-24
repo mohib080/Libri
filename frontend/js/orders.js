@@ -220,7 +220,14 @@ function renderOrders(orders) {
                     <div class="order-item">
                         <img src="${item.image_url}" alt="${item.title}" onerror="this.src='/images/default-book.jpg'">
                         <div class="item-details">
-                            <h4>${item.title} ${item.format_name ? `(${item.format_name})` : ''}</h4>
+                            <h4>
+  ${item.title}
+  ${item.format_name
+            ? `<span class="format-badge">${item.format_name}</span>`
+            : ''
+        }
+</h4>
+
                             <p>Quantity: ${item.quantity}</p>
                             
                         </div>

@@ -524,7 +524,7 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
             cartId = cartResult.rows[0].cart_id;
         }
 
-        // Update the cart items query in the GET /api/cart endpoint
+        // Modified cart items query to handle multiple authors and ensure format_id consistency
         const cartItemsResult = await client.query(`
             SELECT
                 crt.cart_item_id,
@@ -533,23 +533,26 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
                 b.image_url,
                 b.price,
                 crt.quantity,
-                crt.format_id,
-                f.format_name,
-                f.factor,
-                au.name AS author,
-                (b.price * crt.quantity * f.factor) AS total_item_price
+                COALESCE(crt.format_id, 2) as format_id, -- Default to 2 (hardcover) if null
+                COALESCE(f.format_name, 'Hardcover') as format_name,
+                COALESCE(f.factor, 1.0) as factor,
+                STRING_AGG(DISTINCT au.name, ', ') AS author,
+                (b.price * crt.quantity * COALESCE(f.factor, 1.0)) AS total_item_price
             FROM
                 cart_item crt
             JOIN
                 book b ON crt.book_id = b.book_id
-            JOIN
+            LEFT JOIN
                 book_author ba ON b.book_id = ba.book_id
-            JOIN
+            LEFT JOIN
                 author au ON au.author_id = ba.author_id
             LEFT JOIN
-                format f ON crt.format_id = f.format_id
+                format f ON COALESCE(crt.format_id, 2) = f.format_id
             WHERE
                 crt.cart_id = $1
+            GROUP BY 
+                crt.cart_item_id, crt.book_id, b.title, b.image_url, b.price, 
+                crt.quantity, crt.format_id, f.format_name, f.factor
             ORDER BY
                 crt.cart_item_id;
         `, [cartId]);
@@ -572,10 +575,12 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
 });
 
 
+
 //cart adding route
 app.post('/api/cart/add', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     const { bookId, quantity } = req.body;
+    const formatId = 2;
 
     if (!bookId || !quantity || quantity <= 0) {
         return res.status(400).json({ error: 'Book ID and a positive quantity are required.' });
@@ -609,7 +614,7 @@ app.post('/api/cart/add', authenticateToken, async (req, res) => {
             return res.status(409).json({ message: 'Book already in the cart.' });
         }
         else {
-            await client.query('INSERT INTO cart_item (cart_id, book_id, quantity) VALUES ($1, $2, $3)', [cartId, bookId, quantity]);
+            await client.query('INSERT INTO cart_item (cart_id, book_id, quantity, format_id) VALUES ($1, $2, $3, $4)', [cartId, bookId, quantity, formatId]);
             res.status(201).json({ message: 'Book added to cart successfully.' });
         }
         await client.query('UPDATE cart SET updated_at = NOW() WHERE cart_id = $1', [cartId]);
@@ -624,6 +629,48 @@ app.post('/api/cart/add', authenticateToken, async (req, res) => {
         if (client) client.release();
     }
 });
+
+// Update cart item format
+app.put('/api/cart/update-format', authenticateToken, async (req, res) => {
+    const { bookId, formatId } = req.body;
+    const customerId = req.user.customerId || req.user.userId;
+
+    if (!bookId || !formatId) {
+        return res.status(400).json({ error: 'Book ID and format ID are required' });
+    }
+
+    let client;
+    try {
+        client = await pool.connect();
+
+        const result = await client.query(
+            `UPDATE cart_item
+   SET format_id = $1
+   FROM cart
+   WHERE cart_item.cart_id = cart.cart_id
+     AND cart.customer_id = $2
+     AND cart_item.book_id = $3
+   RETURNING cart_item.*`,
+            [formatId, customerId, bookId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Cart item not found' });
+        }
+
+        res.json({
+            message: 'Cart item format updated successfully',
+            cartItem: result.rows[0]
+        });
+
+    } catch (err) {
+        console.error('Error updating cart item format:', err);
+        res.status(500).json({ error: 'Failed to update cart item format' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
 
 app.put('/api/cart/update', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
@@ -673,6 +720,7 @@ app.put('/api/cart/update', authenticateToken, async (req, res) => {
         if (client) client.release();
     }
 });
+
 
 app.delete('/api/cart/remove/:bookId', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;

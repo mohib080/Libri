@@ -12,9 +12,31 @@
  Target Server Version : 170005 (170005)
  File Encoding         : 65001
 
- Date: 22/07/2025 09:30:58
+ Date: 24/07/2025 16:31:01
 */
 
+
+-- ----------------------------
+-- Sequence structure for admin_admin_id_seq
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "public"."admin_admin_id_seq";
+CREATE SEQUENCE "public"."admin_admin_id_seq" 
+INCREMENT 1
+MINVALUE  1
+MAXVALUE 2147483647
+START 1
+CACHE 1;
+
+-- ----------------------------
+-- Sequence structure for admin_notifications_notification_id_seq
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "public"."admin_notifications_notification_id_seq";
+CREATE SEQUENCE "public"."admin_notifications_notification_id_seq" 
+INCREMENT 1
+MINVALUE  1
+MAXVALUE 2147483647
+START 1
+CACHE 1;
 
 -- ----------------------------
 -- Sequence structure for author_author_id_seq
@@ -248,6 +270,17 @@ START 1
 CACHE 1;
 
 -- ----------------------------
+-- Sequence structure for user_notifications_notification_id_seq
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "public"."user_notifications_notification_id_seq";
+CREATE SEQUENCE "public"."user_notifications_notification_id_seq" 
+INCREMENT 1
+MINVALUE  1
+MAXVALUE 2147483647
+START 1
+CACHE 1;
+
+-- ----------------------------
 -- Sequence structure for wishlist_item_wishlist_item_id_seq
 -- ----------------------------
 DROP SEQUENCE IF EXISTS "public"."wishlist_item_wishlist_item_id_seq";
@@ -268,6 +301,44 @@ MINVALUE  1
 MAXVALUE 2147483647
 START 1
 CACHE 1;
+
+-- ----------------------------
+-- Table structure for admin
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."admin";
+CREATE TABLE "public"."admin" (
+  "admin_id" int4 NOT NULL DEFAULT nextval('admin_admin_id_seq'::regclass),
+  "email" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "secret_code" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+)
+;
+
+-- ----------------------------
+-- Records of admin
+-- ----------------------------
+INSERT INTO "public"."admin" VALUES (1, 'mohibul.sawrav2004@gmail.com', '007018');
+
+-- ----------------------------
+-- Table structure for admin_notifications
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."admin_notifications";
+CREATE TABLE "public"."admin_notifications" (
+  "notification_id" int4 NOT NULL DEFAULT nextval('admin_notifications_notification_id_seq'::regclass),
+  "admin_id" int4,
+  "type" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "title" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "message" text COLLATE "pg_catalog"."default" NOT NULL,
+  "data" jsonb,
+  "is_read" bool DEFAULT false,
+  "created_at" timestamp(6) DEFAULT now()
+)
+;
+
+-- ----------------------------
+-- Records of admin_notifications
+-- ----------------------------
+INSERT INTO "public"."admin_notifications" VALUES (1, NULL, 'new_signup', 'New User Registration', 'A new user "Messi" has registered with email: 2205888@ugrad.cse.buet.ac.bd', '{"customer_id": 10, "signup_date": "2025-07-24T02:39:54.913706", "customer_name": "Messi", "customer_email": "2205888@ugrad.cse.buet.ac.bd"}', 't', '2025-07-24 02:39:54.913706');
+INSERT INTO "public"."admin_notifications" VALUES (2, NULL, 'new_signup', 'New User Registration', 'A new user "Neymar" has registered with email: 2205666@ugrad.cse.buet.ac.bd', '{"customer_id": 11, "signup_date": "2025-07-24T02:48:10.804728", "customer_name": "Neymar", "customer_email": "2205666@ugrad.cse.buet.ac.bd"}', 't', '2025-07-24 02:48:10.804728');
 
 -- ----------------------------
 -- Table structure for author
@@ -296,6 +367,7 @@ INSERT INTO "public"."author" VALUES (8, 'Morgan Housel', 'Partner at The Collab
 INSERT INTO "public"."author" VALUES (9, 'George Orwell', 'English novelist, essayist, journalist, and critic.', 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', 'British');
 INSERT INTO "public"."author" VALUES (10, 'Yuval Noah Harari', 'Israeli public intellectual, historian and author.', 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', 'Israeli');
 INSERT INTO "public"."author" VALUES (11, 'Harper Lee', 'American novelist.', 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', 'American');
+INSERT INTO "public"."author" VALUES (15, 'William Shakespeare', NULL, NULL, NULL);
 
 -- ----------------------------
 -- Table structure for book
@@ -305,7 +377,7 @@ CREATE TABLE "public"."book" (
   "book_id" int4 NOT NULL DEFAULT nextval('book_book_id_seq'::regclass),
   "title" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "description" text COLLATE "pg_catalog"."default",
-  "image_url" text COLLATE "pg_catalog"."default",
+  "image_url" text COLLATE "pg_catalog"."default" DEFAULT 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png'::text,
   "is_active" bool DEFAULT true,
   "isbn" varchar(20) COLLATE "pg_catalog"."default",
   "publisher" varchar(255) COLLATE "pg_catalog"."default",
@@ -334,6 +406,7 @@ INSERT INTO "public"."book" VALUES (7, 'The Psychology of Money', 'Timeless less
 INSERT INTO "public"."book" VALUES (8, '1984', 'A dystopian social science fiction novel and cautionary tale.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9780451524935', 'Signet Classic', '1950-07-01 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 1, 9.99);
 INSERT INTO "public"."book" VALUES (9, 'Sapiens', 'A brief history of humankind.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9780062316097', 'Harper', '2015-02-10 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 1, 22.00);
 INSERT INTO "public"."book" VALUES (10, 'To Kill a Mockingbird', 'A novel about the serious issues of rape and racial inequality.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9780061120084', 'Harper Perennial', '2006-05-23 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 1, 10.00);
+INSERT INTO "public"."book" VALUES (13, 'Hamlet', 'Hamlet is a tragic play by Shakespeare that follows a prince’s quest for revenge against his father’s murderer, exploring themes of madness, betrayal, and mortality.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '3425654365343', 'Penguin Publications', '2019-07-01 00:00:00', NULL, NULL, NULL, 'f', 0.00, 0, 1, 19.99);
 
 -- ----------------------------
 -- Table structure for book_author
@@ -359,6 +432,7 @@ INSERT INTO "public"."book_author" VALUES (7, 8);
 INSERT INTO "public"."book_author" VALUES (8, 9);
 INSERT INTO "public"."book_author" VALUES (9, 10);
 INSERT INTO "public"."book_author" VALUES (10, 11);
+INSERT INTO "public"."book_author" VALUES (13, 15);
 
 -- ----------------------------
 -- Table structure for book_category
@@ -446,6 +520,7 @@ CREATE TABLE "public"."book_supply" (
 -- ----------------------------
 -- Records of book_supply
 -- ----------------------------
+INSERT INTO "public"."book_supply" VALUES (13, 1);
 
 -- ----------------------------
 -- Table structure for cart
@@ -463,8 +538,10 @@ CREATE TABLE "public"."cart" (
 -- Records of cart
 -- ----------------------------
 INSERT INTO "public"."cart" VALUES (3, 6, '2025-07-15 20:59:54.891959', '2025-07-15 20:59:54.891959');
-INSERT INTO "public"."cart" VALUES (1, 3, '2025-07-05 18:32:03.173854', '2025-07-22 00:33:50.715584');
+INSERT INTO "public"."cart" VALUES (5, 9, '2025-07-23 13:49:44.794863', '2025-07-23 13:49:44.794863');
+INSERT INTO "public"."cart" VALUES (6, 10, '2025-07-24 02:40:22.280713', '2025-07-24 02:40:22.280713');
 INSERT INTO "public"."cart" VALUES (4, 8, '2025-07-15 23:06:24.344894', '2025-07-15 23:06:24.344894');
+INSERT INTO "public"."cart" VALUES (1, 3, '2025-07-05 18:32:03.173854', '2025-07-24 16:10:47.665704');
 INSERT INTO "public"."cart" VALUES (2, 7, '2025-07-13 15:30:18.952162', '2025-07-13 15:30:18.952162');
 
 -- ----------------------------
@@ -483,7 +560,6 @@ CREATE TABLE "public"."cart_item" (
 -- ----------------------------
 -- Records of cart_item
 -- ----------------------------
-INSERT INTO "public"."cart_item" VALUES (66, 1, 2, 1, NULL);
 
 -- ----------------------------
 -- Table structure for chat_message
@@ -544,9 +620,12 @@ CREATE TABLE "public"."customer" (
 INSERT INTO "public"."customer" VALUES (4, 'mohib080', 'mohibul.sawrav2004@gmail.com', '$2b$10$toBBByEj1LrBcRY4TILZkulC2cEjkvXDPxGDb9m46PilGjqQ1G2gK', NULL, NULL, '2025-07-01 22:56:45.063885', '2025-07-01 22:56:45.063885', 'customer', NULL, 'f');
 INSERT INTO "public"."customer" VALUES (8, 'Cristiano Ronaldo', 'sawrav124@gmail.com', '$2b$10$9cdzyxT3Px56eTkJ4IuUUOs41b3bq0pBrVKZEO9D/Wi2gU2/5cU4m', NULL, NULL, '2025-07-15 23:06:22.116455', '2025-07-15 23:06:22.116455', 'customer', NULL, 'f');
 INSERT INTO "public"."customer" VALUES (5, 'r', '2205007@ugrad.cse.buet.ac.bd', '$2b$10$v76HTKVs2QtlHEip1iRk3esnbWlUtHLFOg6TrtOKxlnNOzPx4WO12', NULL, NULL, '2025-07-13 15:12:30.156238', '2025-07-13 15:12:30.156238', 'customer', NULL, 'f');
+INSERT INTO "public"."customer" VALUES (9, 'Mr.A', '2205999@ugrad.cse.buet.ac.bd', '$2b$10$2yzWS7tY3eOMU0vobYy3IeFsI9pWQGg1LO/851GjvR1EELhx3YWoW', NULL, NULL, '2025-07-23 13:49:27.52812', '2025-07-23 13:49:27.52812', 'customer', '2025-07-23 13:49:42.936612', 'f');
+INSERT INTO "public"."customer" VALUES (10, 'Messi', '2205888@ugrad.cse.buet.ac.bd', '$2b$10$jTS27dNp4uqLYo41JFO/B.hnQ6/7xOuyfelLpHFicIHSPYPN/pTYa', NULL, NULL, '2025-07-24 02:39:54.913706', '2025-07-24 02:39:54.913706', 'customer', '2025-07-24 02:40:20.280903', 'f');
 INSERT INTO "public"."customer" VALUES (7, 'saber', '2205017@ugrad.cse.buet.ac.bd', '$2b$10$SGjls5kb.SzOFSRk3R3ywuY4lunIonf9mqUuEmL4UBI5r323XbM6K', NULL, NULL, '2025-07-13 15:30:02.152869', '2025-07-13 15:30:02.152869', 'customer', '2025-07-13 15:30:17.314285', 'f');
+INSERT INTO "public"."customer" VALUES (11, 'Neymar', '2205666@ugrad.cse.buet.ac.bd', '$2b$10$pDpLCQfsX8KMArdE/ObdnOkXACtI1PLc43NzS.tph8VIo/hV1WayO', NULL, NULL, '2025-07-24 02:48:10.804728', '2025-07-24 02:48:10.804728', 'customer', NULL, 'f');
+INSERT INTO "public"."customer" VALUES (3, 'Mohibul Sawrav', '2205018@ugrad.cse.buet.ac.bd', '$2b$10$RfOVcY9RIcmrXJ3GZty4Oep21SVA3Kj2rY5wcYCen/6/SCF30hVki', '+8801864316100', 'Dhaka, Bangladesh', '2025-07-01 22:53:03.887927', '2025-07-20 01:50:05.844338', 'customer', '2025-07-24 16:18:45.916078', 'f');
 INSERT INTO "public"."customer" VALUES (6, 'shafin', '2205001@ugrad.cse.buet.ac.bd', '$2b$10$VTUSxXumJnwlI8ptdABbIOj9eZX9GBlglShYL4WAtME.SIAFSoXmG', NULL, NULL, '2025-07-13 15:26:50.075573', '2025-07-13 15:26:50.075573', 'customer', '2025-07-15 20:59:53.333532', 'f');
-INSERT INTO "public"."customer" VALUES (3, 'Mohibul Sawrav', '2205018@ugrad.cse.buet.ac.bd', '$2b$10$RfOVcY9RIcmrXJ3GZty4Oep21SVA3Kj2rY5wcYCen/6/SCF30hVki', '+8801864316100', 'Dhaka, Bangladesh', '2025-07-01 22:53:03.887927', '2025-07-20 01:50:05.844338', 'customer', '2025-07-22 00:54:49.067206', 'f');
 
 -- ----------------------------
 -- Table structure for format
@@ -593,7 +672,8 @@ INSERT INTO "public"."inventory" VALUES (8, 8, NULL, 9, 100, '2025-07-20 00:39:2
 INSERT INTO "public"."inventory" VALUES (9, 9, NULL, 9, 100, '2025-07-20 00:40:31.460748', NULL);
 INSERT INTO "public"."inventory" VALUES (6, 6, NULL, 9, 100, '2025-07-21 23:55:40.249489', NULL);
 INSERT INTO "public"."inventory" VALUES (4, 4, NULL, 4, 100, '2025-07-22 00:10:44.242339', NULL);
-INSERT INTO "public"."inventory" VALUES (2, 2, NULL, 2, 100, '2025-07-22 00:19:40.318759', NULL);
+INSERT INTO "public"."inventory" VALUES (2, 2, NULL, 0, 100, '2025-07-24 16:24:33.672447', NULL);
+INSERT INTO "public"."inventory" VALUES (12, 13, NULL, 9, NULL, '2025-07-24 16:24:33.672447', NULL);
 
 -- ----------------------------
 -- Table structure for order
@@ -625,11 +705,13 @@ INSERT INTO "public"."order" VALUES (4, 3, 'cancelled', '2025-07-19 17:26:33.608
 INSERT INTO "public"."order" VALUES (3, 3, 'cancelled', '2025-07-19 17:15:19.301405', 35.00, 'standard', NULL);
 INSERT INTO "public"."order" VALUES (2, 3, 'cancelled', '2025-07-19 16:55:41.083519', 20.00, 'standard', NULL);
 INSERT INTO "public"."order" VALUES (13, 3, 'pending', '2025-07-20 00:58:15.487039', 6.00, 'standard', NULL);
-INSERT INTO "public"."order" VALUES (14, 3, 'pending', '2025-07-21 23:55:40.249489', 31.00, 'standard', NULL);
 INSERT INTO "public"."order" VALUES (15, 3, 'pending', '2025-07-22 00:00:00.539189', 28.00, 'standard', NULL);
 INSERT INTO "public"."order" VALUES (16, 3, 'cancelled', '2025-07-22 00:10:44.242339', 10.50, 'standard', NULL);
 INSERT INTO "public"."order" VALUES (17, 3, 'pending', '2025-07-22 00:15:45.625922', 6.00, 'standard', NULL);
 INSERT INTO "public"."order" VALUES (18, 3, 'pending', '2025-07-22 00:19:40.318759', 11.00, 'standard', NULL);
+INSERT INTO "public"."order" VALUES (19, 3, 'pending', '2025-07-22 23:43:44.2144', 11.00, 'standard', NULL);
+INSERT INTO "public"."order" VALUES (14, 3, 'completed', '2025-07-21 23:55:40.249489', 31.00, 'standard', NULL);
+INSERT INTO "public"."order" VALUES (20, 3, 'pending', '2025-07-24 16:24:33.672447', 17.00, 'standard', NULL);
 
 -- ----------------------------
 -- Table structure for order_cancellation
@@ -698,6 +780,9 @@ INSERT INTO "public"."order_item" VALUES (17, 15, 4, '2025-07-22 00:00:00.539189
 INSERT INTO "public"."order_item" VALUES (18, 16, 4, '2025-07-22 00:10:44.242339', 1, 10.50, NULL);
 INSERT INTO "public"."order_item" VALUES (19, 17, 2, '2025-07-22 00:15:45.625922', 1, 6.00, NULL);
 INSERT INTO "public"."order_item" VALUES (20, 18, 2, '2025-07-22 00:19:40.318759', 1, 6.00, NULL);
+INSERT INTO "public"."order_item" VALUES (21, 19, 2, '2025-07-22 23:43:44.2144', 1, 6.00, NULL);
+INSERT INTO "public"."order_item" VALUES (22, 20, 2, '2025-07-24 16:24:33.672447', 1, 6.00, NULL);
+INSERT INTO "public"."order_item" VALUES (23, 20, 13, '2025-07-24 16:24:33.672447', 1, 6.00, NULL);
 
 -- ----------------------------
 -- Table structure for payment
@@ -803,6 +888,8 @@ INSERT INTO "public"."shipping" VALUES (14, 15, 'Dhaka, Bangladesh', '', '', 'US
 INSERT INTO "public"."shipping" VALUES (15, 16, 'Dhaka, Bangladesh', '', '', 'USA', NULL, '2025-07-29 00:10:44.242339');
 INSERT INTO "public"."shipping" VALUES (16, 17, 'Dhaka, Bangladesh', '', '', 'USA', NULL, '2025-07-29 00:15:45.625922');
 INSERT INTO "public"."shipping" VALUES (17, 18, 'Dhaka, Bangladesh', '', '', 'USA', NULL, '2025-07-29 00:19:40.318759');
+INSERT INTO "public"."shipping" VALUES (18, 19, 'Dhaka, Bangladesh', '', '', 'USA', NULL, '2025-07-29 23:43:44.2144');
+INSERT INTO "public"."shipping" VALUES (19, 20, 'Dhaka, Bangladesh', 'Dhaka', '1000', 'Bangladesh', NULL, '2025-07-31 16:24:33.672447');
 
 -- ----------------------------
 -- Table structure for sub_category
@@ -839,13 +926,36 @@ CREATE TABLE "public"."supplier" (
   "phone_number" varchar(255) COLLATE "pg_catalog"."default",
   "email" varchar(255) COLLATE "pg_catalog"."default",
   "address" text COLLATE "pg_catalog"."default",
-  "payment_method" varchar(255) COLLATE "pg_catalog"."default"
+  "payment_method" varchar(255) COLLATE "pg_catalog"."default",
+  "hashed_password" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 
 -- ----------------------------
 -- Records of supplier
 -- ----------------------------
+INSERT INTO "public"."supplier" VALUES (1, 'Mohibul Sawrav', NULL, '2205018@ugrad.cse.buet.ac.bd', NULL, NULL, '$2b$10$GW2nAaG620Zd9hhovRf7f.5bHLeLWofuIU.VSz7RGTH7Y1M5nXibC');
+
+-- ----------------------------
+-- Table structure for user_notifications
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."user_notifications";
+CREATE TABLE "public"."user_notifications" (
+  "notification_id" int4 NOT NULL DEFAULT nextval('user_notifications_notification_id_seq'::regclass),
+  "customer_id" int4 NOT NULL,
+  "type" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "title" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "message" text COLLATE "pg_catalog"."default" NOT NULL,
+  "order_id" int4,
+  "is_read" bool DEFAULT false,
+  "created_at" timestamp(6) DEFAULT now()
+)
+;
+
+-- ----------------------------
+-- Records of user_notifications
+-- ----------------------------
+INSERT INTO "public"."user_notifications" VALUES (1, 3, 'order_status_update', 'Order Status Updated', 'Your order #14 status has been updated to: completed', 14, 't', '2025-07-24 03:19:24.059767');
 
 -- ----------------------------
 -- Table structure for wishlist
@@ -866,6 +976,8 @@ INSERT INTO "public"."wishlist" VALUES (1, 3, NULL, '2025-07-12 20:47:22.521085'
 INSERT INTO "public"."wishlist" VALUES (2, 7, NULL, '2025-07-13 15:30:18.956092');
 INSERT INTO "public"."wishlist" VALUES (3, 6, NULL, '2025-07-15 20:59:54.895749');
 INSERT INTO "public"."wishlist" VALUES (4, 8, NULL, '2025-07-15 23:06:24.347098');
+INSERT INTO "public"."wishlist" VALUES (5, 9, NULL, '2025-07-23 13:49:44.809874');
+INSERT INTO "public"."wishlist" VALUES (6, 10, NULL, '2025-07-24 02:40:22.408042');
 
 -- ----------------------------
 -- Table structure for wishlist_item
@@ -882,6 +994,60 @@ CREATE TABLE "public"."wishlist_item" (
 -- ----------------------------
 -- Records of wishlist_item
 -- ----------------------------
+
+-- ----------------------------
+-- Function structure for notify_admin_new_signup
+-- ----------------------------
+DROP FUNCTION IF EXISTS "public"."notify_admin_new_signup"();
+CREATE FUNCTION "public"."notify_admin_new_signup"()
+  RETURNS "pg_catalog"."trigger" AS $BODY$
+BEGIN
+    -- Insert notification for all admins
+    INSERT INTO admin_notifications (type, title, message, data, created_at)
+    VALUES (
+        'new_signup',
+        'New User Registration',
+        'A new user "' || NEW.name || '" has registered with email: ' || NEW.email,
+        jsonb_build_object(
+            'customer_id', NEW.customer_id,
+            'customer_name', NEW.name,
+            'customer_email', NEW.email,
+            'signup_date', NEW.created_at
+        ),
+        NOW()
+    );
+    
+    RETURN NEW;
+END;
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
+
+-- ----------------------------
+-- Function structure for notify_user_order_status_change
+-- ----------------------------
+DROP FUNCTION IF EXISTS "public"."notify_user_order_status_change"();
+CREATE FUNCTION "public"."notify_user_order_status_change"()
+  RETURNS "pg_catalog"."trigger" AS $BODY$
+BEGIN
+    -- Only create notification if status actually changed
+    IF OLD.status IS DISTINCT FROM NEW.status THEN
+        INSERT INTO user_notifications (customer_id, type, title, message, order_id, created_at)
+        VALUES (
+            NEW.customer_id,
+            'order_status_update',
+            'Order Status Updated',
+            'Your order #' || NEW.order_id || ' status has been updated to: ' || NEW.status,
+            NEW.order_id,
+            NOW()
+        );
+    END IF;
+    
+    RETURN NEW;
+END;
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
 
 -- ----------------------------
 -- Function structure for update_book_ratings
@@ -911,16 +1077,30 @@ $BODY$
 -- ----------------------------
 -- Alter sequences owned by
 -- ----------------------------
+ALTER SEQUENCE "public"."admin_admin_id_seq"
+OWNED BY "public"."admin"."admin_id";
+SELECT setval('"public"."admin_admin_id_seq"', 1, false);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+ALTER SEQUENCE "public"."admin_notifications_notification_id_seq"
+OWNED BY "public"."admin_notifications"."notification_id";
+SELECT setval('"public"."admin_notifications_notification_id_seq"', 2, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
 ALTER SEQUENCE "public"."author_author_id_seq"
 OWNED BY "public"."author"."author_id";
-SELECT setval('"public"."author_author_id_seq"', 1, false);
+SELECT setval('"public"."author_author_id_seq"', 15, true);
 
 -- ----------------------------
 -- Alter sequences owned by
 -- ----------------------------
 ALTER SEQUENCE "public"."book_book_id_seq"
 OWNED BY "public"."book"."book_id";
-SELECT setval('"public"."book_book_id_seq"', 1, false);
+SELECT setval('"public"."book_book_id_seq"', 13, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -941,14 +1121,14 @@ SELECT setval('"public"."book_format_book_format_id_seq"', 1, false);
 -- ----------------------------
 ALTER SEQUENCE "public"."cart_cart_id_seq"
 OWNED BY "public"."cart"."cart_id";
-SELECT setval('"public"."cart_cart_id_seq"', 4, true);
+SELECT setval('"public"."cart_cart_id_seq"', 6, true);
 
 -- ----------------------------
 -- Alter sequences owned by
 -- ----------------------------
 ALTER SEQUENCE "public"."cart_item_cart_item_id_seq"
 OWNED BY "public"."cart_item"."cart_item_id";
-SELECT setval('"public"."cart_item_cart_item_id_seq"', 66, true);
+SELECT setval('"public"."cart_item_cart_item_id_seq"', 68, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -969,7 +1149,7 @@ SELECT setval('"public"."chat_session_session_id_seq"', 1, false);
 -- ----------------------------
 ALTER SEQUENCE "public"."customer_customer_id_seq"
 OWNED BY "public"."customer"."customer_id";
-SELECT setval('"public"."customer_customer_id_seq"', 8, true);
+SELECT setval('"public"."customer_customer_id_seq"', 11, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -983,7 +1163,7 @@ SELECT setval('"public"."format_format_id_seq"', 1, false);
 -- ----------------------------
 ALTER SEQUENCE "public"."inventory_inventory_id_seq"
 OWNED BY "public"."inventory"."inventory_id";
-SELECT setval('"public"."inventory_inventory_id_seq"', 1, false);
+SELECT setval('"public"."inventory_inventory_id_seq"', 12, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -997,14 +1177,14 @@ SELECT setval('"public"."order_cancellation_cancellation_id_seq"', 12, true);
 -- ----------------------------
 ALTER SEQUENCE "public"."order_item_order_item_id_seq"
 OWNED BY "public"."order_item"."order_item_id";
-SELECT setval('"public"."order_item_order_item_id_seq"', 20, true);
+SELECT setval('"public"."order_item_order_item_id_seq"', 23, true);
 
 -- ----------------------------
 -- Alter sequences owned by
 -- ----------------------------
 ALTER SEQUENCE "public"."order_order_id_seq"
 OWNED BY "public"."order"."order_id";
-SELECT setval('"public"."order_order_id_seq"', 18, true);
+SELECT setval('"public"."order_order_id_seq"', 20, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -1039,7 +1219,7 @@ SELECT setval('"public"."review_review_id_seq"', 15, true);
 -- ----------------------------
 ALTER SEQUENCE "public"."shipping_shipping_id_seq"
 OWNED BY "public"."shipping"."shipping_id";
-SELECT setval('"public"."shipping_shipping_id_seq"', 17, true);
+SELECT setval('"public"."shipping_shipping_id_seq"', 19, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -1053,21 +1233,43 @@ SELECT setval('"public"."sub_category_sub_category_id_seq"', 1, false);
 -- ----------------------------
 ALTER SEQUENCE "public"."supplier_supplier_id_seq"
 OWNED BY "public"."supplier"."supplier_id";
-SELECT setval('"public"."supplier_supplier_id_seq"', 1, false);
+SELECT setval('"public"."supplier_supplier_id_seq"', 1, true);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+ALTER SEQUENCE "public"."user_notifications_notification_id_seq"
+OWNED BY "public"."user_notifications"."notification_id";
+SELECT setval('"public"."user_notifications_notification_id_seq"', 1, true);
 
 -- ----------------------------
 -- Alter sequences owned by
 -- ----------------------------
 ALTER SEQUENCE "public"."wishlist_item_wishlist_item_id_seq"
 OWNED BY "public"."wishlist_item"."wishlist_item_id";
-SELECT setval('"public"."wishlist_item_wishlist_item_id_seq"', 19, true);
+SELECT setval('"public"."wishlist_item_wishlist_item_id_seq"', 20, true);
 
 -- ----------------------------
 -- Alter sequences owned by
 -- ----------------------------
 ALTER SEQUENCE "public"."wishlist_wishlist_id_seq"
 OWNED BY "public"."wishlist"."wishlist_id";
-SELECT setval('"public"."wishlist_wishlist_id_seq"', 4, true);
+SELECT setval('"public"."wishlist_wishlist_id_seq"', 6, true);
+
+-- ----------------------------
+-- Uniques structure for table admin
+-- ----------------------------
+ALTER TABLE "public"."admin" ADD CONSTRAINT "admin_email_key" UNIQUE ("email");
+
+-- ----------------------------
+-- Primary Key structure for table admin
+-- ----------------------------
+ALTER TABLE "public"."admin" ADD CONSTRAINT "admin_pkey" PRIMARY KEY ("admin_id");
+
+-- ----------------------------
+-- Primary Key structure for table admin_notifications
+-- ----------------------------
+ALTER TABLE "public"."admin_notifications" ADD CONSTRAINT "admin_notifications_pkey" PRIMARY KEY ("notification_id");
 
 -- ----------------------------
 -- Primary Key structure for table author
@@ -1160,6 +1362,13 @@ ALTER TABLE "public"."chat_message" ADD CONSTRAINT "chat_message_pkey" PRIMARY K
 ALTER TABLE "public"."chat_session" ADD CONSTRAINT "chat_session_pkey" PRIMARY KEY ("session_id");
 
 -- ----------------------------
+-- Triggers structure for table customer
+-- ----------------------------
+CREATE TRIGGER "trigger_new_user_signup" AFTER INSERT ON "public"."customer"
+FOR EACH ROW
+EXECUTE PROCEDURE "public"."notify_admin_new_signup"();
+
+-- ----------------------------
 -- Uniques structure for table customer
 -- ----------------------------
 ALTER TABLE "public"."customer" ADD CONSTRAINT "customer_email_key" UNIQUE ("email");
@@ -1188,6 +1397,13 @@ ALTER TABLE "public"."inventory" ADD CONSTRAINT "inventory_quantity_in_stock_che
 -- Primary Key structure for table inventory
 -- ----------------------------
 ALTER TABLE "public"."inventory" ADD CONSTRAINT "inventory_pkey" PRIMARY KEY ("inventory_id");
+
+-- ----------------------------
+-- Triggers structure for table order
+-- ----------------------------
+CREATE TRIGGER "trigger_order_status_update" AFTER UPDATE ON "public"."order"
+FOR EACH ROW
+EXECUTE PROCEDURE "public"."notify_user_order_status_change"();
 
 -- ----------------------------
 -- Primary Key structure for table order
@@ -1263,6 +1479,11 @@ ALTER TABLE "public"."sub_category" ADD CONSTRAINT "sub_category_pkey" PRIMARY K
 ALTER TABLE "public"."supplier" ADD CONSTRAINT "supplier_pkey" PRIMARY KEY ("supplier_id");
 
 -- ----------------------------
+-- Primary Key structure for table user_notifications
+-- ----------------------------
+ALTER TABLE "public"."user_notifications" ADD CONSTRAINT "user_notifications_pkey" PRIMARY KEY ("notification_id");
+
+-- ----------------------------
 -- Uniques structure for table wishlist
 -- ----------------------------
 ALTER TABLE "public"."wishlist" ADD CONSTRAINT "wishlist_customer_id_key" UNIQUE ("customer_id");
@@ -1281,6 +1502,11 @@ ALTER TABLE "public"."wishlist_item" ADD CONSTRAINT "wishlist_item_wishlist_id_b
 -- Primary Key structure for table wishlist_item
 -- ----------------------------
 ALTER TABLE "public"."wishlist_item" ADD CONSTRAINT "wishlist_item_pkey" PRIMARY KEY ("wishlist_item_id");
+
+-- ----------------------------
+-- Foreign Keys structure for table admin_notifications
+-- ----------------------------
+ALTER TABLE "public"."admin_notifications" ADD CONSTRAINT "admin_notifications_admin_id_fkey" FOREIGN KEY ("admin_id") REFERENCES "public"."admin" ("admin_id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- ----------------------------
 -- Foreign Keys structure for table book
@@ -1391,6 +1617,12 @@ ALTER TABLE "public"."shipping" ADD CONSTRAINT "shipping_order_id_fkey" FOREIGN 
 -- Foreign Keys structure for table sub_category
 -- ----------------------------
 ALTER TABLE "public"."sub_category" ADD CONSTRAINT "sub_category_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "public"."book_category" ("category_id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- ----------------------------
+-- Foreign Keys structure for table user_notifications
+-- ----------------------------
+ALTER TABLE "public"."user_notifications" ADD CONSTRAINT "user_notifications_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "public"."customer" ("customer_id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE "public"."user_notifications" ADD CONSTRAINT "user_notifications_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "public"."order" ("order_id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- ----------------------------
 -- Foreign Keys structure for table wishlist

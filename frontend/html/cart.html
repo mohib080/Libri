@@ -27,6 +27,9 @@
                     <span class="header-total">Total</span>
                     <span class="header-actions">Actions</span>
                 </div>
+
+                <!-- Cart items will be dynamically inserted here by cart.js -->
+
                 <!-- Empty Cart Message -->
                 <div class="empty-cart-message" style="display: none;">
                     <i class="fas fa-shopping-basket"></i>
@@ -44,7 +47,7 @@
                     <span class="summary-label">Total Amount:</span>
                     <span class="total-amount">$<span id="total-price">0.00</span></span>
                 </div>
-                <button class="checkout-btn" id="checkout-btn">
+                <button class="checkout-btn" id="checkout-btn" disabled>
                     <i class="fas fa-credit-card"></i>
                     Proceed to Checkout
                 </button>
