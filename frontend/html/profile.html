@@ -1,93 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>Your Profile</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="profile.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>My Profile - BookWise</title>
+    <link rel="stylesheet" href="../css/profile.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
-    <nav>
-        <div class="nav-left">
-            <a href="user.html" class="site-logo"><i class="fas fa-graduation-cap"></i> Libri</a>
-        </div>
-        <div class="nav-right">
-            <button id="dark-mode-toggle" title="Toggle dark mode">
-                <i class="fas fa-moon"></i>
-            </button>
-            <div class="profile-container"></div>
-        </div>
-    </nav>
-    <main>
-        <section class="profile-card">
-            <div class="avatar-section">
-                <img id="profile-avatar" src="https://www.gravatar.com/avatar/default?s=128&d=mp" alt="Profile avatar">
-                <label for="avatar-upload" class="avatar-upload-label">
-                    <i class="fas fa-camera"></i>
-                </label>
-                <input type="file" id="avatar-upload" accept="image/*" hidden>
+    <div class="profile-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="profile-sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-user-circle"></i>
+                <h2>My Account</h2>
             </div>
-            <div class="profile-info">
-                <h2 id="profile-name">Your Name</h2>
-                <p id="profile-email"><i class="fas fa-envelope"></i> your.email@example.com</p>
-                <p id="profile-phone"><i class="fas fa-phone"></i> Phone: </p>
-                <p id="profile-address"><i class="fas fa-map-marker-alt"></i> Address: </p>
-                <p id="profile-role"><i class="fas fa-user-tag"></i> Role: </p>
-                <p id="profile-verified"><i class="fas fa-check-circle"></i> Verified: </p>
-                <p id="profile-last-login"><i class="fas fa-clock"></i> Last Login: </p>
-                <div class="profile-actions">
-                    <button id="edit-profile-btn"><i class="fas fa-edit"></i> Edit Profile</button>
-                    <button id="change-password-btn"><i class="fas fa-key"></i> Change Password</button>
-                </div>
+            <nav class="sidebar-nav">
+                <a href="#profile-details" class="nav-link active"><i class="fas fa-user-edit"></i> Profile Details</a>
+                <a href="#security" class="nav-link"><i class="fas fa-shield-alt"></i> Security</a>
+                <a href="orders.html" class="nav-link"><i class="fas fa-box"></i> My Orders</a>
+                <a href="user.html" class="nav-link"><i class="fas fa-store"></i> Back to Shop</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#" id="logout-link" class="nav-link logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
-        </section>
-        <section class="profile-details" id="edit-profile-section" style="display:none;">
-            <h3>Edit Profile</h3>
-            <form id="profile-edit-form">
-                <label>
-                    Name:
-                    <input type="text" id="edit-name" name="name" required>
-                </label>
-                <label>
-                    Email:
-                    <input type="email" id="edit-email" name="email" required>
-                </label>
-                <label>
-                    Phone:
-                    <input type="text" id="edit-phone" name="phone_number">
-                </label>
-                <label>
-                    Address:
-                    <input type="text" id="edit-address" name="address">
-                </label>
-                <div class="form-actions">
-                    <button type="submit">Save</button>
-                    <button type="button" id="cancel-edit-btn">Cancel</button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="profile-content">
+            <header class="content-header">
+                <h1 id="welcome-message">Hello, User!</h1>
+                <p>Manage your account information and password here.</p>
+            </header>
+
+            <!-- Notification Area -->
+            <div id="notification" class="notification hidden"></div>
+
+            <!-- Profile Details Section -->
+            <section id="profile-details" class="content-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Personal Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="profile-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fullName">Full Name</label>
+                                    <input type="text" id="fullName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" id="email" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone">
+                            </div>
+                            <div class="form-group">
+                                <label for="address">Address</label>
+                                <textarea id="address" rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </form>
-        </section>
-        <section class="profile-details" id="change-password-section" style="display:none;">
-            <h3>Change Password</h3>
-            <form id="change-password-form">
-                <label>
-                    Old Password:
-                    <input type="password" name="old-password" id="old-password" required>
-                </label>
-                <label>
-                    New Password:
-                    <input type="password" name="new-password" id="new-password" required>
-                </label>
-                <div class="form-actions">
-                    <button type="submit">Change</button>
-                    <button type="button" id="cancel-password-btn">Cancel</button>
+            </section>
+
+            <!-- Security Section -->
+            <section id="security" class="content-section hidden">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Password & Security</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="password-form">
+                            <div class="form-group">
+                                <label for="current-password">Current Password</label>
+                                <input type="password" id="current-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="new-password">New Password</label>
+                                <input type="password" id="new-password" required minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirm-password">Confirm New Password</label>
+                                <input type="password" id="confirm-password" required minlength="6">
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Update Password</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </form>
-        </section>
-    </main>
-    <script src="profile.js"></script>
+            </section>
+        </main>
+    </div>
+
+    <script src="../js/profile.js"></script>
 </body>
+
 </html>
