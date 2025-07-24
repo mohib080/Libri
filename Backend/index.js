@@ -1587,7 +1587,6 @@ app.get('/api/admin/total-sales', authenticateToken, isAdmin, async (req, res) =
 
 app.get('/api/admin/books', authenticateToken, isAdmin, async (req, res) => {
     try {
-        // Adjust these joins/fields for your schema as needed.
         const result = await pool.query(`
             SELECT
     b.book_id,
@@ -1618,7 +1617,6 @@ ORDER BY b.title;
     }
 });
 
-// Add this route to your Express app (index.js)
 
 app.get('/api/admin/orders', authenticateToken, isAdmin, async (req, res) => {
     let client;
@@ -1681,7 +1679,140 @@ app.get('/api/admin/sellers', authenticateToken, isAdmin, async (req, res) => {
     }
 });
 
-// Get all notifications for admin
+app.get('/api/seller/dashboard-stats', authenticateToken, isSeller, async (req, res) => {
+    const supplierId = req.user.supplierId;
+    let client;
+
+    try {
+        client = await pool.connect();
+
+        // 1. Get Total Sales for this seller's books
+        const salesQuery = `
+            SELECT COALESCE(SUM(oi.item_price * oi.quantity), 0) AS total_sales
+            FROM order_item oi
+            JOIN book_supply bs ON oi.book_id = bs.book_id
+            WHERE bs.supplier_id = $1;
+        `;
+        const salesResult = await client.query(salesQuery, [supplierId]);
+
+        // 2. Get Total Orders containing this seller's books
+        const ordersQuery = `
+            SELECT COUNT(DISTINCT oi.order_id) AS total_orders
+            FROM order_item oi
+            JOIN book_supply bs ON oi.book_id = bs.book_id
+            WHERE bs.supplier_id = $1;
+        `;
+        const ordersResult = await client.query(ordersQuery, [supplierId]);
+
+        // 3. Get Total Books in Stock for this seller
+        const stockQuery = `
+            SELECT COALESCE(SUM(i.quantity_in_stock), 0) AS books_in_stock
+            FROM inventory i
+            JOIN book_supply bs ON i.book_id = bs.book_id
+            WHERE bs.supplier_id = $1;
+        `;
+        const stockResult = await client.query(stockQuery, [supplierId]);
+
+        // 4. Get Recent Orders for this seller's books
+        const recentOrdersQuery = `
+            SELECT
+                o.order_id,
+                c.name AS customer_name,
+                b.title AS book_title,
+                (oi.item_price * oi.quantity) AS total,
+                o.status
+            FROM "order" o
+            JOIN order_item oi ON o.order_id = oi.order_id
+            JOIN customer c ON o.customer_id = c.customer_id
+            JOIN book b ON oi.book_id = b.book_id
+            JOIN book_supply bs ON b.book_id = bs.book_id
+            WHERE bs.supplier_id = $1
+            ORDER BY o.order_date DESC
+            LIMIT 5;
+        `;
+        const recentOrdersResult = await client.query(recentOrdersQuery, [supplierId]);
+
+        res.json({
+            totalSales: parseFloat(salesResult.rows[0].total_sales),
+            totalOrders: parseInt(ordersResult.rows[0].total_orders, 10),
+            booksInStock: parseInt(stockResult.rows[0].books_in_stock, 10),
+            // For now, low stock alerts can be a static value or a future enhancement
+            lowStockAlerts: 8,
+            recentOrders: recentOrdersResult.rows
+        });
+
+    } catch (err) {
+        console.error('Seller dashboard stats error:', err);
+        res.status(500).json({ error: 'Failed to fetch dashboard data' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+app.get('/api/seller/profile', authenticateToken, isSeller, async (req, res) => {
+    const supplierId = req.user.supplierId;
+    try {
+        const result = await pool.query(
+            'SELECT supplier_id, supplier_name, email, phone_number, address FROM supplier WHERE supplier_id = $1',
+            [supplierId]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Seller profile not found.' });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error fetching seller profile:', err);
+        res.status(500).json({ error: 'Failed to retrieve profile.' });
+    }
+});
+
+// UPDATE seller's profile information
+app.put('/api/seller/profile', authenticateToken, isSeller, async (req, res) => {
+    const supplierId = req.user.supplierId;
+    const { supplier_name, email, phone_number, address } = req.body;
+
+    try {
+        const result = await pool.query(
+            `UPDATE supplier SET supplier_name = $1, email = $2, phone_number = $3, address = $4
+             WHERE supplier_id = $5 RETURNING supplier_id, supplier_name, email`,
+            [supplier_name, email, phone_number, address, supplierId]
+        );
+        res.json({ message: 'Profile updated successfully!', supplier: result.rows[0] });
+    } catch (err) {
+        console.error('Error updating seller profile:', err);
+        res.status(500).json({ error: 'Failed to update profile.' });
+    }
+});
+
+// UPDATE seller's password
+app.post('/api/seller/change-password', authenticateToken, isSeller, async (req, res) => {
+    const supplierId = req.user.supplierId;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'All password fields are required.' });
+    }
+
+    try {
+        const result = await pool.query('SELECT hashed_password FROM supplier WHERE supplier_id = $1', [supplierId]);
+        const supplier = result.rows[0];
+
+        const isMatch = await bcrypt.compare(currentPassword, supplier.hashed_password);
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Incorrect current password.' });
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        await pool.query('UPDATE supplier SET hashed_password = $1 WHERE supplier_id = $2', [hashedNewPassword, supplierId]);
+
+        res.json({ message: 'Password updated successfully.' });
+    } catch (err) {
+        console.error('Error changing seller password:', err);
+        res.status(500).json({ error: 'Failed to update password.' });
+    }
+});
+
+
 app.get('/api/admin/notifications', authenticateToken, isAdmin, async (req, res) => {
     let client;
     try {

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Dashboard - BookWise</title>
+    <link rel="stylesheet" href="../css/seller-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-store"></i>
+                <h2>Seller Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" id="dashboard-link" class="nav-link active">
+                    <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
+                </a>
+                <a href="#" id="inventory-link" class="nav-link">
+                    <i class="fas fa-book-open"></i><span>My Inventory</span>
+                </a>
+                <a href="#" id="orders-link" class="nav-link">
+                    <i class="fas fa-receipt"></i><span>Orders</span>
+                </a>
+                <!-- Added Supply Books -->
+                <a href="seller-form.html" id="supply-books-link" class="nav-link">
+                    <i class="fas fa-truck"></i><span>Supply Books</span>
+                </a>
+                <!-- "Analytics" and "Settings" have been removed from here -->
+            </nav>
+            <div class="sidebar-footer">
+                <!-- Added Profile -->
+                <a href="seller-profile.html" id="profile-link" class="nav-link">
+                    <i class="fas fa-user"></i><span>Profile</span>
+                </a>
+                <a href="index.html" id="logout-button" class="nav-link logout">
+                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Dashboard Overview Section -->
+            <div id="dashboard-content" class="content-section">
+                <h1 class="content-title">Dashboard Overview</h1>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fas fa-dollar-sign stat-icon sales"></i>
+                        <div class="stat-info">
+                            <h3>Total Sales</h3>
+                            <p>$1,250.75</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-box-open stat-icon orders"></i>
+                        <div class="stat-info">
+                            <h3>Total Orders</h3>
+                            <p>82</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-boxes stat-icon inventory"></i>
+                        <div class="stat-info">
+                            <h3>Books in Stock</h3>
+                            <p>154</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-exclamation-triangle stat-icon alerts"></i>
+                        <div class="stat-info">
+                            <h3>Low Stock Alerts</h3>
+                            <p>8</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-block">
+                    <h2 class="block-title">Recent Orders</h2>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Book Title</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>#ORD-1024</td>
+                                    <td>Jane Doe</td>
+                                    <td>The Midnight Library</td>
+                                    <td>$15.99</td>
+                                    <td><span class="status-badge shipped">Shipped</span></td>
+                                </tr>
+                                <tr>
+                                    <td>#ORD-1023</td>
+                                    <td>John Smith</td>
+                                    <td>Atomic Habits</td>
+                                    <td>$13.50</td>
+                                    <td><span class="status-badge processing">Processing</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Management Section -->
+            <div id="inventory-content" class="content-section hidden">
+                <h1 class="content-title">My Inventory</h1>
+                <div class="content-block">
+                    <div class="table-header">
+                        <h2 class="block-title">All Books</h2>
+                        <button class="btn btn-primary"><i class="fas fa-plus"></i> Add New Book</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Book ID</th>
+                                    <th>Title</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>#BK-001</td>
+                                    <td>Atomic Habits</td>
+                                    <td>$13.50</td>
+                                    <td>25</td>
+                                    <td><button class="btn btn-secondary">Edit</button></td>
+                                </tr>
+                                <tr>
+                                    <td>#BK-002</td>
+                                    <td>The Midnight Library</td>
+                                    <td>$15.99</td>
+                                    <td><span class="stock-low">5</span></td>
+                                    <td><button class="btn btn-secondary">Edit</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/seller-dashboard.js"></script>
+</body>
+
+</html>
