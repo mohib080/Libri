@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
-            window.location.href = 'seller-form.html';
+            window.location.href = 'seller-dashboard.html';
         } catch (error) {
             showNotification(error.message, 'error', 'signupNotification');
         } 
