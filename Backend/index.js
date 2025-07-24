@@ -32,7 +32,7 @@ pool.on('error', (err) => {
 
 const getBookDetailsBaseQuery = `
     SELECT
-        b.book_id AS id,
+        b.book_id,
         b.title,
         STRING_AGG(DISTINCT a.name, ', ') AS author,
         b.description,
@@ -89,8 +89,12 @@ app.get('/api/books', async (req, res) => {
         if (whereClauses.length > 0) {
             query += ' WHERE ' + whereClauses.join(' AND ');
         }
-        query += ` GROUP BY b.book_id, bc.category_id, bc.category_name, sc.sub_category_id,
-        sc.sub_category_name ORDER BY b.title ASC`;
+
+        query += `
+            GROUP BY b.book_id, bc.category_id, bc.category_name,
+                     sc.sub_category_id, sc.sub_category_name
+            ORDER BY b.title ASC
+        `;
 
         const result = await client.query(query, queryParams);
         res.json(result.rows);
@@ -98,9 +102,7 @@ app.get('/api/books', async (req, res) => {
         console.error('Database query error:', err);
         res.status(500).send('Error fetching data from PostgreSQL DB');
     } finally {
-        if (client) {
-            client.release();
-        }
+        if (client) client.release();
     }
 });
 
@@ -139,8 +141,11 @@ app.get('/api/books/search', async (req, res) => {
             query += ' WHERE ' + whereClauses.join(' AND ');
         }
 
-        query += ` GROUP BY b.book_id, bc.category_id, bc.category_name, sc.sub_category_id,
-        sc.sub_category_name ORDER BY b.title ASC`; // Corrected alias to sc.sub_category_name
+        query += `
+            GROUP BY b.book_id, bc.category_id, bc.category_name,
+                     sc.sub_category_id, sc.sub_category_name
+            ORDER BY b.title ASC
+        `;
 
         const result = await client.query(query, queryParams);
         res.json(result.rows);
@@ -165,13 +170,26 @@ app.get('/api/books/by-name', async (req, res) => {
         const result = await client.query(`
             ${getBookDetailsBaseQuery}
             WHERE b.title ILIKE $1
-            GROUP BY b.book_id, bc.category_id, bc.category_name, sc.sub_category_id,
-            sc.sub_category_name
+            GROUP BY b.book_id, bc.category_id, bc.category_name,
+                     sc.sub_category_id, sc.sub_category_name
             LIMIT 1;
         `, [bookTitle]);
 
         if (result.rows.length > 0) {
-            res.json(result.rows[0]);
+            const bookDetails = result.rows[0];
+            const bookId = bookDetails.book_id;
+
+            const stockResult = await client.query(`
+                SELECT f.format_name, SUM(i.quantity_in_stock) AS stock
+                FROM inventory i
+                JOIN format f ON i.format_id = f.format_id
+                WHERE i.book_id = $1
+                GROUP BY f.format_name
+            `, [bookId]);
+
+            bookDetails.stock_by_format = stockResult.rows;
+
+            res.json(bookDetails);
         } else {
             res.status(404).json({ error: 'Book not found with that title' });
         }
@@ -193,25 +211,37 @@ app.get('/api/books/:id', async (req, res) => {
     let client;
     try {
         client = await pool.connect();
+
         const result = await client.query(`
             ${getBookDetailsBaseQuery}
             WHERE b.book_id = $1
-            GROUP BY b.book_id, bc.category_id, bc.category_name, sc.sub_category_id,
-            sc.sub_category_name
+            GROUP BY b.book_id, bc.category_id, bc.category_name,
+                     sc.sub_category_id, sc.sub_category_name
         `, [bookId]);
 
-        if (result.rows.length > 0) {
-            res.json(result.rows[0]);
-        } else {
-            res.status(404).json({ error: 'Book not found' });
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Book not found' });
         }
+
+        const bookDetails = result.rows[0];
+
+        const stockResult = await client.query(`
+            SELECT f.format_name, SUM(i.quantity_in_stock) AS stock
+            FROM inventory i
+            JOIN format f ON i.format_id = f.format_id
+            WHERE i.book_id = $1
+            GROUP BY f.format_name
+        `, [bookId]);
+
+        bookDetails.stock_by_format = stockResult.rows;
+
+        res.json(bookDetails);
+
     } catch (err) {
-        console.error('Error fetching single book by ID:', err);
+        console.error('Error fetching book details by ID:', err);
         res.status(500).send('Error retrieving book details by ID');
     } finally {
-        if (client) {
-            client.release();
-        }
+        if (client) client.release();
     }
 });
 

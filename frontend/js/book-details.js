@@ -467,7 +467,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Book details rendering
     function renderBookDetails(book) {
         const pubDate = book.publication_date ? new Date(book.publication_date).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -478,6 +477,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         const averageRating = parseFloat(book.average_rating || 0).toFixed(2);
         const reviewCount = book.review_count !== undefined ? book.review_count : 0;
         const overallRatingStars = renderStars(averageRating, '1.4rem');
+
+        // Format-wise stock info
+        let stockHTML = '';
+        if (book.stock_by_format && book.stock_by_format.length > 0) {
+            stockHTML += `<div class="book-meta-item"><strong>Available Stock:</strong><ul>`;
+            book.stock_by_format.forEach(entry => {
+                stockHTML += `<li>${entry.format_name}: ${entry.stock}</li>`;
+            });
+            stockHTML += `</ul></div>`;
+        } else {
+            stockHTML += `<div class="book-meta-item"><strong>Available Stock:</strong> <span>Not available</span></div>`;
+        }
 
         bookDetailsContent.innerHTML = `
             <div class="book-cover-wrapper">
@@ -519,6 +530,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <strong>Language:</strong>
                         <span>${book.language || 'N/A'}</span>
                     </div>
+
+                    <!-- Inject stock by format -->
+                    ${stockHTML}
                 </div>
 
                 <div class="action-buttons">
@@ -564,6 +578,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+
     // Fetch book details
     async function fetchBookDetails(title) {
         try {
@@ -574,7 +589,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const book = await response.json();
 
             if (book) {
-                currentBookId = book.id;
+                currentBookId = book.book_id;
                 renderBookDetails(book);
                 await fetchBookReviews(currentBookId);
             } else {
