@@ -1559,7 +1559,10 @@ app.get('/api/admin/total-users', authenticateToken, isAdmin, async (req, res) =
 
 app.get('/api/admin/total-orders', authenticateToken, isAdmin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT COUNT(*) AS total_orders FROM "order" WHERE status = \'Delivered\'');
+        const result = await pool.query(
+    'SELECT COUNT(*) AS total_orders FROM "order"'
+    );
+
         res.json({ totalOrders: parseInt(result.rows[0].total_orders, 10) });
     } catch (err) {
         console.error('Count orders error:', err);
@@ -1569,16 +1572,17 @@ app.get('/api/admin/total-orders', authenticateToken, isAdmin, async (req, res) 
 
 app.get('/api/admin/total-books-in-stock', authenticateToken, isAdmin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT COUNT(DISTINCT book_id) AS unique_books FROM inventory WHERE quantity_in_stock > 0');
-        res.json({ booksInStock: parseInt(result.rows[0].unique_books, 10) });
+        const result = await pool.query('SELECT COALESCE(SUM(quantity_in_stock), 0) AS total FROM inventory');
+        res.json({ booksInStock: parseInt(result.rows[0].total, 10) });
     } catch (err) {
         console.error('Count books in stock error:', err);
         res.status(500).json({ error: 'Failed to get books in stock' });
     }
 });
+
 app.get('/api/admin/total-sales', authenticateToken, isAdmin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT COALESCE(SUM(total_amount), 0) AS total_sales FROM "order" WHERE status=\'Delivered\'');
+        const result = await pool.query('SELECT COALESCE(SUM(total_amount), 0) AS total_sales FROM "order" WHERE status=\'delivered\'');
         res.json({ totalSales: parseFloat(result.rows[0].total_sales) });
     } catch (err) {
         console.error('Count total sales error:', err);
@@ -1684,17 +1688,17 @@ app.get('/api/admin/books', authenticateToken, isAdmin, async (req, res) => {
     sc.sub_category_name,
     COALESCE(AVG(r.rating), 0)::numeric(3, 2) AS average_rating,
     COUNT(r.review_id) AS review_count
-FROM book b
-LEFT JOIN book_author ba ON b.book_id = ba.book_id
-LEFT JOIN author a ON ba.author_id = a.author_id
-LEFT JOIN inventory i ON b.book_id = i.book_id
-LEFT JOIN book_sub_category bsc ON b.book_id = bsc.book_id
-LEFT JOIN sub_category sc ON bsc.sub_category_id = sc.sub_category_id
-LEFT JOIN book_category bc ON sc.category_id = bc.category_id
-LEFT JOIN review r ON b.book_id = r.book_id
-GROUP BY b.book_id, b.title, b.price, bc.category_name, sc.sub_category_name
-ORDER BY b.title;
-`
+    FROM book b
+    LEFT JOIN book_author ba ON b.book_id = ba.book_id
+    LEFT JOIN author a ON ba.author_id = a.author_id
+    LEFT JOIN inventory i ON b.book_id = i.book_id
+    LEFT JOIN book_sub_category bsc ON b.book_id = bsc.book_id
+    LEFT JOIN sub_category sc ON bsc.sub_category_id = sc.sub_category_id
+    LEFT JOIN book_category bc ON sc.category_id = bc.category_id
+    LEFT JOIN review r ON b.book_id = r.book_id
+    GROUP BY b.book_id, b.title, b.price, bc.category_name, sc.sub_category_name
+    ORDER BY b.title;
+    `
         );
         res.json(result.rows);
     } catch (err) {
@@ -2263,7 +2267,7 @@ app.get('/api/seller/delivered-books-stats', authenticateToken, isSeller, async 
             LEFT JOIN author a ON ba.author_id = a.author_id
             JOIN order_item oi ON b.book_id = oi.book_id
             JOIN "order" o ON oi.order_id = o.order_id
-            WHERE bs.supplier_id = $1 AND o.status = 'Delivered'
+            WHERE bs.supplier_id = $1 AND o.status = 'delivered'
             GROUP BY 
                 b.book_id, b.title, b.image_url, b.price
             ORDER BY delivered_orders DESC, total_quantity_delivered DESC
