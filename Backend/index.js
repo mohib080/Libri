@@ -455,12 +455,13 @@ function authenticateToken(req, res, next) {
 }
 
 const isSeller = (req, res, next) => {
-    // This check relies on the JWT payload having a 'supplierId' or 'isSeller' flag
-    if (!req.user || !req.user.isSeller) {
-        return res.status(403).json({ error: 'Forbidden: Requires seller privileges' });
+    // Check if user has supplierId (indicating they're a seller)
+    if (!req.user || !req.user.supplierId) {
+        return res.status(403).json({ error: 'Access denied. Seller privileges required.' });
     }
     next();
 };
+
 
 const isAdmin = (req, res, next) => {
     // Assumes authenticateToken has attached user info to req.user
@@ -2025,6 +2026,46 @@ app.get('/api/seller/supplied-books', authenticateToken, isSeller, async (req, r
     }
 });
 
+
+/// GET /api/seller/delivered-books-stats - Get statistics of delivered books for the logged-in seller
+app.get('/api/seller/delivered-books-stats', authenticateToken, isSeller, async (req, res) => {
+    const supplierId = req.user.supplierId;
+
+    let client;
+    try {
+        client = await pool.connect();
+
+        const result = await client.query(`
+            SELECT 
+                b.book_id,
+                b.title,
+                STRING_AGG(DISTINCT a.name, ', ') AS authors,
+                b.image_url,
+                b.price,
+                COUNT(oi.order_item_id) AS delivered_orders,
+                SUM(oi.quantity) AS total_quantity_delivered,
+                SUM(oi.quantity * oi.item_price) AS total_revenue_delivered
+            FROM book_supply bs
+            JOIN book b ON bs.book_id = b.book_id
+            LEFT JOIN book_author ba ON b.book_id = ba.book_id
+            LEFT JOIN author a ON ba.author_id = a.author_id
+            JOIN order_item oi ON b.book_id = oi.book_id
+            JOIN "order" o ON oi.order_id = o.order_id
+            WHERE bs.supplier_id = $1 AND o.status = 'Delivered'
+            GROUP BY 
+                b.book_id, b.title, b.image_url, b.price
+            ORDER BY delivered_orders DESC, total_quantity_delivered DESC
+        `, [supplierId]);
+
+        res.json(result.rows);
+
+    } catch (err) {
+        console.error('Error fetching delivered books stats:', err);
+        res.status(500).json({ error: 'Failed to fetch delivered books statistics' });
+    } finally {
+        if (client) client.release();
+    }
+});
 
 
 

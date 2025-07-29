@@ -433,3 +433,86 @@ tbody tr:hover {
 .error {
     color: #dc3545;
 }
+
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.stat-book-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.stat-book-image img {
+    width: 60px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.stat-book-details {
+    flex: 1;
+}
+
+.stat-book-title {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin: 0 0 5px 0;
+    color: #333;
+}
+
+.stat-book-authors {
+    color: #666;
+    font-size: 0.9em;
+    margin: 0 0 15px 0;
+}
+
+.stat-metrics {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.metric {
+    text-align: center;
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 6px;
+    flex: 1;
+}
+
+.metric-value {
+    display: block;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #2d8f2d;
+}
+
+.metric-label {
+    display: block;
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 5px;
+}
+
+.no-stats {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 40px;
+}
+
+.error {
+    text-align: center;
+    color: #dc3545;
+    padding: 40px;
+}

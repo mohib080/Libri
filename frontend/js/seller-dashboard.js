@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DOM ELEMENT REFERENCES ---
     const dashboardContent = document.getElementById('dashboard-content');
     const inventoryContent = document.getElementById('inventory-content');
+    const ordersContent = document.getElementById('orders-content');
 
     const totalSalesEl = document.querySelector('#dashboard-content .stat-card:nth-child(1) p');
     const totalOrdersEl = document.querySelector('#dashboard-content .stat-card:nth-child(2) p');
@@ -103,11 +104,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (link.id === 'supply-books-link') {
                     window.location.href = 'seller-form.html';
                 }
+
+                // Load specific content when sections are activated
+                if (link.id === 'inventory-link') {
+                    loadSuppliedBooks();
+                } else if (link.id === 'orders-link') {
+                    loadDeliveredBooksStats();
+                }
             });
         });
     }
 
-    // Function to fetch and display supplied books
+    // --- SUPPLIED BOOKS FUNCTIONS ---
     async function loadSuppliedBooks() {
         try {
             const token = localStorage.getItem('token');
@@ -131,7 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Function to display the supplied books
     function displaySuppliedBooks(books) {
         const container = document.getElementById('supplied-books-container');
 
@@ -170,15 +177,76 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = booksHTML;
     }
 
-    // Call this function when the page loads or when the "Supplied Books" section is activated
-    window.addEventListener('DOMContentLoaded', function () {
-        // Load supplied books when page loads
-        loadSuppliedBooks();
-    });
+    // --- DELIVERED BOOKS STATISTICS FUNCTIONS ---
+    async function loadDeliveredBooksStats() {
+        console.log('Loading delivered books stats...');
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/seller/delivered-books-stats', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
 
+            if (!response.ok) {
+                throw new Error('Failed to fetch delivered books statistics');
+            }
+
+            const stats = await response.json();
+            displayDeliveredBooksStats(stats);
+
+        } catch (error) {
+            console.error('Error loading delivered books stats:', error);
+            document.getElementById('delivered-books-stats-container').innerHTML =
+                '<p class="error">Failed to load delivered books statistics. Please try again.</p>';
+        }
+    }
+
+    function displayDeliveredBooksStats(stats) {
+        const container = document.getElementById('delivered-books-stats-container');
+
+        if (stats.length === 0) {
+            container.innerHTML = '<p class="no-stats">No delivered orders found for your books yet.</p>';
+            return;
+        }
+
+        const statsHTML = stats.map(book => `
+            <div class="stat-book-card">
+                <div class="stat-book-image">
+                    <img src="${book.image_url || '/images/default-book.jpg'}" alt="${book.title}" />
+                </div>
+                <div class="stat-book-details">
+                    <h3 class="stat-book-title">${book.title}</h3>
+                    <p class="stat-book-authors">by ${book.authors || 'Unknown Author'}</p>
+                    <div class="stat-metrics">
+                        <div class="metric">
+                            <span class="metric-value">${book.delivered_orders}</span>
+                            <span class="metric-label">Delivered Orders</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">${book.total_quantity_delivered}</span>
+                            <span class="metric-label">Total Copies Sold</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">$${parseFloat(book.total_revenue_delivered).toFixed(2)}</span>
+                            <span class="metric-label">Revenue from Delivered</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        container.innerHTML = statsHTML;
+    }
+
+    // Make functions globally accessible for onclick handlers
+    window.loadSuppliedBooks = loadSuppliedBooks;
+    window.loadDeliveredBooksStats = loadDeliveredBooksStats;
 
     // --- INITIALIZE THE DASHBOARD ---
     fetchDashboardData();
     setupNavigation();
-});
 
+    // Load supplied books when page loads (for the inventory section)
+    loadSuppliedBooks();
+});

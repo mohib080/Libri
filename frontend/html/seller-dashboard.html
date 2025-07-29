@@ -26,13 +26,12 @@
                     <i class="fas fa-book-open"></i><span>Supplied Books</span>
                 </a>
                 <a href="#" id="orders-link" class="nav-link">
-                    <i class="fas fa-receipt"></i><span>Orders</span>
+                    <i class="fas fa-receipt"></i><span>Ordered Books</span>
                 </a>
                 <!-- Added Supply Books -->
                 <a href="seller-form.html" id="supply-books-link" class="nav-link">
                     <i class="fas fa-truck"></i><span>Supply Books</span>
                 </a>
-                <!-- "Analytics" and "Settings" have been removed from here -->
             </nav>
             <div class="sidebar-footer">
                 <!-- Added Profile -->
@@ -119,42 +118,20 @@
                 </div>
             </div>
 
-            <!-- Orders Section -->
+            <!-- Delivered Books Statistics Section -->
             <div id="orders-content" class="content-section hidden">
-                <h1 class="content-title">Order Management</h1>
+                <h1 class="content-title">Ordered Books Stats</h1>
                 <div class="content-block">
-                    <div class="table-header">
-                        <h2 class="block-title">All Orders</h2>
-                        <div class="filter-controls">
-                            <select id="order-status-filter">
-                                <option value="">All Statuses</option>
-                                <option value="pending">Pending</option>
-                                <option value="processing">Processing</option>
-                                <option value="shipped">Shipped</option>
-                                <option value="delivered">Delivered</option>
-                                <option value="cancelled">Cancelled</option>
-                            </select>
-                        </div>
+                    <div class="section-header">
+                        <h2 class="block-title">Books Successfully Delivered</h2>
+                        <button class="refresh-btn" onclick="loadDeliveredBooksStats()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
                     </div>
-                    <div class="table-container">
-                        <table id="all-orders-table">
-                            <thead>
-                                <tr>
-                                    <th>Order ID</th>
-                                    <th>Customer</th>
-                                    <th>Books</th>
-                                    <th>Total</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="all-orders-tbody">
-                                <tr>
-                                    <td colspan="7" class="loading">Loading orders...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+
+                    <div id="delivered-books-stats-container" class="stats-container">
+                        <!-- Statistics will be loaded here -->
+                        <div class="loading">Loading delivered books statistics...</div>
                     </div>
                 </div>
             </div>
