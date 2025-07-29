@@ -677,53 +677,54 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Render reviews
     function renderReviews(reviews) {
-        const existingReviews = reviewListContent.querySelectorAll('.review-card');
-        existingReviews.forEach(review => review.remove());
+    // Clear all existing content (including placeholder text)
+    reviewListContent.innerHTML = '';
 
-        if (!reviews || reviews.length === 0) {
-            reviewListContent.innerHTML = '<p style="text-align: center; color: #555;">No reviews yet. Be the first to review!</p>';
-            return;
+    if (!reviews || reviews.length === 0) {
+        reviewListContent.innerHTML = '<p style="text-align: center; color: #555;">No reviews yet. Be the first to review!</p>';
+        return;
+    }
+
+    reviews.forEach(review => {
+        const reviewCard = document.createElement('div');
+        reviewCard.classList.add('review-card');
+        reviewCard.dataset.reviewId = review.review_id;
+
+        const customerName = review.customer_name || 'Anonymous';
+        const reviewDate = new Date(review.review_date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+
+        let deleteButtonHtml = '';
+        if (isLoggedIn && currentCustomerId && review.customer_id === currentCustomerId) {
+            deleteButtonHtml = `
+                <button class="delete-review-btn" data-review-id="${review.review_id}">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </button>
+            `;
         }
 
-        reviews.forEach(review => {
-            const reviewCard = document.createElement('div');
-            reviewCard.classList.add('review-card');
-            reviewCard.dataset.reviewId = review.review_id;
+        reviewCard.innerHTML = `
+            <div class="review-header">
+                <span class="reviewer-name">
+                    <i class="fas fa-user-circle"></i>
+                    ${customerName}
+                </span>
+                <div class="review-rating">${renderStars(review.rating, '1.2rem')}</div>
+            </div>
+            <p class="review-comment">${review.comment || 'No comment provided.'}</p>
+            <div class="review-footer">
+                <p class="review-date">Reviewed on ${reviewDate}</p>
+                ${deleteButtonHtml}
+            </div>
+        `;
 
-            const customerName = review.customer_name || 'Anonymous';
-            const reviewDate = new Date(review.review_date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
+        reviewListContent.appendChild(reviewCard);
+    });
+}
 
-            let deleteButtonHtml = '';
-            if (isLoggedIn && currentCustomerId && review.customer_id === currentCustomerId) {
-                deleteButtonHtml = `
-                    <button class="delete-review-btn" data-review-id="${review.review_id}">
-                        <i class="fas fa-trash-alt"></i> Delete
-                    </button>
-                `;
-            }
-
-            reviewCard.innerHTML = `
-                <div class="review-header">
-                    <span class="reviewer-name">
-                        <i class="fas fa-user-circle"></i>
-                        ${customerName}
-                    </span>
-                    <div class="review-rating">${renderStars(review.rating, '1.2rem')}</div>
-                </div>
-                <p class="review-comment">${review.comment || 'No comment provided.'}</p>
-                <div class="review-footer">
-                    <p class="review-date">Reviewed on ${reviewDate}</p>
-                    ${deleteButtonHtml}
-                </div>
-            `;
-
-            reviewListContent.appendChild(reviewCard);
-        });
-    }
 
     // Submit review (only for logged-in users)
     async function submitReview(rating, comment) {

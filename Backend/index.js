@@ -1559,7 +1559,7 @@ app.get('/api/admin/total-users', authenticateToken, isAdmin, async (req, res) =
 
 app.get('/api/admin/total-orders', authenticateToken, isAdmin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT COUNT(*) AS total_orders FROM "order" WHERE status = \'completed\'');
+        const result = await pool.query('SELECT COUNT(*) AS total_orders FROM "order" WHERE status = \'Delivered\'');
         res.json({ totalOrders: parseInt(result.rows[0].total_orders, 10) });
     } catch (err) {
         console.error('Count orders error:', err);
@@ -1578,7 +1578,7 @@ app.get('/api/admin/total-books-in-stock', authenticateToken, isAdmin, async (re
 });
 app.get('/api/admin/total-sales', authenticateToken, isAdmin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT COALESCE(SUM(total_amount), 0) AS total_sales FROM "order" WHERE status=\'completed\'');
+        const result = await pool.query('SELECT COALESCE(SUM(total_amount), 0) AS total_sales FROM "order" WHERE status=\'Delivered\'');
         res.json({ totalSales: parseFloat(result.rows[0].total_sales) });
     } catch (err) {
         console.error('Count total sales error:', err);
@@ -1702,6 +1702,133 @@ ORDER BY b.title;
         res.status(500).json({ error: 'Failed to fetch admin books' });
     }
 });
+
+// --- ADMIN: Get single book details (with author(s), categories, is_active/is_featured, and all reviews)
+app.get('/api/admin/books/:id', authenticateToken, isAdmin, async (req, res) => {
+    const bookId = parseInt(req.params.id, 10);
+    if (isNaN(bookId)) return res.status(400).json({ error: 'Invalid book ID' });
+
+    let client;
+    try {
+        client = await pool.connect();
+        // Book details
+        const bookResult = await client.query(`
+            SELECT 
+                b.book_id,
+                b.title,
+                b.description,
+                b.image_url,
+                b.price,
+                b.isbn,
+                b.publisher,
+                b.publication_date,
+                b.language,
+                b.is_active,
+                b.is_featured,
+                COALESCE(AVG(r.rating), 0)::numeric(3,2) AS avg_rating,
+                COUNT(r.review_id) AS review_count,
+                STRING_AGG(DISTINCT a.name, ', ') AS authors,
+                bc.category_name,
+                sc.sub_category_name
+            FROM book b
+            LEFT JOIN book_author ba ON b.book_id = ba.book_id
+            LEFT JOIN author a ON ba.author_id = a.author_id
+            LEFT JOIN review r ON b.book_id = r.book_id
+            LEFT JOIN book_sub_category bsc ON b.book_id = bsc.book_id
+            LEFT JOIN sub_category sc ON bsc.sub_category_id = sc.sub_category_id
+            LEFT JOIN book_category bc ON sc.category_id = bc.category_id
+            WHERE b.book_id = $1
+            GROUP BY b.book_id, b.title, b.description, b.image_url, b.price, b.isbn, b.publisher, b.publication_date, b.language, b.is_active, b.is_featured, bc.category_name, sc.sub_category_name
+        `, [bookId]);
+        if (!bookResult.rows.length) return res.status(404).json({ error: 'Book not found' });
+        const bookDetails = bookResult.rows[0];
+
+        // Reviews
+        const reviewsResult = await client.query(`
+            SELECT r.review_id, r.rating, r.comment, r.review_date, c.customer_id, c.name AS customer_name
+            FROM review r
+            LEFT JOIN customer c ON c.customer_id = r.customer_id
+            WHERE r.book_id = $1
+            ORDER BY r.review_date DESC
+        `, [bookId]);
+        bookDetails.reviews = reviewsResult.rows;
+
+        res.json(bookDetails);
+    } catch (err) {
+        console.error('Admin get single book error:', err);
+        res.status(500).json({ error: 'Failed to load book details' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// --- ADMIN: Update book flags (is_active, is_featured)
+app.patch('/api/admin/books/:id/flags', authenticateToken, isAdmin, async (req, res) => {
+    const bookId = parseInt(req.params.id, 10);
+    const { isActive, isFeatured } = req.body;
+
+    if (isNaN(bookId)) return res.status(400).json({ error: 'Invalid book ID' });
+
+    let updateFields = [];
+    let params = [];
+    let paramIdx = 1;
+
+    if (typeof isActive === 'boolean') {
+        updateFields.push(`is_active = $${paramIdx++}`);
+        params.push(isActive);
+    }
+    if (typeof isFeatured === 'boolean') {
+        updateFields.push(`is_featured = $${paramIdx++}`);
+        params.push(isFeatured);
+    }
+    if (updateFields.length === 0) return res.status(400).json({ error: 'Nothing to update' });
+    params.push(bookId);
+
+    try {
+        const result = await pool.query(
+            `UPDATE book SET ${updateFields.join(', ')} WHERE book_id = $${params.length} RETURNING is_active, is_featured`,
+            params
+        );
+        if (!result.rows.length) return res.status(404).json({ error: 'Book not found' });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Admin update book flags error:', err);
+        res.status(500).json({ error: 'Update failed.' });
+    }
+});
+
+// --- ADMIN: Delete any review for a book
+app.delete('/api/admin/books/:bookId/reviews/:reviewId', authenticateToken, isAdmin, async (req, res) => {
+    const bookId = parseInt(req.params.bookId, 10);
+    const reviewId = parseInt(req.params.reviewId, 10);
+    if (isNaN(bookId) || isNaN(reviewId)) return res.status(400).json({ error: 'Invalid IDs' });
+
+    let client;
+    try {
+        client = await pool.connect();
+        await client.query('BEGIN');
+
+        // Verify review exists and belongs to the right book
+        const chk = await client.query('SELECT review_id FROM review WHERE review_id = $1 AND book_id = $2', [reviewId, bookId]);
+        if (!chk.rows.length) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Review not found.' });
+        }
+        await client.query('DELETE FROM review WHERE review_id = $1', [reviewId]);
+
+        // Book triggers will update average_rating automatically
+
+        await client.query('COMMIT');
+        res.json({ message: 'Review deleted.' });
+    } catch (err) {
+        if (client) await client.query('ROLLBACK');
+        console.error('Admin delete review error:', err);
+        res.status(500).json({ error: 'Failed to delete review' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
 
 
 app.get('/api/admin/orders', authenticateToken, isAdmin, async (req, res) => {

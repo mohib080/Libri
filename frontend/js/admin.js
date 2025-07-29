@@ -123,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 sellersTableBody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-gray-500">No sellers found.</td></tr>`;
                 return;
             }
-
             sellersTableBody.innerHTML = sellers.map(seller => `
             <tr>
                 <td class="font-mono text-gray-500">${seller.supplier_id}</td>
@@ -136,6 +135,160 @@ document.addEventListener('DOMContentLoaded', () => {
             sellersTableBody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-red-600">${err.message}</td></tr>`;
         }
     }
+
+    //--- BOOK EDIT MODAL UTIL ---
+    function ensureAdminBookEditModal() {
+        if (!document.getElementById('admin-book-edit-modal')) {
+            const mdl = document.createElement('div');
+            mdl.innerHTML = `
+<div id="admin-book-edit-modal" class="modal hidden">
+    <div class="modal-content" id="admin-book-edit-content">
+        <!-- Will be filled by JS -->
+    </div>
+</div>
+<style>
+.modal { display: none; position:fixed; left:0; top:0; width:100%; height:100%; z-index: 999; background: rgba(0,0,0,0.42); }
+.modal.visible { display:block; }
+.modal-content { background: #fff; max-width:540px; margin:80px auto; padding:30px; border-radius:6px; position:relative; }
+.modal-content .close-btn { position:absolute; right:20px; top:10px; cursor:pointer; font-size:22px; }
+.modal-content h2 {margin-top:0;}
+.review-row { border-bottom:1px solid #ececec; margin-bottom:10px; padding:5px 0;}
+.review-actions { float:right; }
+.feature-possible { color:green; font-size:13px; }
+.feature-disabled { color:#b22; font-size:13px;}
+</style>
+            `;
+            document.body.appendChild(mdl);
+        }
+    }
+
+    function openEditBookModal(bookId) {
+        ensureAdminBookEditModal();
+        const token = localStorage.getItem('token');
+        const modal = document.getElementById('admin-book-edit-modal');
+        const content = document.getElementById('admin-book-edit-content');
+        content.innerHTML = '<div style="text-align:center;"><em>Loading...</em></div>';
+        modal.classList.add('visible');
+        modal.classList.remove('hidden');
+
+        fetch(`/api/admin/books/${bookId}`, { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.json())
+            .then(book => {
+                if (book.error) throw new Error(book.error);
+
+                content.innerHTML = `
+                    <span class="close-btn" onclick="closeEditBookModal()">&times;</span>
+                    <h2>${book.title}</h2>
+                    <p><b>Book ID:</b> ${book.book_id}</p>
+                    <p><b>Authors:</b> ${book.authors}</p>
+                    <p><b>Category:</b> ${book.category_name || ''} - ${book.sub_category_name || ''}</p>
+                    <p><b>ISBN:</b> ${book.isbn || ''}</p>
+                    <p><b>Publisher:</b> ${book.publisher || ''}</p>
+                    <p><b>Publication date:</b> ${book.publication_date ? new Date(book.publication_date).toLocaleDateString() : ''}</p>
+                    <p><b>Language:</b> ${book.language || ''}</p>
+                    <p><b>Stock:</b> ${book.total_stock || 'N/A'}</p>
+                    <p><b>Average Rating:</b> ${book.avg_rating ?? book.average_rating}</p>
+                    <p><b>Review Count:</b> ${book.review_count}</p>
+                    <hr>
+                    <div>
+                        <label>
+                            <input type="checkbox" id="edit-book-is-active" ${book.is_active ? 'checked' : ''}>
+                            Is Active
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            <input type="checkbox" id="edit-book-is-featured" ${book.is_featured ? 'checked' : ''}
+                              ${book.review_count < 5 ? 'disabled' : ''}>
+                            Is Featured
+                            ${book.review_count < 5 
+                                ? `<span class="feature-disabled">(At least 5 reviews needed)</span>` 
+                                : `<span class="feature-possible">(Eligible)</span>`
+                            }
+                        </label>
+                    </div>
+                    <button id="admin-book-save-flags-btn" class="action-btn">Save</button>
+                    <hr>
+                    <div>
+                        <b>Reviews:</b>
+                        <div style="max-height:200px; overflow-y:auto; margin:8px 0;">
+                            ${
+                              !book.reviews || book.reviews.length === 0
+                              ? '<div><i>No reviews for this book.</i></div>'
+                              : book.reviews.map(rv => `
+                                <div class="review-row" id="review-row-${rv.review_id}">
+                                    <b>${rv.customer_name || 'Unknown User'}</b>
+                                    <span>rated <b>${rv.rating}</b> &mdash; <i>${new Date(rv.review_date).toLocaleString()}</i></span><br>
+                                    <span style="display:inline-block; min-width:60%;">${rv.comment ? rv.comment.replace(/[<>]/g, '') : ''}</span>
+                                    <span class="review-actions">
+                                        <button data-bookid="${book.book_id}" data-reviewid="${rv.review_id}" class="admin-del-review-btn" style="color:#a34;">Delete</button>
+                                    </span>
+                                </div>
+                              `).join('')
+                            }
+                        </div>
+                    </div>
+                `;
+
+                // Save handler
+                document.getElementById('admin-book-save-flags-btn').onclick = function() {
+                    const isActive = document.getElementById('edit-book-is-active').checked;
+                    const isFeatured = document.getElementById('edit-book-is-featured').checked;
+                    if (isFeatured && book.review_count < 5) {
+                        alert('A book needs at least 5 reviews to be featured.');
+                        return;
+                    }
+                    fetch(`/api/admin/books/${book.book_id}/flags`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ isActive, isFeatured })
+                    })
+                    .then(r => r.json())
+                    .then(ret => {
+                        if (ret.error) return alert('Update failed: ' + ret.error);
+                        alert('Book status updated.');
+                        loadBooks();
+                        closeEditBookModal();
+                    })
+                    .catch(() => alert('Network or server error.'));
+                };
+
+                // Review delete
+                content.querySelectorAll('.admin-del-review-btn').forEach(btn => {
+                    btn.onclick = function() {
+                        const confirmDel = confirm('Delete this review?');
+                        if (!confirmDel) return;
+                        const reviewId = btn.getAttribute('data-reviewid');
+                        fetch(`/api/admin/books/${book.book_id}/reviews/${reviewId}`, {
+                            method: 'DELETE',
+                            headers: { Authorization: `Bearer ${token}` }
+                        })
+                        .then(r => r.json())
+                        .then(ret => {
+                            if (ret.error) return alert('Delete failed: ' + ret.error);
+                            document.getElementById(`review-row-${reviewId}`).remove();
+                            loadBooks();
+                        })
+                        .catch(() => alert('Network/software error!'));
+                    };
+                });
+            })
+            .catch(e => {
+                content.innerHTML = `<div style="color:#b22">Failed to load: ${e.message}</div>`;
+            });
+    }
+    window.openEditBookModal = openEditBookModal;
+    function closeEditBookModal() {
+        const modal = document.getElementById('admin-book-edit-modal');
+        if (modal) {
+            modal.classList.remove('visible');
+            modal.classList.add('hidden');
+        }
+    }
+    window.closeEditBookModal = closeEditBookModal;
 
     async function loadBooks() {
         const booksTableBody = document.getElementById('books-table-body');
@@ -150,13 +303,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             booksTableBody.innerHTML = books.map(book => `
                 <tr>
-                    <td class="font-mono text-gray-500">${book.book_id}</td><td class="book-title">${book.title}</td><td>${book.authors || 'N/A'}</td>
-                    <td><span class="badge badge-category">${book.category_name || 'N/A'}</span></td><td><span class="badge badge-subcategory">${book.sub_category_name || 'N/A'}</span></td>
-                    <td>$${Number(book.price).toFixed(2)}</td><td><span class="badge badge-stock ${book.total_stock > 0 ? 'in-stock' : 'out-of-stock'}">${book.total_stock ?? 0}</span></td>
+                    <td class="font-mono text-gray-500">${book.book_id}</td>
+                    <td class="book-title">${book.title}</td>
+                    <td>${book.authors || 'N/A'}</td>
+                    <td><span class="badge badge-category">${book.category_name || 'N/A'}</span></td>
+                    <td><span class="badge badge-subcategory">${book.sub_category_name || 'N/A'}</span></td>
+                    <td>$${Number(book.price).toFixed(2)}</td>
+                    <td><span class="badge badge-stock ${book.total_stock > 0 ? 'in-stock' : 'out-of-stock'}">${book.total_stock ?? 0}</span></td>
                     <td><div class="rating-cell"><span>${Number(book.average_rating).toFixed(2)}</span><span class="star">★</span></div></td>
-                    <td>${book.review_count ?? 0}</td><td><button class="action-btn">Edit</button></td>
+                    <td>${book.review_count ?? 0}</td>
+                    <td><button class="action-btn admin-edit-book-btn" data-bookid="${book.book_id}">Edit</button></td>
                 </tr>
             `).join('');
+            setTimeout(() => {
+                document.querySelectorAll('.admin-edit-book-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const bookId = btn.getAttribute('data-bookid');
+                        openEditBookModal(bookId);
+                    });
+                });
+            }, 30);
         } catch (err) {
             booksTableBody.innerHTML = `<tr><td colspan="10" class="py-4 text-center text-red-600">Error: ${err.message}</td></tr>`;
         }
@@ -201,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Modal close logic
+    // Modal close logic for orders
     document.getElementById('orderModalClose').onclick = () => {
         document.getElementById('orderModal').style.display = 'none';
     };
@@ -291,7 +457,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // Set status dropdown
             const dropdown = document.getElementById('order-status-dropdown');
             dropdown.value = order.status;
-
             // Save order ID for update
             dropdown.setAttribute('data-order-id', order.order_id);
             document.getElementById('order-status-update-btn').setAttribute('data-order-id', order.order_id);
@@ -325,14 +490,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             toastElement.textContent = "Status updated successfully!";
             toastElement.className = 'toast-success';
-            
             // Update the status badge
             document.getElementById('order-modal-status-badge').innerHTML = `
                 <span class="badge badge-status-${status}">
                     ${status.charAt(0).toUpperCase() + status.slice(1)}
                 </span>
             `;
-
             // Refresh the orders table
             loadOrders();
             
