@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'seller-login.html';
         return;
     }
-    
+
     // Decode token to ensure it's a seller
     try {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -84,11 +84,11 @@ document.addEventListener('DOMContentLoaded', () => {
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                
+
                 // Handle active state for links
                 navLinks.forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
-                
+
                 // Show the correct content section
                 const targetId = `${link.id.split('-')[0]}-content`;
                 contentSections.forEach(section => {
@@ -106,6 +106,76 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // Function to fetch and display supplied books
+    async function loadSuppliedBooks() {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/seller/supplied-books', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch supplied books');
+            }
+
+            const books = await response.json();
+            displaySuppliedBooks(books);
+
+        } catch (error) {
+            console.error('Error loading supplied books:', error);
+            document.getElementById('supplied-books-container').innerHTML =
+                '<p class="error">Failed to load supplied books. Please try again.</p>';
+        }
+    }
+
+    // Function to display the supplied books
+    function displaySuppliedBooks(books) {
+        const container = document.getElementById('supplied-books-container');
+
+        if (books.length === 0) {
+            container.innerHTML = '<p class="no-books">You haven\'t supplied any books yet.</p>';
+            return;
+        }
+
+        const booksHTML = books.map(book => `
+        <div class="book-card">
+            <div class="book-image">
+                <img src="${book.image_url || '/images/default-book.jpg'}" alt="${book.title}" />
+            </div>
+            <div class="book-details">
+                <h3 class="book-title">${book.title}</h3>
+                <p class="book-authors">by ${book.authors || 'Unknown Author'}</p>
+                <p class="book-category">${book.category_name || 'N/A'} - ${book.sub_category_name || 'N/A'}</p>
+                <div class="book-stats">
+                    <span class="price">$${parseFloat(book.price).toFixed(2)}</span>
+                    <span class="stock">Stock: ${book.total_stock}</span>
+                    <span class="rating">★ ${book.average_rating} (${book.review_count} reviews)</span>
+                </div>
+                <div class="book-performance">
+                    <span class="orders">Orders: ${book.total_orders}</span>
+                    <span class="revenue">Revenue: $${parseFloat(book.total_revenue).toFixed(2)}</span>
+                </div>
+                <div class="book-meta">
+                    <p><strong>ISBN:</strong> ${book.isbn || 'N/A'}</p>
+                    <p><strong>Publisher:</strong> ${book.publisher || 'N/A'}</p>
+                    <p><strong>Published:</strong> ${book.publication_date ? new Date(book.publication_date).toLocaleDateString() : 'N/A'}</p>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+        container.innerHTML = booksHTML;
+    }
+
+    // Call this function when the page loads or when the "Supplied Books" section is activated
+    window.addEventListener('DOMContentLoaded', function () {
+        // Load supplied books when page loads
+        loadSuppliedBooks();
+    });
+
 
     // --- INITIALIZE THE DASHBOARD ---
     fetchDashboardData();

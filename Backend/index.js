@@ -1970,6 +1970,62 @@ app.put('/api/user/notifications/:id/read', authenticateToken, async (req, res) 
     }
 });
 
+// GET /api/seller/supplied-books - Get all books supplied by the logged-in seller
+app.get('/api/seller/supplied-books', authenticateToken, isSeller, async (req, res) => {
+    const supplierId = req.user.supplierId;
+
+    let client;
+    try {
+        client = await pool.connect();
+
+        const result = await client.query(`
+            SELECT 
+                b.book_id,
+                b.title,
+                STRING_AGG(DISTINCT a.name, ', ') AS authors,
+                b.description,
+                b.image_url,
+                b.price,
+                b.isbn,
+                b.publisher,
+                b.publication_date,
+                b.language,
+                COALESCE(AVG(r.rating), 0)::numeric(3, 2) AS average_rating,
+                COUNT(r.review_id) AS review_count,
+                bc.category_name,
+                sc.sub_category_name,
+                COALESCE(SUM(i.quantity_in_stock), 0) AS total_stock,
+                COUNT(DISTINCT oi.order_item_id) AS total_orders,
+                COALESCE(SUM(oi.quantity * oi.item_price), 0) AS total_revenue
+            FROM book_supply bs
+            JOIN book b ON bs.book_id = b.book_id
+            LEFT JOIN book_author ba ON b.book_id = ba.book_id
+            LEFT JOIN author a ON ba.author_id = a.author_id
+            LEFT JOIN review r ON b.book_id = r.book_id
+            LEFT JOIN book_sub_category bsc ON b.book_id = bsc.book_id
+            LEFT JOIN sub_category sc ON bsc.sub_category_id = sc.sub_category_id
+            LEFT JOIN book_category bc ON sc.category_id = bc.category_id
+            LEFT JOIN inventory i ON b.book_id = i.book_id
+            LEFT JOIN order_item oi ON b.book_id = oi.book_id
+            WHERE bs.supplier_id = $1
+            GROUP BY 
+                b.book_id, b.title, b.description, b.image_url, b.price, 
+                b.isbn, b.publisher, b.publication_date, b.language,
+                bc.category_name, sc.sub_category_name
+            ORDER BY b.title ASC
+        `, [supplierId]);
+
+        res.json(result.rows);
+
+    } catch (err) {
+        console.error('Error fetching supplied books:', err);
+        res.status(500).json({ error: 'Failed to fetch supplied books' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+
 
 
 
