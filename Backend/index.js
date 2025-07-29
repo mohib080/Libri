@@ -1156,7 +1156,7 @@ app.delete('/api/books/:bookId/reviews/:reviewId', authenticateToken, async (req
 
 app.post('/api/orders', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
-    const { shipping, items } = req.body; // Get items from request body
+    const { shipping, items, paymentMethodId } = req.body; // Get items from request body
     let client;
 
     try {
@@ -1171,12 +1171,14 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
 
         // 2. Create order
         const orderResult = await client.query(`
-            INSERT INTO "order" (customer_id, status, order_date, total_amount, shipping_method)
-            VALUES ($1, 'pending', NOW(), $2, 'standard')
-            RETURNING order_id
+            INSERT INTO "order" (customer_id, status, order_date, total_amount, shipping_method, tracking_number)
+            VALUES ($1, 'pending', NOW(), $2, 'standard', 'LIBRI' || SUBSTRING(MD5(RANDOM()::TEXT), 1, 5))
+            RETURNING order_id, tracking_number
         `, [customerId, serverTotal]);
 
         const orderId = orderResult.rows[0].order_id;
+        const trackingNumber = orderResult.rows[0].tracking_number;
+
 
         // 3. Add order items with format
         for (const item of items) {
@@ -1219,6 +1221,16 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
         await client.query(`
             DELETE FROM cart_item WHERE cart_id = (SELECT cart_id FROM cart WHERE customer_id = $1)
         `, [customerId]);
+
+        await client.query(`
+            INSERT INTO payment (
+                order_id, 
+                payment_method_id, 
+                amount,
+                payment_date, 
+                requested_at
+            ) VALUES ($1, $2, $3, NOW(),NOW())
+        `, [orderId, paymentMethodId, serverTotal]);
 
         await client.query('COMMIT');
         res.status(201).json({

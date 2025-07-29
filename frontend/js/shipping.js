@@ -45,7 +45,23 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const token = localStorage.getItem('token');
             const checkoutData = JSON.parse(localStorage.getItem('checkoutData') || '{}');
+            // Determine payment method ID
+            let selectedPayment = document.querySelector('input[name="payment_method"]:checked').value;
+            let paymentMethodId;
 
+            switch (selectedPayment) {
+                case 'cod':
+                    paymentMethodId = 1;
+                    break;
+                case 'online_banking':
+                    paymentMethodId = 2;
+                    break;
+                case 'card':
+                    paymentMethodId = 3;
+                    break;
+                default:
+                    paymentMethodId = 1; // fallback
+            }
             const response = await fetch(`${API_BASE_URL}/orders`, {
                 method: 'POST',
                 headers: {
@@ -60,7 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         price: item.price,
                         formatId: item.formatId // Use formatId instead of format
                     })),
-                    totalAmount: checkoutData.totalAmount
+                    totalAmount: checkoutData.totalAmount,
+                    paymentMethodId: paymentMethodId
                 })
             });
 
