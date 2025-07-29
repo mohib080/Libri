@@ -34,38 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('shippingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const useProfileAddress = document.getElementById('profileAddressRadio').checked;
-        let shippingData;
-
-        if (useProfileAddress) {
-            // Get address from profile
-            const token = localStorage.getItem('token');
-            try {
-                const response = await fetch(`${API_BASE_URL}/profile`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                const profileData = await response.json();
-                shippingData = {
-                    address: profileData.customer.address || '',
-                    city: '', // You'll need to parse the address or store city separately in profile
-                    postal_code: '', // Same as above
-                    country: 'USA' // Default or from profile
-                };
-            } catch (error) {
-                console.error('Error fetching profile address:', error);
-                return;
-            }
-        } else {
-            // Get address from form
-            shippingData = {
-                address: document.getElementById('addressBox').value,
-                city: document.getElementById('city').value,
-                postal_code: document.getElementById('postalCode').value,
-                country: document.getElementById('country').value
-            };
-        }
+        // Always get address from form (no profile option anymore)
+        const shippingData = {
+            address: document.getElementById('addressBox').value,
+            city: document.getElementById('city').value,
+            postal_code: document.getElementById('postalCode').value,
+            country: document.getElementById('country').value
+        };
 
         try {
             const token = localStorage.getItem('token');
@@ -104,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error creating order:', error);
-            showNotification('Failed to create order. Please try again.', 'error');
+            alert('Failed to create order. Please try again.');
         }
     });
 });
