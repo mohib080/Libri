@@ -6,6 +6,11 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const app = express();
+const { jsPDF } = require('jspdf');
+const autoTable = require('jspdf-autotable').default;
+
+
+
 
 // Serve static files from frontend directories
 app.use(express.static(path.join(__dirname, '../frontend/html')));
@@ -1560,8 +1565,8 @@ app.get('/api/admin/total-users', authenticateToken, isAdmin, async (req, res) =
 app.get('/api/admin/total-orders', authenticateToken, isAdmin, async (req, res) => {
     try {
         const result = await pool.query(
-    'SELECT COUNT(*) AS total_orders FROM "order"'
-    );
+            'SELECT COUNT(*) AS total_orders FROM "order"'
+        );
 
         res.json({ totalOrders: parseInt(result.rows[0].total_orders, 10) });
     } catch (err) {
@@ -2379,6 +2384,260 @@ app.put('/api/supplier/notifications/read-all', authenticateToken, isSeller, asy
         if (client) client.release();
     }
 });
+
+
+app.get('/api/orders/:orderId/receipt', authenticateToken, async (req, res) => {
+    const customerId = req.user.customerId;
+    const orderId = parseInt(req.params.orderId, 10);
+
+    if (isNaN(orderId)) {
+        return res.status(400).json({ error: 'Invalid order ID' });
+    }
+
+    let client;
+    try {
+        client = await pool.connect();
+
+        // Fetch order header
+        const orderResult = await client.query(`
+      SELECT 
+        o.order_id, o.status, o.order_date, o.total_amount, o.shipping_method, o.tracking_number,
+        c.name as customer_name, c.email as customer_email, c.phone_number as customer_phone, c.address as customer_address,
+        s.address as shipping_address, s.city as shipping_city, s.postal_code as shipping_postal_code,
+        s.country as shipping_country, s.shipped_date, s.delivery_estimate
+      FROM "order" o
+      JOIN customer c ON o.customer_id = c.customer_id
+      LEFT JOIN shipping s ON o.order_id = s.order_id
+      WHERE o.order_id = $1 AND o.customer_id = $2
+    `, [orderId, customerId]);
+
+        if (orderResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        const order = orderResult.rows[0];
+
+        // Fetch order items
+        const itemsResult = await client.query(`
+      SELECT 
+        oi.quantity, oi.item_price, b.title as book_title,
+        STRING_AGG(DISTINCT a.name, ', ') as authors,
+        f.format_name, f.factor
+      FROM order_item oi
+      LEFT JOIN book b ON oi.book_id = b.book_id
+      LEFT JOIN book_author ba ON b.book_id = ba.book_id
+      LEFT JOIN author a ON ba.author_id = a.author_id
+      LEFT JOIN format f ON oi.format_id = f.format_id
+      WHERE oi.order_id = $1
+      GROUP BY oi.quantity, oi.item_price, b.title, f.format_name, f.factor
+    `, [orderId]);
+
+        order.items = itemsResult.rows;
+
+        // Generate PDF buffer
+        const pdfBuffer = generateReceiptPDF(order);
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="receipt_${orderId}.pdf"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+        res.send(pdfBuffer);
+
+    } catch (error) {
+        console.error('Error generating receipt:', error);
+        res.status(500).json({ error: 'Failed to generate receipt', details: error.message });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+
+
+function generateReceiptPDF(order) {
+    const doc = new jsPDF();
+    let y = 20;
+
+    doc.setFontSize(28).setFont('helvetica', 'bold').text('Libri', 20, y);
+    y += 10;
+    doc.setFontSize(16).setFont('helvetica', 'normal').text('Order Receipt', 20, y);
+
+    y += 20; doc.setFontSize(14).setFont('helvetica', 'bold').text('Order Details', 20, y);
+    y += 10; doc.setFontSize(11).setFont('helvetica', 'normal');
+    doc.text(`Order ID: #${order.order_id}`, 20, y);
+    y += 7; doc.text(`Date: ${new Date(order.order_date).toLocaleDateString()}`, 20, y);
+    y += 7; doc.text(`Status: ${order.status.toUpperCase()}`, 20, y);
+    if (order.tracking_number) { y += 7; doc.text(`Tracking: ${order.tracking_number}`, 20, y); }
+
+    y += 15; doc.setFontSize(14).setFont('helvetica', 'bold').text('Customer Information', 20, y);
+    y += 10; doc.setFontSize(11).setFont('helvetica', 'normal');
+    doc.text(`Name: ${order.customer_name}`, 20, y);
+    y += 7; doc.text(`Email: ${order.customer_email}`, 20, y);
+    if (order.customer_phone) { y += 7; doc.text(`Phone: ${order.customer_phone}`, 20, y); }
+
+    if (order.shipping_address) {
+        y += 15; doc.setFontSize(14).setFont('helvetica', 'bold').text('Shipping Address', 20, y);
+        y += 10; doc.setFontSize(11).setFont('helvetica', 'normal');
+        doc.text(order.shipping_address, 20, y);
+        y += 7; doc.text(`${order.shipping_city}${order.shipping_postal_code ? ', ' + order.shipping_postal_code : ''}`, 20, y);
+        y += 7; doc.text(order.shipping_country, 20, y);
+        if (order.delivery_estimate) { y += 7; doc.text(`Est. Delivery: ${new Date(order.delivery_estimate).toLocaleDateString()}`, 20, y); }
+    }
+
+    y += 20;
+    doc.setFontSize(14).setFont('helvetica', 'bold').text('Order Items', 20, y);
+    y += 10;
+
+    const tableHeaders = ['Item', 'Format', 'Qty', 'Price', 'Total'];
+    const tableData = order.items.map(item => [
+        `${item.book_title}${item.authors ? `\nby ${item.authors}` : ''}`,
+        item.format_name || 'Standard',
+        item.quantity.toString(),
+        `$${parseFloat(item.item_price).toFixed(2)}`,
+        `$${(item.item_price * item.quantity).toFixed(2)}`
+    ]);
+
+    autoTable(doc, {
+        startY: y,
+        head: [tableHeaders],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [30, 31, 38], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 10, cellPadding: 5 },
+    });
+
+    const subtotal = order.items.reduce((sum, item) => sum + (item.item_price * item.quantity), 0);
+    const shippingCost = 5.00;
+    const finalY = doc.lastAutoTable.finalY + 15;
+
+    doc.setFontSize(11).setFont('helvetica', 'normal');
+    doc.text('Subtotal:', 120, finalY);
+    doc.text(`$${subtotal.toFixed(2)}`, 170, finalY, { align: 'right' });
+    doc.text('Shipping:', 120, finalY + 7);
+    doc.text(`$${shippingCost.toFixed(2)}`, 170, finalY + 7, { align: 'right' });
+    doc.setFont('helvetica', 'bold').setFontSize(12);
+    doc.text('Total:', 120, finalY + 17);
+    doc.text(`$${parseFloat(order.total_amount).toFixed(2)}`, 170, finalY + 17, { align: 'right' });
+
+    const footerY = finalY + 35;function generateReceiptPDF(order) {
+    const doc = new jsPDF();
+    let y = 20;
+    const pageW = doc.internal.pageSize.getWidth();
+    const xMargin = 20;
+
+    // --- 1. Modern Header with Emoji ---
+    // Using a Unicode emoji for the icon.
+    doc.setFontSize(26);
+    doc.setFont('helvetica', 'bold');
+    doc.text('🎓 Libri', xMargin, y);
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Order Receipt', pageW - xMargin, y, { align: 'right' });
+    y += 10;
+    doc.setDrawColor(220, 220, 220); // Light gray line
+    doc.line(xMargin, y, pageW - xMargin, y);
+
+    // --- 2. Two-Column Layout for Details ---
+    const x1 = xMargin;
+    const x2 = pageW / 2 + 10;
+    y += 15;
+
+    // Left Column: Order Details
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Order ID:', x1, y);
+    doc.text('Order Date:', x1, y + 7);
+    doc.text('Status:', x1, y + 14);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(`#${order.order_id}`, x1 + 35, y);
+    doc.text(new Date(order.order_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), x1 + 35, y + 7);
+    doc.text(order.status.toUpperCase(), x1 + 35, y + 14);
+    
+    // Right Column: Customer Details
+    doc.setFont('helvetica', 'bold');
+    doc.text('Billed To:', x2, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(order.customer_name, x2, y + 7);
+    doc.text(order.customer_email, x2, y + 14);
+    if(order.customer_phone) doc.text(order.customer_phone, x2, y + 21);
+
+    y += 35; // Extra space before table
+
+    // --- 3. Enhanced AutoTable Styling ---
+    const tableHeaders = [['Item', 'Format', 'Qty', 'Price', 'Total']];
+    const tableData = order.items.map(item => [
+        `${item.book_title}\n${item.authors ? `by ${item.authors}` : ''}`,
+        item.format_name || 'Standard',
+        item.quantity.toString(),
+        `$${parseFloat(item.item_price).toFixed(2)}`,
+        `$${(item.item_price * item.quantity).toFixed(2)}`
+    ]);
+
+    autoTable(doc, {
+        startY: y,
+        head: tableHeaders,
+        body: tableData,
+        theme: 'striped',
+        headStyles: {
+            fillColor: [41, 128, 185], // A modern blue
+            textColor: 255,
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        columnStyles: {
+            0: { cellWidth: 70 }, // Item
+            1: { halign: 'center' }, // Format
+            2: { halign: 'center' }, // Qty
+            3: { halign: 'right' },  // Price
+            4: { halign: 'right' }   // Total
+        },
+        margin: { left: xMargin, right: xMargin },
+    });
+
+    // --- 4. Professional Totals Section ---
+    const subtotal = order.items.reduce((sum, item) => sum + (item.item_price * item.quantity), 0);
+    const shippingCost = 5.00;
+    let finalY = doc.lastAutoTable.finalY + 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const totalsX = pageW - xMargin - 60;
+
+    doc.text('Subtotal:', totalsX, finalY);
+    doc.text(`$${subtotal.toFixed(2)}`, pageW - xMargin, finalY, { align: 'right' });
+
+    finalY += 7;
+    doc.text('Shipping:', totalsX, finalY);
+    doc.text(`$${shippingCost.toFixed(2)}`, pageW - xMargin, finalY, { align: 'right' });
+
+    finalY += 7;
+    doc.setDrawColor(41, 128, 185);
+    doc.line(totalsX - 2, finalY, pageW - xMargin, finalY); // Line above total
+
+    finalY += 5;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total:', totalsX, finalY);
+    doc.text(`$${parseFloat(order.total_amount).toFixed(2)}`, pageW - xMargin, finalY, { align: 'right' });
+
+    // --- 5. Styled Footer ---
+    const footerY = doc.internal.pageSize.getHeight() - 15;
+    doc.setDrawColor(220, 220, 220);
+    doc.line(xMargin, footerY - 5, pageW - xMargin, footerY - 5);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Thank you for your business!', pageW / 2, footerY, { align: 'center' });
+    doc.text('For support, contact support@libri.com', pageW / 2, footerY + 5, { align: 'center' });
+
+    return Buffer.from(doc.output('arraybuffer'));
+}
+
+    doc.setFontSize(10).setFont('helvetica', 'normal');
+    doc.text('Thank you for using Libri!', 105, footerY, { align: 'center' });
+
+    return Buffer.from(doc.output('arraybuffer'));
+}
+
 
 
 

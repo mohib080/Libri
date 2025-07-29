@@ -738,3 +738,37 @@ body.dark-mode .format-badge {
     background: #7c3aed;
     color: #fff;
 }
+
+/* Download receipt button styles */
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+}
+
+.btn-secondary i {
+    font-size: 0.9rem;
+}
+
+.order-actions .btn-secondary {
+    margin-right: 0.5rem;
+}
+
+/* Loading state */
+.btn-secondary.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}

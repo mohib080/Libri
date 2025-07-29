@@ -329,6 +329,73 @@ function showOrderDetails(orderId) {
         orderModal.style.display = 'flex';
     }
 }
+// Download receipt function
+function downloadReceipt(orderId) {
+    const token = getAuthToken();
+    if (!token) return;
+
+    showNotification('Generating receipt...', 'info');
+
+    fetch(`${API_BASE_URL}/orders/${orderId}/receipt`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            // Create a download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `receipt_${orderId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            showNotification('Receipt downloaded successfully!', 'success');
+        })
+        .catch(error => {
+            console.error('Error downloading receipt:', error);
+            showNotification('Failed to download receipt', 'error');
+        });
+}
+
+// Update the getOrderActions function to include download button
+function getOrderActions(order) {
+    const actions = [];
+    
+    // View Details button (always available)
+    actions.push(`<button class="btn-primary" onclick="showOrderDetails(${order.order_id})">View Details</button>`);
+    
+    // Download Receipt button (available for all statuses except 'pending' and 'cancelled')
+    if (order.status !== 'pending' && order.status !== 'cancelled') {
+        actions.push(`<button class="btn-secondary" onclick="downloadReceipt(${order.order_id})">
+            <i class="fas fa-download"></i> Download Receipt
+        </button>`);
+    }
+
+    // Cancel button (only for 'pending' orders)
+    if (order.status === 'pending') {
+        actions.push(`<button class="btn-danger" onclick="showCancellationModal(${order.order_id})">Cancel Order</button>`);
+    }
+    
+    // Re-order button (only for 'delivered' orders)
+    if (order.status === 'delivered') {
+        actions.push(`<button class="btn-primary" onclick="reorderItems(${order.order_id})">Reorder</button>`);
+    }
+    
+    return actions.join(' ');
+}
+
+
 
 // Show cancel order modal
 function showCancelModal(orderId) {
