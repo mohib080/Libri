@@ -516,3 +516,272 @@ tbody tr:hover {
     color: #dc3545;
     padding: 40px;
 }
+
+
+/* === NOTIFICATION SYSTEM STYLES (SIDEBAR VERSION) === */
+
+/* Notification Container in Sidebar */
+.notification-container {
+    position: relative;
+    width: 100%;
+}
+
+/* Notification Link in Sidebar - FIXED to match other nav-links */
+#notifications-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--sidebar-text);
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+    width: 100%;
+}
+
+/* Fix the icon spacing to match other nav-links */
+#notifications-link i {
+    width: 24px;
+    margin-right: 1rem;
+    font-size: 1.1rem;
+}
+
+/* Make the text span take up the remaining space */
+#notifications-link > span:first-of-type {
+    flex-grow: 1;
+}
+
+#notifications-link:hover {
+    background-color: var(--sidebar-hover-bg);
+    color: white;
+}
+
+#notifications-link.active {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+}
+
+/* Notification Badge on Sidebar */
+.notification-badge-sidebar {
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+    margin-left: 0.5rem; /* Small margin from the text */
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+}
+
+/* Rest of your notification styles remain the same... */
+.notification-dropdown-sidebar {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    margin-left: 10px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    width: 350px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1001;
+    display: none;
+}
+
+.notification-header {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: bold;
+    color: var(--text-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-color);
+    border-radius: 8px 8px 0 0;
+}
+
+/* Notification Items */
+.notification-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.notification-item:hover {
+    background-color: var(--bg-color);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item.unread {
+    background-color: #f0f8ff;
+    border-left: 3px solid var(--primary-color);
+}
+
+.notification-item.unread::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: var(--primary-color);
+    border-radius: 50%;
+}
+
+.notification-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+}
+
+.notification-message {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin-bottom: 6px;
+}
+
+.notification-time {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.mark-all-read {
+    color: var(--primary-color);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: normal;
+}
+
+.mark-all-read:hover {
+    text-decoration: underline;
+}
+
+.no-notifications {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Full Page Notification Styles */
+.notification-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.notification-card:hover {
+    background-color: var(--bg-color);
+}
+
+.notification-card.unread {
+    border-left: 4px solid var(--primary-color);
+    background-color: #f0f8ff;
+}
+
+.notification-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.notification-card-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.notification-card-time {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.notification-card-message {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.notification-card-details {
+    background: var(--bg-color);
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Toast Animation Styles */
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+/* Remove the main-content margin adjustment since we're not using header anymore */
+.main-content {
+    margin-top: 0;
+}
+
+/* Responsive adjustments for notifications */
+@media (max-width: 768px) {
+    .notification-dropdown-sidebar {
+        width: 300px;
+        left: 50%;
+        transform: translateX(-50%);
+        top: 100%;
+        margin-left: 0;
+    }
+}
+
+/* Scrollbar styling for notification dropdown */
+.notification-dropdown-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.notification-dropdown-sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.notification-dropdown-sidebar::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+.notification-dropdown-sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}

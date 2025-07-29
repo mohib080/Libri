@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dashboardContent = document.getElementById('dashboard-content');
     const inventoryContent = document.getElementById('inventory-content');
     const ordersContent = document.getElementById('orders-content');
+    const notificationsContent = document.getElementById('notifications-content'); // ADDED
 
     const totalSalesEl = document.querySelector('#dashboard-content .stat-card:nth-child(1) p');
     const totalOrdersEl = document.querySelector('#dashboard-content .stat-card:nth-child(2) p');
@@ -31,7 +32,296 @@ document.addEventListener('DOMContentLoaded', () => {
     const lowStockAlertsEl = document.querySelector('#dashboard-content .stat-card:nth-child(4) p');
     const recentOrdersTbody = document.querySelector('#dashboard-content table tbody');
 
-    // --- API CALL TO FETCH DASHBOARD DATA ---
+    // --- NOTIFICATION VARIABLES (ADDED) ---
+    let notificationPollingInterval;
+
+    // --- NOTIFICATION SYSTEM FUNCTIONS (ADDED) ---
+    async function initializeNotifications() {
+        await fetchNotificationCount();
+        setupNotificationEventListeners();
+    }
+
+    function setupNotificationEventListeners() {
+        const notificationsLink = document.getElementById('notifications-link');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const markAllRead = document.getElementById('markAllRead');
+        
+        // Only show notification dropdown on click
+        notificationsLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const isVisible = notificationDropdown.style.display === 'block';
+            notificationDropdown.style.display = isVisible ? 'none' : 'block';
+            
+            if (!isVisible) {
+                await fetchNotifications();
+            }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.notification-container')) {
+                notificationDropdown.style.display = 'none';
+            }
+        });
+        
+        // Mark all notifications as read
+        markAllRead.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            try {
+                const response = await fetch('/api/supplier/notifications/read-all', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    await fetchNotifications();
+                    await fetchNotificationCount();
+                    showToast('All notifications marked as read', 'success');
+                } else {
+                    showToast('Failed to mark notifications as read', 'error');
+                }
+            } catch (error) {
+                console.error('Error marking all notifications as read:', error);
+                showToast('Error marking notifications as read', 'error');
+            }
+        });
+    }
+
+    async function fetchNotificationCount() {
+        try {
+            const response = await fetch('/api/supplier/notifications/count', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                updateNotificationBadge(data.unreadCount);
+            }
+        } catch (error) {
+            console.error('Error fetching notification count:', error);
+        }
+    }
+
+    async function fetchNotifications() {
+        try {
+            const response = await fetch('/api/supplier/notifications', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (response.ok) {
+                const notifications = await response.json();
+                displayNotifications(notifications);
+            } else {
+                console.error('Failed to fetch notifications');
+            }
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+        }
+    }
+
+    function updateNotificationBadge(count) {
+        const badge = document.getElementById('notificationBadgeSidebar');
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function displayNotifications(notifications) {
+        const notificationList = document.getElementById('notificationList');
+        
+        if (notifications.length === 0) {
+            notificationList.innerHTML = `
+                <div class="no-notifications">
+                    No notifications yet
+                </div>
+            `;
+            return;
+        }
+        
+        const notificationsHTML = notifications.map(notification => {
+            const timeAgo = formatTimeAgo(new Date(notification.created_at));
+            const unreadClass = notification.is_read ? '' : 'unread';
+            
+            return `
+                <div class="notification-item ${unreadClass}" onclick="handleNotificationClick(${notification.notification_id}, '${notification.type}', ${JSON.stringify(notification.data).replace(/"/g, '&quot;')})">
+                    <div class="notification-title">${escapeHtml(notification.title)}</div>
+                    <div class="notification-message">${escapeHtml(notification.message)}</div>
+                    <div class="notification-time">${timeAgo}</div>
+                </div>
+            `;
+        }).join('');
+        
+        notificationList.innerHTML = notificationsHTML;
+    }
+
+    async function handleNotificationClick(notificationId, type, data) {
+        // Mark notification as read
+        await markNotificationAsRead(notificationId);
+        
+        // Handle different notification types
+        switch(type) {
+            case 'new_review':
+                if (data && data.book_id) {
+                    console.log('Navigate to book reviews:', data);
+                    showToast(`Review for "${data.book_title}" - Rating: ${data.rating} stars`, 'info');
+                }
+                break;
+            default:
+                console.log('Notification clicked:', type, data);
+        }
+    }
+
+    async function markNotificationAsRead(notificationId) {
+        try {
+            const response = await fetch(`/api/supplier/notifications/${notificationId}/read`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                await fetchNotifications();
+                await fetchNotificationCount();
+            }
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+        }
+    }
+
+    // Full notifications page
+    async function loadAllNotifications() {
+        const container = document.getElementById('all-notifications-container');
+        container.innerHTML = '<div class="loading">Loading all notifications...</div>';
+
+        try {
+            const response = await fetch('/api/supplier/notifications', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch notifications');
+            }
+
+            const notifications = await response.json();
+            displayAllNotifications(notifications);
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+            container.innerHTML = '<div class="error">Failed to load notifications. Please try again.</div>';
+        }
+    }
+
+    function displayAllNotifications(notifications) {
+        const container = document.getElementById('all-notifications-container');
+
+        if (notifications.length === 0) {
+            container.innerHTML = '<div class="no-notifications">No notifications yet.</div>';
+            return;
+        }
+
+        const notificationsHTML = notifications.map(notification => {
+            const timeAgo = formatTimeAgo(new Date(notification.created_at));
+            const unreadClass = notification.is_read ? '' : 'unread';
+            const data = notification.data || {};
+            
+            return `
+                <div class="notification-card ${unreadClass}" onclick="handleNotificationClick(${notification.notification_id}, '${notification.type}', ${JSON.stringify(notification.data).replace(/"/g, '&quot;')})">
+                    <div class="notification-card-header">
+                        <div class="notification-card-title">${escapeHtml(notification.title)}</div>
+                        <div class="notification-card-time">${timeAgo}</div>
+                    </div>
+                    <div class="notification-card-message">${escapeHtml(notification.message)}</div>
+                    ${data.book_title ? `
+                        <div class="notification-card-details">
+                            <strong>Book:</strong> ${escapeHtml(data.book_title)}<br>
+                            ${data.rating ? `<strong>Rating:</strong> ${data.rating} stars<br>` : ''}
+                            ${data.customer_name ? `<strong>Customer:</strong> ${escapeHtml(data.customer_name)}` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = notificationsHTML;
+    }
+
+    function formatTimeAgo(date) {
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) return 'Just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+        if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+        
+        return date.toLocaleDateString();
+    }
+
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, (m) => map[m]);
+    }
+
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        
+        Object.assign(toast.style, {
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            padding: '12px 20px',
+            borderRadius: '4px',
+            color: 'white',
+            fontWeight: 'bold',
+            zIndex: '10000',
+            animation: 'slideIn 0.3s ease-out'
+        });
+        
+        const colors = {
+            success: '#28a745',
+            error: '#dc3545',
+            info: '#17a2b8',
+            warning: '#ffc107'
+        };
+        toast.style.backgroundColor = colors[type] || colors.info;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 3000);
+    }
+
+    // --- API CALL TO FETCH DASHBOARD DATA (UNCHANGED) ---
     async function fetchDashboardData() {
         try {
             const response = await fetch('/api/seller/dashboard-stats', {
@@ -49,19 +339,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
-            // You can show an error message on the UI here
         }
     }
 
-    // --- UI UPDATE FUNCTIONS ---
+    // --- UI UPDATE FUNCTIONS (UNCHANGED) ---
     function updateDashboardUI(data) {
-        // Update stat cards
         totalSalesEl.textContent = `$${data.totalSales.toFixed(2)}`;
         totalOrdersEl.textContent = data.totalOrders;
         booksInStockEl.textContent = data.booksInStock;
-        lowStockAlertsEl.textContent = data.lowStockAlerts; // This is static for now
+        lowStockAlertsEl.textContent = data.lowStockAlerts;
 
-        // Update recent orders table
         if (data.recentOrders.length === 0) {
             recentOrdersTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No recent orders found.</td></tr>`;
         } else {
@@ -77,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- SIDEBAR NAVIGATION LOGIC ---
+    // --- SIDEBAR NAVIGATION LOGIC (MODIFIED TO INCLUDE NOTIFICATIONS) ---
     function setupNavigation() {
         const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
         const contentSections = document.querySelectorAll('.main-content .content-section');
@@ -110,12 +397,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadSuppliedBooks();
                 } else if (link.id === 'orders-link') {
                     loadDeliveredBooksStats();
+                } else if (link.id === 'notifications-link') { // ADDED
+                    loadAllNotifications();
                 }
             });
         });
     }
 
-    // --- SUPPLIED BOOKS FUNCTIONS ---
+    // --- YOUR ORIGINAL SUPPLIED BOOKS FUNCTIONS (UNCHANGED) ---
     async function loadSuppliedBooks() {
         try {
             const token = localStorage.getItem('token');
@@ -177,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = booksHTML;
     }
 
-    // --- DELIVERED BOOKS STATISTICS FUNCTIONS ---
+    // --- YOUR ORIGINAL DELIVERED BOOKS STATISTICS FUNCTIONS (UNCHANGED) ---
     async function loadDeliveredBooksStats() {
         console.log('Loading delivered books stats...');
         try {
@@ -239,14 +528,24 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = statsHTML;
     }
 
-    // Make functions globally accessible for onclick handlers
     window.loadSuppliedBooks = loadSuppliedBooks;
     window.loadDeliveredBooksStats = loadDeliveredBooksStats;
+    window.loadAllNotifications = loadAllNotifications; 
 
-    // --- INITIALIZE THE DASHBOARD ---
+   
     fetchDashboardData();
     setupNavigation();
+    initializeNotifications(); 
+    
+    notificationPollingInterval = setInterval(fetchNotificationCount, 30000);
 
-    // Load supplied books when page loads (for the inventory section)
+
     loadSuppliedBooks();
+
+
+    window.addEventListener('beforeunload', () => {
+        if (notificationPollingInterval) {
+            clearInterval(notificationPollingInterval);
+        }
+    });
 });

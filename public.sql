@@ -12,7 +12,7 @@
  Target Server Version : 170005 (170005)
  File Encoding         : 65001
 
- Date: 29/07/2025 17:45:41
+ Date: 29/07/2025 19:55:23
 */
 
 
@@ -259,6 +259,17 @@ START 1
 CACHE 1;
 
 -- ----------------------------
+-- Sequence structure for supplier_notifications_notification_id_seq
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "public"."supplier_notifications_notification_id_seq";
+CREATE SEQUENCE "public"."supplier_notifications_notification_id_seq" 
+INCREMENT 1
+MINVALUE  1
+MAXVALUE 2147483647
+START 1
+CACHE 1;
+
+-- ----------------------------
 -- Sequence structure for supplier_supplier_id_seq
 -- ----------------------------
 DROP SEQUENCE IF EXISTS "public"."supplier_supplier_id_seq";
@@ -408,7 +419,7 @@ INSERT INTO "public"."book" VALUES (8, '1984', 'A dystopian social science ficti
 INSERT INTO "public"."book" VALUES (9, 'Sapiens', 'A brief history of humankind.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9780062316097', 'Harper', '2015-02-10 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 1, 22.00);
 INSERT INTO "public"."book" VALUES (10, 'To Kill a Mockingbird', 'A novel about the serious issues of rape and racial inequality.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '9780061120084', 'Harper Perennial', '2006-05-23 00:00:00', 'English', NULL, NULL, 'f', 0.00, 0, 1, 10.00);
 INSERT INTO "public"."book" VALUES (13, 'Hamlet', 'Hamlet is a tragic play by Shakespeare that follows a prince’s quest for revenge against his father’s murderer, exploring themes of madness, betrayal, and mortality.', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '3425654365343', 'Penguin Publications', '2019-07-01 00:00:00', NULL, NULL, NULL, 'f', 0.00, 0, 1, 19.99);
-INSERT INTO "public"."book" VALUES (14, 'Harry Potter', 'Fantasy Fiction book', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '34256547363756', 'Bloomsburry Publishing Ltd.', '2010-08-01 00:00:00', NULL, NULL, NULL, 'f', 0.00, 0, 1, 15.00);
+INSERT INTO "public"."book" VALUES (14, 'Harry Potter', 'Fantasy Fiction book', 'https://cdn-icons-png.flaticon.com/512/5402/5402751.png', 't', '34256547363756', 'Bloomsburry Publishing Ltd.', '2010-08-01 00:00:00', NULL, NULL, NULL, 'f', 4.67, 3, 1, 15.00);
 
 -- ----------------------------
 -- Table structure for book_author
@@ -626,10 +637,10 @@ INSERT INTO "public"."customer" VALUES (8, 'Cristiano Ronaldo', 'sawrav124@gmail
 INSERT INTO "public"."customer" VALUES (5, 'r', '2205007@ugrad.cse.buet.ac.bd', '$2b$10$v76HTKVs2QtlHEip1iRk3esnbWlUtHLFOg6TrtOKxlnNOzPx4WO12', NULL, NULL, '2025-07-13 15:12:30.156238', '2025-07-13 15:12:30.156238', 'customer', NULL, 'f');
 INSERT INTO "public"."customer" VALUES (9, 'Mr.A', '2205999@ugrad.cse.buet.ac.bd', '$2b$10$2yzWS7tY3eOMU0vobYy3IeFsI9pWQGg1LO/851GjvR1EELhx3YWoW', NULL, NULL, '2025-07-23 13:49:27.52812', '2025-07-23 13:49:27.52812', 'customer', '2025-07-23 13:49:42.936612', 'f');
 INSERT INTO "public"."customer" VALUES (10, 'Messi', '2205888@ugrad.cse.buet.ac.bd', '$2b$10$jTS27dNp4uqLYo41JFO/B.hnQ6/7xOuyfelLpHFicIHSPYPN/pTYa', NULL, NULL, '2025-07-24 02:39:54.913706', '2025-07-24 02:39:54.913706', 'customer', '2025-07-24 02:40:20.280903', 'f');
-INSERT INTO "public"."customer" VALUES (7, 'saber', '2205017@ugrad.cse.buet.ac.bd', '$2b$10$SGjls5kb.SzOFSRk3R3ywuY4lunIonf9mqUuEmL4UBI5r323XbM6K', NULL, NULL, '2025-07-13 15:30:02.152869', '2025-07-13 15:30:02.152869', 'customer', '2025-07-13 15:30:17.314285', 'f');
 INSERT INTO "public"."customer" VALUES (11, 'Neymar', '2205666@ugrad.cse.buet.ac.bd', '$2b$10$pDpLCQfsX8KMArdE/ObdnOkXACtI1PLc43NzS.tph8VIo/hV1WayO', NULL, NULL, '2025-07-24 02:48:10.804728', '2025-07-24 02:48:10.804728', 'customer', NULL, 'f');
-INSERT INTO "public"."customer" VALUES (6, 'shafin', '2205001@ugrad.cse.buet.ac.bd', '$2b$10$VTUSxXumJnwlI8ptdABbIOj9eZX9GBlglShYL4WAtME.SIAFSoXmG', NULL, NULL, '2025-07-13 15:26:50.075573', '2025-07-13 15:26:50.075573', 'customer', '2025-07-15 20:59:53.333532', 'f');
-INSERT INTO "public"."customer" VALUES (3, 'Mohibul Islam Sawrav', '2205018@ugrad.cse.buet.ac.bd', '$2b$10$RfOVcY9RIcmrXJ3GZty4Oep21SVA3Kj2rY5wcYCen/6/SCF30hVki', '+8801864316100', 'Dhaka, Bangladesh', '2025-07-01 22:53:03.887927', '2025-07-27 01:12:39.477666', 'customer', '2025-07-29 17:37:00.687431', 'f');
+INSERT INTO "public"."customer" VALUES (3, 'Mohibul Islam Sawrav', '2205018@ugrad.cse.buet.ac.bd', '$2b$10$RfOVcY9RIcmrXJ3GZty4Oep21SVA3Kj2rY5wcYCen/6/SCF30hVki', '+8801864316100', 'Dhaka, Bangladesh', '2025-07-01 22:53:03.887927', '2025-07-27 01:12:39.477666', 'customer', '2025-07-29 19:27:57.23552', 'f');
+INSERT INTO "public"."customer" VALUES (6, 'shafin', '2205001@ugrad.cse.buet.ac.bd', '$2b$10$VTUSxXumJnwlI8ptdABbIOj9eZX9GBlglShYL4WAtME.SIAFSoXmG', NULL, NULL, '2025-07-13 15:26:50.075573', '2025-07-13 15:26:50.075573', 'customer', '2025-07-29 19:41:35.536505', 'f');
+INSERT INTO "public"."customer" VALUES (7, 'saber', '2205017@ugrad.cse.buet.ac.bd', '$2b$10$SGjls5kb.SzOFSRk3R3ywuY4lunIonf9mqUuEmL4UBI5r323XbM6K', NULL, NULL, '2025-07-13 15:30:02.152869', '2025-07-13 15:30:02.152869', 'customer', '2025-07-29 19:43:06.057793', 'f');
 
 -- ----------------------------
 -- Table structure for format
@@ -867,6 +878,9 @@ CREATE TABLE "public"."review" (
 -- Records of review
 -- ----------------------------
 INSERT INTO "public"."review" VALUES (15, 2, 3, 4.0, 'nice', '2025-07-15 20:59:18.291643');
+INSERT INTO "public"."review" VALUES (16, 14, 3, 5.0, 'Best Fantasy Book I have read ever!!', '2025-07-29 19:28:26.849296');
+INSERT INTO "public"."review" VALUES (17, 14, 6, 4.0, 'Nice Book', '2025-07-29 19:42:03.464287');
+INSERT INTO "public"."review" VALUES (18, 14, 7, 5.0, 'Damn! One of the Best Books!!', '2025-07-29 19:43:40.258937');
 
 -- ----------------------------
 -- Table structure for shipping
@@ -957,6 +971,29 @@ INSERT INTO "public"."supplier" VALUES (1, 'Mohibul Sawrav', '+8801864316100', '
 INSERT INTO "public"."supplier" VALUES (2, 'Rubiyan', NULL, '2205007@ugrad.cse.buet.ac.bd', NULL, NULL, '$2b$10$HYAkJJkjIKtUNkf/Ir/6VOrEYXSG2vSWvlKCNLpRzCChMsBqai8he');
 
 -- ----------------------------
+-- Table structure for supplier_notifications
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."supplier_notifications";
+CREATE TABLE "public"."supplier_notifications" (
+  "notification_id" int4 NOT NULL DEFAULT nextval('supplier_notifications_notification_id_seq'::regclass),
+  "supplier_id" int4,
+  "type" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "title" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "message" text COLLATE "pg_catalog"."default" NOT NULL,
+  "data" jsonb,
+  "is_read" bool DEFAULT false,
+  "created_at" timestamp(6) DEFAULT now()
+)
+;
+
+-- ----------------------------
+-- Records of supplier_notifications
+-- ----------------------------
+INSERT INTO "public"."supplier_notifications" VALUES (1, 1, 'new_review', 'New Review on Your Book', 'A new 5.0-star review has been submitted for "Harry Potter" by Mohibul Islam Sawrav.', '{"rating": 5.0, "book_id": 14, "comment": "Best Fantasy Book I have read ever!!", "review_id": 16, "book_title": "Harry Potter", "customer_id": 3, "review_date": "2025-07-29T19:28:26.849296", "customer_name": "Mohibul Islam Sawrav", "customer_email": "2205018@ugrad.cse.buet.ac.bd"}', 't', '2025-07-29 19:28:26.849296');
+INSERT INTO "public"."supplier_notifications" VALUES (2, 1, 'new_review', 'New Review on Your Book', 'A new 4.0-star review has been submitted for "Harry Potter" by shafin.', '{"rating": 4.0, "book_id": 14, "comment": "Nice Book", "review_id": 17, "book_title": "Harry Potter", "customer_id": 6, "review_date": "2025-07-29T19:42:03.464287", "customer_name": "shafin", "customer_email": "2205001@ugrad.cse.buet.ac.bd"}', 't', '2025-07-29 19:42:03.464287');
+INSERT INTO "public"."supplier_notifications" VALUES (3, 1, 'new_review', 'New Review on Your Book', 'A new 5.0-star review has been submitted for "Harry Potter" by saber.', '{"rating": 5.0, "book_id": 14, "comment": "Damn! One of the Best Books!!", "review_id": 18, "book_title": "Harry Potter", "customer_id": 7, "review_date": "2025-07-29T19:43:40.258937", "customer_name": "saber", "customer_email": "2205017@ugrad.cse.buet.ac.bd"}', 't', '2025-07-29 19:43:40.258937');
+
+-- ----------------------------
 -- Table structure for user_notifications
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."user_notifications";
@@ -1040,6 +1077,43 @@ BEGIN
         ),
         NOW()
     );
+    
+    RETURN NEW;
+END;
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
+
+-- ----------------------------
+-- Function structure for notify_supplier_new_review
+-- ----------------------------
+DROP FUNCTION IF EXISTS "public"."notify_supplier_new_review"();
+CREATE FUNCTION "public"."notify_supplier_new_review"()
+  RETURNS "pg_catalog"."trigger" AS $BODY$
+BEGIN
+    -- Insert notifications for all suppliers of the reviewed book
+    INSERT INTO supplier_notifications (supplier_id, type, title, message, data, created_at)
+    SELECT 
+        bs.supplier_id,
+        'new_review',
+        'New Review on Your Book',
+        'A new ' || NEW.rating || '-star review has been submitted for "' || b.title || '" by ' || c.name || '.',
+        jsonb_build_object(
+            'book_id', NEW.book_id,
+            'book_title', b.title,
+            'review_id', NEW.review_id,
+            'rating', NEW.rating,
+            'comment', NEW.comment,
+            'customer_id', NEW.customer_id,
+            'customer_name', c.name,
+            'customer_email', c.email,
+            'review_date', NEW.review_date
+        ),
+        NOW()
+    FROM book_supply bs
+    JOIN book b ON bs.book_id = b.book_id
+    JOIN customer c ON NEW.customer_id = c.customer_id
+    WHERE bs.book_id = NEW.book_id;
     
     RETURN NEW;
 END;
@@ -1236,7 +1310,7 @@ SELECT setval('"public"."recommendation_recommendation_id_seq"', 1, false);
 -- ----------------------------
 ALTER SEQUENCE "public"."review_review_id_seq"
 OWNED BY "public"."review"."review_id";
-SELECT setval('"public"."review_review_id_seq"', 15, true);
+SELECT setval('"public"."review_review_id_seq"', 18, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -1251,6 +1325,13 @@ SELECT setval('"public"."shipping_shipping_id_seq"', 22, true);
 ALTER SEQUENCE "public"."sub_category_sub_category_id_seq"
 OWNED BY "public"."sub_category"."sub_category_id";
 SELECT setval('"public"."sub_category_sub_category_id_seq"', 1, false);
+
+-- ----------------------------
+-- Alter sequences owned by
+-- ----------------------------
+ALTER SEQUENCE "public"."supplier_notifications_notification_id_seq"
+OWNED BY "public"."supplier_notifications"."notification_id";
+SELECT setval('"public"."supplier_notifications_notification_id_seq"', 3, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -1476,6 +1557,9 @@ EXECUTE PROCEDURE "public"."update_book_ratings"();
 CREATE TRIGGER "trg_update_book_ratings_update" AFTER UPDATE ON "public"."review"
 FOR EACH ROW
 EXECUTE PROCEDURE "public"."update_book_ratings"();
+CREATE TRIGGER "trigger_supplier_new_review" AFTER INSERT ON "public"."review"
+FOR EACH ROW
+EXECUTE PROCEDURE "public"."notify_supplier_new_review"();
 
 -- ----------------------------
 -- Checks structure for table review
@@ -1501,6 +1585,11 @@ ALTER TABLE "public"."sub_category" ADD CONSTRAINT "sub_category_pkey" PRIMARY K
 -- Primary Key structure for table supplier
 -- ----------------------------
 ALTER TABLE "public"."supplier" ADD CONSTRAINT "supplier_pkey" PRIMARY KEY ("supplier_id");
+
+-- ----------------------------
+-- Primary Key structure for table supplier_notifications
+-- ----------------------------
+ALTER TABLE "public"."supplier_notifications" ADD CONSTRAINT "supplier_notifications_pkey" PRIMARY KEY ("notification_id");
 
 -- ----------------------------
 -- Primary Key structure for table user_notifications
@@ -1642,6 +1731,11 @@ ALTER TABLE "public"."shipping" ADD CONSTRAINT "shipping_order_id_fkey" FOREIGN 
 -- Foreign Keys structure for table sub_category
 -- ----------------------------
 ALTER TABLE "public"."sub_category" ADD CONSTRAINT "sub_category_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "public"."book_category" ("category_id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- ----------------------------
+-- Foreign Keys structure for table supplier_notifications
+-- ----------------------------
+ALTER TABLE "public"."supplier_notifications" ADD CONSTRAINT "supplier_notifications_supplier_id_fkey" FOREIGN KEY ("supplier_id") REFERENCES "public"."supplier" ("supplier_id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- ----------------------------
 -- Foreign Keys structure for table user_notifications

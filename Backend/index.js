@@ -1592,7 +1592,7 @@ app.get('/api/admin/orders/:orderId', authenticateToken, isAdmin, async (req, re
     let client;
     try {
         client = await pool.connect();
-        
+
         // Get base order with customer details
         const result = await client.query(`
             SELECT 
@@ -1605,13 +1605,13 @@ app.get('/api/admin/orders/:orderId', authenticateToken, isAdmin, async (req, re
             JOIN customer c ON o.customer_id = c.customer_id
             WHERE o.order_id = $1
         `, [orderId]);
-        
+
         if (result.rows.length === 0) {
             return res.status(404).json({ error: "Order not found" });
         }
-        
+
         const order = result.rows[0];
-        
+
         // Get order items with book details
         const itemsResult = await client.query(`
             SELECT 
@@ -1630,15 +1630,15 @@ app.get('/api/admin/orders/:orderId', authenticateToken, isAdmin, async (req, re
                      oi.quantity, oi.item_price, oi.format_id, b.title, 
                      b.image_url, f.format_name
         `, [orderId]);
-        
+
         order.items = itemsResult.rows;
-        
+
         // Get shipping details
         const shippingResult = await client.query(
             `SELECT * FROM shipping WHERE order_id = $1`, [orderId]
         );
         order.shipping = shippingResult.rows[0] || null;
-        
+
         res.json(order);
     } catch (err) {
         console.error('Admin order details error', err);
@@ -1652,11 +1652,11 @@ app.get('/api/admin/orders/:orderId', authenticateToken, isAdmin, async (req, re
 app.put('/api/admin/orders/:orderId/status', authenticateToken, isAdmin, async (req, res) => {
     const orderId = parseInt(req.params.orderId, 10);
     const { status } = req.body;
-    
-    if (!['pending','processing','shipped','delivered','cancelled'].includes(status)) {
+
+    if (!['pending', 'processing', 'shipped', 'delivered', 'cancelled'].includes(status)) {
         return res.status(400).json({ error: "Invalid status" });
     }
-    
+
     let client;
     try {
         client = await pool.connect();
@@ -2152,6 +2152,102 @@ app.get('/api/seller/delivered-books-stats', authenticateToken, isSeller, async 
     }
 });
 
+
+// Get supplier notifications
+app.get('/api/supplier/notifications', authenticateToken, isSeller, async (req, res) => {
+    const supplierId = req.user.supplierId;
+    let client;
+
+    try {
+        client = await pool.connect();
+        const result = await client.query(`
+            SELECT 
+                notification_id,
+                type,
+                title,
+                message,
+                data,
+                is_read,
+                created_at
+            FROM supplier_notifications 
+            WHERE supplier_id = $1 
+            ORDER BY created_at DESC 
+            LIMIT 50
+        `, [supplierId]);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching supplier notifications:', err);
+        res.status(500).json({ error: 'Failed to fetch notifications' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+app.get('/api/supplier/notifications/count', authenticateToken, isSeller, async (req, res) => {
+    const supplierId = req.user.supplierId;
+    let client;
+
+    try {
+        client = await pool.connect();
+        const result = await client.query(`
+            SELECT COUNT(*) as unread_count 
+            FROM supplier_notifications 
+            WHERE supplier_id = $1 AND is_read = FALSE
+        `, [supplierId]);
+
+        res.json({ unreadCount: parseInt(result.rows[0].unread_count, 10) });
+    } catch (err) {
+        console.error('Error fetching supplier notification count:', err);
+        res.status(500).json({ error: 'Failed to fetch notification count' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// Mark supplier notification as read
+app.put('/api/supplier/notifications/:id/read', authenticateToken, isSeller, async (req, res) => {
+    const notificationId = parseInt(req.params.id, 10);
+    const supplierId = req.user.supplierId;
+    let client;
+
+    try {
+        client = await pool.connect();
+        await client.query(`
+            UPDATE supplier_notifications 
+            SET is_read = TRUE 
+            WHERE notification_id = $1 AND supplier_id = $2
+        `, [notificationId, supplierId]);
+
+        res.json({ message: 'Notification marked as read' });
+    } catch (err) {
+        console.error('Error marking supplier notification as read:', err);
+        res.status(500).json({ error: 'Failed to mark notification as read' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+app.put('/api/supplier/notifications/read-all', authenticateToken, isSeller, async (req, res) => {
+    const supplierId = req.user.supplierId;
+    let client;
+
+    try {
+        client = await pool.connect();
+        await client.query(`
+            UPDATE supplier_notifications 
+            SET is_read = TRUE 
+            WHERE supplier_id = $1 AND is_read = FALSE
+        `, [supplierId]);
+
+        res.json({ message: 'All notifications marked as read' });
+    } catch (err) {
+        console.error('Error marking all supplier notifications as read:', err);
+        res.status(500).json({ error: 'Failed to mark all notifications as read' });
+    } finally {
+        if (client) client.release();
+    }
+});
 
 
 

@@ -28,6 +28,27 @@
                 <a href="#" id="orders-link" class="nav-link">
                     <i class="fas fa-receipt"></i><span>Ordered Books</span>
                 </a>
+                <!-- Notifications Link -->
+                <div class="notification-container">
+                    <a href="#" id="notifications-link" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Notifications</span>
+                        <span class="notification-badge-sidebar" id="notificationBadgeSidebar"
+                            style="display: none;">0</span>
+                    </a>
+
+                    <div class="notification-dropdown-sidebar" id="notificationDropdown">
+                        <div class="notification-header">
+                            <span>Notifications</span>
+                            <span class="mark-all-read" id="markAllRead">Mark all read</span>
+                        </div>
+                        <div id="notificationList">
+                            <div class="no-notifications">
+                                Loading notifications...
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <!-- Added Supply Books -->
                 <a href="seller-form.html" id="supply-books-link" class="nav-link">
                     <i class="fas fa-truck"></i><span>Supply Books</span>
@@ -99,6 +120,22 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications Content Section -->
+            <div id="notifications-content" class="content-section hidden">
+                <h1 class="content-title">Notifications</h1>
+                <div class="content-block">
+                    <div class="section-header">
+                        <h2 class="block-title">All Notifications</h2>
+                        <button class="refresh-btn" onclick="loadAllNotifications()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div id="all-notifications-container">
+                        <div class="loading">Loading all notifications...</div>
                     </div>
                 </div>
             </div>
