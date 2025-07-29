@@ -600,8 +600,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     <p class="price">$${parseFloat(book.price).toFixed(2)}</p>
                 </a>
                 <div class="book-actions">
-                    <button class="add-to-cart-btn" data-book-id="${book.id}"><i class="fas fa-shopping-cart"></i> Add to Cart</button>
-                    <button class="add-to-wishlist-btn" data-book-id="${book.id}"><i class="fas fa-heart"></i> Add to Wishlist</button>
+                    <button class="add-to-cart-btn" data-book-id="${book.book_id}"><i class="fas fa-shopping-cart"></i> Add to Cart</button>
+                    <button class="add-to-wishlist-btn" data-book-id="${book.book_id}"><i class="fas fa-heart"></i> Add to Wishlist</button>
                 </div>
             `;
             const addToCartBtn = bookCard.querySelector('.add-to-cart-btn');
@@ -609,20 +609,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 addToCartBtn.addEventListener('click', (event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    const bookId = event.target.dataset.bookId;
+                    const bookId = parseInt(event.currentTarget.dataset.bookId, 10);
                     addToCart(bookId, 1);
                 });
             }
-            // New: Add event listener for "Add to Wishlist" button
             const addToWishlistBtn = bookCard.querySelector('.add-to-wishlist-btn');
             if (addToWishlistBtn) {
                 addToWishlistBtn.addEventListener('click', (event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    const bookId = event.target.dataset.bookId;
+                    const bookId = parseInt(event.currentTarget.dataset.bookId, 10);
                     addToWishlist(bookId);
                 });
             }
+
             bookGrid.appendChild(bookCard);
         });
         // After displaying all books, check their cart and wishlist status

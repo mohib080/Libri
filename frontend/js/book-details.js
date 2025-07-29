@@ -268,16 +268,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Enhanced add to cart functionality with INSTANT UI UPDATE
+    // Enhanced add to cart functionality with INSTANT UI UPDATE and robust validation
     async function addToCart(bookId, quantity = 1) {
+        // Defensive validation
+        if (!bookId || Number.isNaN(bookId) || quantity <= 0) {
+            showNotification('Internal error: Invalid book ID or quantity', 'error');
+            return;
+        }
+
         const token = getAuthToken();
         const addToCartBtn = document.getElementById('add-to-cart-btn');
+        if (!addToCartBtn) return;
 
         // Store original button state
         const originalText = addToCartBtn.innerHTML;
         const originalBackground = addToCartBtn.style.background;
         const originalBackgroundColor = addToCartBtn.style.backgroundColor;
         const originalDisabled = addToCartBtn.disabled;
+        const originalCursor = addToCartBtn.style.cursor;
+        const originalOpacity = addToCartBtn.style.opacity;
+        const originalTransform = addToCartBtn.style.transform;
 
         // Show loading state
         addToCartBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
@@ -306,7 +316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 addToCartBtn.style.transform = 'none';
 
                 // Update cart count
-                updateCartCount();
+                await updateCartCount();
 
             } else if (response.status === 409) {
                 showNotification('This book is already in your cart', 'info');
@@ -329,6 +339,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 addToCartBtn.disabled = originalDisabled;
                 addToCartBtn.style.background = originalBackground;
                 addToCartBtn.style.backgroundColor = originalBackgroundColor;
+                addToCartBtn.style.cursor = originalCursor;
+                addToCartBtn.style.opacity = originalOpacity;
+                addToCartBtn.style.transform = originalTransform;
             }
         } catch (error) {
             console.error('Error adding to cart:', error);
@@ -339,19 +352,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             addToCartBtn.disabled = originalDisabled;
             addToCartBtn.style.background = originalBackground;
             addToCartBtn.style.backgroundColor = originalBackgroundColor;
+            addToCartBtn.style.cursor = originalCursor;
+            addToCartBtn.style.opacity = originalOpacity;
+            addToCartBtn.style.transform = originalTransform;
         }
     }
 
-    // Enhanced add to wishlist functionality with INSTANT UI UPDATE
+    // Enhanced add to wishlist functionality with INSTANT UI UPDATE and robust validation
     async function addToWishlist(bookId) {
+        // Defensive validation
+        if (!bookId || Number.isNaN(bookId)) {
+            showNotification('Internal error: Invalid book ID', 'error');
+            return;
+        }
+
         const token = getAuthToken();
         const addToWishlistBtn = document.getElementById('add-to-wishlist-btn');
+        if (!addToWishlistBtn) return;
 
         // Store original button state
         const originalText = addToWishlistBtn.innerHTML;
         const originalBackground = addToWishlistBtn.style.background;
         const originalBackgroundColor = addToWishlistBtn.style.backgroundColor;
         const originalDisabled = addToWishlistBtn.disabled;
+        const originalCursor = addToWishlistBtn.style.cursor;
+        const originalOpacity = addToWishlistBtn.style.opacity;
+        const originalTransform = addToWishlistBtn.style.transform;
 
         // Show loading state
         addToWishlistBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
@@ -379,7 +405,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 addToWishlistBtn.style.opacity = '0.8';
                 addToWishlistBtn.style.transform = 'none';
 
-                updateWishlistCount();
+                await updateWishlistCount();
 
             } else if (response.status === 409) {
                 showNotification('This book is already in your wishlist', 'info');
@@ -402,6 +428,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 addToWishlistBtn.disabled = originalDisabled;
                 addToWishlistBtn.style.background = originalBackground;
                 addToWishlistBtn.style.backgroundColor = originalBackgroundColor;
+                addToWishlistBtn.style.cursor = originalCursor;
+                addToWishlistBtn.style.opacity = originalOpacity;
+                addToWishlistBtn.style.transform = originalTransform;
             }
         } catch (error) {
             console.error('Error adding to wishlist:', error);
@@ -412,13 +441,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             addToWishlistBtn.disabled = originalDisabled;
             addToWishlistBtn.style.background = originalBackground;
             addToWishlistBtn.style.backgroundColor = originalBackgroundColor;
+            addToWishlistBtn.style.cursor = originalCursor;
+            addToWishlistBtn.style.opacity = originalOpacity;
+            addToWishlistBtn.style.transform = originalTransform;
         }
     }
 
     // Check cart and wishlist status with INSTANT UI UPDATE
     async function checkCartAndWishlistStatus(bookId) {
         const token = getAuthToken();
-        if (!token) return;
+        if (!token || !bookId) return;
 
         // Check cart status
         try {
@@ -468,6 +500,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderBookDetails(book) {
+        // Defensive check for book data
+        if (!book || !book.book_id) {
+            showNotification('Book data is incomplete or missing. Please try again.', 'error');
+            return;
+        }
+
         const pubDate = book.publication_date ? new Date(book.publication_date).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -536,39 +574,54 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
 
                 <div class="action-buttons">
-                    <button id="add-to-cart-btn"><i class="fas fa-shopping-cart"></i> Add to Cart</button>
-                    <button id="add-to-wishlist-btn"><i class="fas fa-heart"></i> Add to Wishlist</button>
+                    <button id="add-to-cart-btn" data-book-id="${book.book_id}">
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
+                    <button id="add-to-wishlist-btn" data-book-id="${book.book_id}">
+                        <i class="fas fa-heart"></i> Add to Wishlist
+                    </button>
                 </div>
             </div>
         `;
 
-        // Add event listeners for action buttons
+        // Add event listeners for action buttons with robust error handling
         const addToCartBtn = document.getElementById('add-to-cart-btn');
-        const addToWishlistBtn = document.getElementById('add-to-wishlist-btn');
-
         if (addToCartBtn) {
-            addToCartBtn.addEventListener('click', () => {
-                if (isLoggedIn) {
-                    addToCart(currentBookId, 1);
-                } else {
+            addToCartBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (!isLoggedIn) {
                     showNotification('Please sign in to add items to your cart', 'error');
-                    setTimeout(() => {
-                        window.location.href = 'signin.html';
-                    }, 1500);
+                    setTimeout(() => { window.location.href = 'signin.html'; }, 1500);
+                    return;
                 }
+                const bookId = parseInt(event.currentTarget.dataset.bookId, 10);
+                if (!bookId || Number.isNaN(bookId)) {
+                    showNotification('Internal error: Book ID missing', 'error');
+                    return;
+                }
+                // Prevent double-clicks while request is in progress
+                if (addToCartBtn.disabled) return;
+                addToCart(bookId, 1);
             });
         }
 
+        const addToWishlistBtn = document.getElementById('add-to-wishlist-btn');
         if (addToWishlistBtn) {
-            addToWishlistBtn.addEventListener('click', () => {
-                if (isLoggedIn) {
-                    addToWishlist(currentBookId);
-                } else {
+            addToWishlistBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (!isLoggedIn) {
                     showNotification('Please sign in to add items to your wishlist', 'error');
-                    setTimeout(() => {
-                        window.location.href = 'signin.html';
-                    }, 1500);
+                    setTimeout(() => { window.location.href = 'signin.html'; }, 1500);
+                    return;
                 }
+                const bookId = parseInt(event.currentTarget.dataset.bookId, 10);
+                if (!bookId || Number.isNaN(bookId)) {
+                    showNotification('Internal error: Book ID missing', 'error');
+                    return;
+                }
+                // Prevent double-clicks while request is in progress
+                if (addToWishlistBtn.disabled) return;
+                addToWishlist(bookId);
             });
         }
 
@@ -578,9 +631,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-
     // Fetch book details
     async function fetchBookDetails(title) {
+        if (!title) {
+            showNotification('No book title provided', 'error');
+            return;
+        }
+
         try {
             const response = await fetch(`${API_BASE_URL}/books/by-name?title=${encodeURIComponent(title)}`);
             if (!response.ok) {
@@ -588,7 +645,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             const book = await response.json();
 
-            if (book) {
+            if (book && book.book_id) {
                 currentBookId = book.book_id;
                 renderBookDetails(book);
                 await fetchBookReviews(currentBookId);
@@ -944,8 +1001,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (bookTitle) {
         await fetchBookDetails(bookTitle);
         if (isLoggedIn) {
-            updateCartCount();
-            updateWishlistCount();
+            await updateCartCount();
+            await updateWishlistCount();
         }
     } else {
         showNotification('No book specified in URL', 'error');
