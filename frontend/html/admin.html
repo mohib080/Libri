@@ -9,14 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/admin.css">
     <style>
-        /* This is a small addition to your existing style block for better active link indication */
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .sidebar-link.active {
-            background-color: #4f46e5;
-            color: white;
+        /* Only keeping minimal styles that aren't in admin.css */
+        .hidden {
+            display: none;
         }
     </style>
 </head>
@@ -349,6 +344,32 @@
                             <button id="order-status-update-btn" class="action-btn">Update Status</button>
                         </div>
                         <div id="order-modal-toast"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Details Modal -->
+            <div id="customer-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Customer Details</h2>
+                        <span class="close" onclick="closeCustomerModal()">&times;</span>
+                    </div>
+                    <div class="modal-body" id="customer-details">
+                        <!-- Customer details will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seller Details Modal -->
+            <div id="seller-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Seller Details</h2>
+                        <span class="close" onclick="closeSellerModal()">&times;</span>
+                    </div>
+                    <div class="modal-body" id="seller-details">
+                        <!-- Seller details will be populated here -->
                     </div>
                 </div>
             </div>

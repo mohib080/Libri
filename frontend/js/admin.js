@@ -64,146 +64,146 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     class AdminChatSystem {
-    constructor() {
-        this.ws = null;
-        this.currentSessionId = null;
-        this.activeSessions = new Map();
-        this.chatCount = 0; // Add this property to track chat count
-        this.initializeElements();
-        this.attachEventListeners();
-        this.connectWebSocket();
-    }
+        constructor() {
+            this.ws = null;
+            this.currentSessionId = null;
+            this.activeSessions = new Map();
+            this.chatCount = 0; // Add this property to track chat count
+            this.initializeElements();
+            this.attachEventListeners();
+            this.connectWebSocket();
+        }
 
-    initializeElements() {
-        this.chatLink = document.getElementById('chat-link');
-        this.chatContent = document.getElementById('chat-content');
-        this.chatSessionsList = document.getElementById('chat-sessions-list');
-        this.chatArea = document.getElementById('chat-area');
-        this.chatInputArea = document.getElementById('chat-input-area');
-        this.adminChatInput = document.getElementById('admin-chat-input');
-        this.adminSendButton = document.getElementById('admin-send-message');
-        this.adminEndButton = document.getElementById('admin-end-chat');
-        this.chatNotificationBadge = document.getElementById('chat-notification-badge');
-    }
+        initializeElements() {
+            this.chatLink = document.getElementById('chat-link');
+            this.chatContent = document.getElementById('chat-content');
+            this.chatSessionsList = document.getElementById('chat-sessions-list');
+            this.chatArea = document.getElementById('chat-area');
+            this.chatInputArea = document.getElementById('chat-input-area');
+            this.adminChatInput = document.getElementById('admin-chat-input');
+            this.adminSendButton = document.getElementById('admin-send-message');
+            this.adminEndButton = document.getElementById('admin-end-chat');
+            this.chatNotificationBadge = document.getElementById('chat-notification-badge');
+        }
 
-    attachEventListeners() {
-        if (!this.chatLink) return; // Exit if chat elements don't exist
+        attachEventListeners() {
+            if (!this.chatLink) return; // Exit if chat elements don't exist
 
-        this.adminSendButton?.addEventListener('click', () => this.sendMessage());
-        this.adminEndButton?.addEventListener('click', () => this.endChat());
+            this.adminSendButton?.addEventListener('click', () => this.sendMessage());
+            this.adminEndButton?.addEventListener('click', () => this.endChat());
 
-        this.adminChatInput?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.sendMessage();
+            this.adminChatInput?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.sendMessage();
+                }
+            });
+        }
+
+        connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/chat`;
+
+            this.ws = new WebSocket(wsUrl);
+
+            this.ws.onopen = () => {
+                console.log('Admin WebSocket connected');
+                this.ws.send(JSON.stringify({
+                    type: 'authenticate',
+                    token: token,
+                    userType: 'admin'
+                }));
+            };
+
+            this.ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                this.handleMessage(message);
+            };
+
+            this.ws.onclose = () => {
+                console.log('Admin WebSocket disconnected');
+                // Attempt to reconnect after 3 seconds
+                setTimeout(() => this.connectWebSocket(), 3000);
+            };
+
+            this.ws.onerror = (error) => {
+                console.error('Admin WebSocket error:', error);
+            };
+        }
+
+        handleMessage(message) {
+            switch (message.type) {
+                case 'authenticated':
+                    console.log('Admin authenticated');
+                    break;
+
+                case 'pending_chats':
+                    this.updateChatSessions(message.chats);
+                    this.refreshDashboardCount(); // Add this line
+                    break;
+
+                case 'new_chat_request':
+                    this.addNewChatSession(message);
+                    this.showNotificationBadge();
+                    this.refreshDashboardCount(); // Add this line
+                    break;
+
+                case 'new_message':
+                    this.handleNewMessage(message);
+                    break;
+
+                case 'chat_history':
+                    this.displayChatHistory(message.messages);
+                    break;
+
+                case 'chat_ended':
+                    this.handleChatEnded(message.sessionId);
+                    this.refreshDashboardCount(); // Add this line
+                    break;
             }
-        });
-    }
-
-    connectWebSocket() {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/chat`;
-
-        this.ws = new WebSocket(wsUrl);
-
-        this.ws.onopen = () => {
-            console.log('Admin WebSocket connected');
-            this.ws.send(JSON.stringify({
-                type: 'authenticate',
-                token: token,
-                userType: 'admin'
-            }));
-        };
-
-        this.ws.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            this.handleMessage(message);
-        };
-
-        this.ws.onclose = () => {
-            console.log('Admin WebSocket disconnected');
-            // Attempt to reconnect after 3 seconds
-            setTimeout(() => this.connectWebSocket(), 3000);
-        };
-
-        this.ws.onerror = (error) => {
-            console.error('Admin WebSocket error:', error);
-        };
-    }
-
-    handleMessage(message) {
-        switch (message.type) {
-            case 'authenticated':
-                console.log('Admin authenticated');
-                break;
-
-            case 'pending_chats':
-                this.updateChatSessions(message.chats);
-                this.refreshDashboardCount(); // Add this line
-                break;
-
-            case 'new_chat_request':
-                this.addNewChatSession(message);
-                this.showNotificationBadge();
-                this.refreshDashboardCount(); // Add this line
-                break;
-
-            case 'new_message':
-                this.handleNewMessage(message);
-                break;
-
-            case 'chat_history':
-                this.displayChatHistory(message.messages);
-                break;
-
-            case 'chat_ended':
-                this.handleChatEnded(message.sessionId);
-                this.refreshDashboardCount(); // Add this line
-                break;
-        }
-    }
-
-    updateChatSessions(chats) {
-        if (!this.chatSessionsList) return;
-
-        // Update chat count
-        this.chatCount = chats.length;
-        this.updateChatCountDisplay();
-
-        this.chatSessionsList.innerHTML = '';
-
-        if (chats.length === 0) {
-            this.chatSessionsList.innerHTML = '<div class="p-4 text-center text-gray-500">No active chat sessions</div>';
-            return;
         }
 
-        chats.forEach(chat => {
+        updateChatSessions(chats) {
+            if (!this.chatSessionsList) return;
+
+            // Update chat count
+            this.chatCount = chats.length;
+            this.updateChatCountDisplay();
+
+            this.chatSessionsList.innerHTML = '';
+
+            if (chats.length === 0) {
+                this.chatSessionsList.innerHTML = '<div class="p-4 text-center text-gray-500">No active chat sessions</div>';
+                return;
+            }
+
+            chats.forEach(chat => {
+                this.addChatSessionToList(chat);
+            });
+        }
+
+        addNewChatSession(chatData) {
+            const chat = {
+                session_id: chatData.sessionId,
+                customer_id: chatData.customerId,
+                customer_name: `Customer ${chatData.customerId}`,
+                started_at: new Date().toISOString()
+            };
+
             this.addChatSessionToList(chat);
-        });
-    }
 
-    addNewChatSession(chatData) {
-        const chat = {
-            session_id: chatData.sessionId,
-            customer_id: chatData.customerId,
-            customer_name: `Customer ${chatData.customerId}`,
-            started_at: new Date().toISOString()
-        };
+            // Increment chat count
+            this.chatCount++;
+            this.updateChatCountDisplay();
+        }
 
-        this.addChatSessionToList(chat);
-        
-        // Increment chat count
-        this.chatCount++;
-        this.updateChatCountDisplay();
-    }
+        addChatSessionToList(chat) {
+            if (!this.chatSessionsList) return;
 
-    addChatSessionToList(chat) {
-        if (!this.chatSessionsList) return;
+            const sessionDiv = document.createElement('div');
+            sessionDiv.classList.add('bg-white', 'p-4', 'rounded-lg', 'shadow-sm', 'border', 'cursor-pointer', 'hover:bg-blue-50', 'transition-colors');
+            sessionDiv.dataset.sessionId = chat.session_id;
 
-        const sessionDiv = document.createElement('div');
-        sessionDiv.classList.add('bg-white', 'p-4', 'rounded-lg', 'shadow-sm', 'border', 'cursor-pointer', 'hover:bg-blue-50', 'transition-colors');
-        sessionDiv.dataset.sessionId = chat.session_id;
-
-        sessionDiv.innerHTML = `
+            sessionDiv.innerHTML = `
             <div class="flex justify-between items-start">
                 <div>
                     <h4 class="font-semibold text-gray-800">${chat.customer_name}</h4>
@@ -217,86 +217,86 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        this.chatSessionsList.appendChild(sessionDiv);
-    }
-
-    joinChat(sessionId) {
-        this.currentSessionId = sessionId;
-
-        // Update UI
-        document.querySelectorAll('[data-session-id]').forEach(item => {
-            item.classList.remove('bg-blue-100', 'border-blue-300');
-            item.classList.add('bg-white');
-        });
-
-        const selectedSession = document.querySelector(`[data-session-id="${sessionId}"]`);
-        if (selectedSession) {
-            selectedSession.classList.remove('bg-white');
-            selectedSession.classList.add('bg-blue-100', 'border-blue-300');
+            this.chatSessionsList.appendChild(sessionDiv);
         }
 
-        // Show chat area
-        if (this.chatArea) {
-            this.chatArea.innerHTML = '<div id="admin-chat-messages" class="h-full p-4 overflow-y-auto bg-gray-50"></div>';
-        }
-        if (this.chatInputArea) {
-            this.chatInputArea.classList.remove('hidden');
-        }
+        joinChat(sessionId) {
+            this.currentSessionId = sessionId;
 
-        // Send join message to WebSocket
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({
-                type: 'admin_join',
-                sessionId: sessionId
-            }));
-        }
-    }
+            // Update UI
+            document.querySelectorAll('[data-session-id]').forEach(item => {
+                item.classList.remove('bg-blue-100', 'border-blue-300');
+                item.classList.add('bg-white');
+            });
 
-    sendMessage() {
-        const messageText = this.adminChatInput?.value.trim();
-        if (messageText && this.currentSessionId && this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({
-                type: 'send_message',
-                sessionId: this.currentSessionId,
-                messageText: messageText
-            }));
+            const selectedSession = document.querySelector(`[data-session-id="${sessionId}"]`);
+            if (selectedSession) {
+                selectedSession.classList.remove('bg-white');
+                selectedSession.classList.add('bg-blue-100', 'border-blue-300');
+            }
 
-            this.addMessageToChat('admin', messageText);
-            this.adminChatInput.value = '';
-        }
-    }
+            // Show chat area
+            if (this.chatArea) {
+                this.chatArea.innerHTML = '<div id="admin-chat-messages" class="h-full p-4 overflow-y-auto bg-gray-50"></div>';
+            }
+            if (this.chatInputArea) {
+                this.chatInputArea.classList.remove('hidden');
+            }
 
-    endChat() {
-        if (this.currentSessionId && this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({
-                type: 'end_chat',
-                sessionId: this.currentSessionId
-            }));
-        }
-    }
-
-    handleNewMessage(message) {
-        if (message.sessionId === this.currentSessionId) {
-            this.addMessageToChat(message.senderType, message.messageText, message.timestamp);
+            // Send join message to WebSocket
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({
+                    type: 'admin_join',
+                    sessionId: sessionId
+                }));
+            }
         }
 
-        // Show notification if not in chat section
-        if (this.chatContent?.classList.contains('hidden')) {
-            this.showNotificationBadge();
+        sendMessage() {
+            const messageText = this.adminChatInput?.value.trim();
+            if (messageText && this.currentSessionId && this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({
+                    type: 'send_message',
+                    sessionId: this.currentSessionId,
+                    messageText: messageText
+                }));
+
+                this.addMessageToChat('admin', messageText);
+                this.adminChatInput.value = '';
+            }
         }
-    }
 
-    addMessageToChat(senderType, messageText, timestamp = null) {
-        const messagesContainer = document.getElementById('admin-chat-messages');
-        if (!messagesContainer) return;
+        endChat() {
+            if (this.currentSessionId && this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({
+                    type: 'end_chat',
+                    sessionId: this.currentSessionId
+                }));
+            }
+        }
 
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('mb-4');
+        handleNewMessage(message) {
+            if (message.sessionId === this.currentSessionId) {
+                this.addMessageToChat(message.senderType, message.messageText, message.timestamp);
+            }
 
-        const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
-        const isAdmin = senderType === 'admin';
+            // Show notification if not in chat section
+            if (this.chatContent?.classList.contains('hidden')) {
+                this.showNotificationBadge();
+            }
+        }
 
-        messageDiv.innerHTML = `
+        addMessageToChat(senderType, messageText, timestamp = null) {
+            const messagesContainer = document.getElementById('admin-chat-messages');
+            if (!messagesContainer) return;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('mb-4');
+
+            const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+            const isAdmin = senderType === 'admin';
+
+            messageDiv.innerHTML = `
             <div class="flex ${isAdmin ? 'justify-end' : 'justify-start'}">
                 <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isAdmin ? 'bg-blue-600 text-white' : 'bg-white text-gray-800 border'}">
                     <div class="text-xs ${isAdmin ? 'text-blue-100' : 'text-gray-500'} mb-1">
@@ -308,41 +308,41 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        messagesContainer.appendChild(messageDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    displayChatHistory(messages) {
-        const messagesContainer = document.getElementById('admin-chat-messages');
-        if (!messagesContainer) return;
-
-        messagesContainer.innerHTML = '';
-
-        messages.forEach(message => {
-            this.addMessageToChat(
-                message.sender_type,
-                message.message_text,
-                message.sent_at
-            );
-        });
-    }
-
-    handleChatEnded(sessionId) {
-        // Remove from sessions list
-        const sessionElement = document.querySelector(`[data-session-id="${sessionId}"]`);
-        if (sessionElement) {
-            sessionElement.remove();
-            
-            // Decrement chat count
-            this.chatCount = Math.max(0, this.chatCount - 1);
-            this.updateChatCountDisplay();
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        // Clear chat if it was the current session
-        if (this.currentSessionId === sessionId) {
-            this.currentSessionId = null;
-            if (this.chatArea) {
-                this.chatArea.innerHTML = `
+        displayChatHistory(messages) {
+            const messagesContainer = document.getElementById('admin-chat-messages');
+            if (!messagesContainer) return;
+
+            messagesContainer.innerHTML = '';
+
+            messages.forEach(message => {
+                this.addMessageToChat(
+                    message.sender_type,
+                    message.message_text,
+                    message.sent_at
+                );
+            });
+        }
+
+        handleChatEnded(sessionId) {
+            // Remove from sessions list
+            const sessionElement = document.querySelector(`[data-session-id="${sessionId}"]`);
+            if (sessionElement) {
+                sessionElement.remove();
+
+                // Decrement chat count
+                this.chatCount = Math.max(0, this.chatCount - 1);
+                this.updateChatCountDisplay();
+            }
+
+            // Clear chat if it was the current session
+            if (this.currentSessionId === sessionId) {
+                this.currentSessionId = null;
+                if (this.chatArea) {
+                    this.chatArea.innerHTML = `
                     <div class="no-chat-selected flex flex-col items-center justify-center h-full text-gray-500">
                         <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -352,62 +352,62 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p>Chat session ended</p>
                     </div>
                 `;
-            }
-            if (this.chatInputArea) {
-                this.chatInputArea.classList.add('hidden');
-            }
-        }
-    }
-
-    showNotificationBadge() {
-        if (!this.chatNotificationBadge) return;
-
-        const currentCount = parseInt(this.chatNotificationBadge.textContent) || 0;
-        this.chatNotificationBadge.textContent = currentCount + 1;
-        this.chatNotificationBadge.classList.remove('hidden');
-    }
-
-    hideNotificationBadge() {
-        if (this.chatNotificationBadge) {
-            this.chatNotificationBadge.classList.add('hidden');
-        }
-    }
-
-    // NEW METHOD: Update the dashboard chat count display
-    updateChatCountDisplay() {
-        const liveChatCountElement = document.getElementById('live-chat-count');
-        if (liveChatCountElement) {
-            liveChatCountElement.textContent = this.chatCount;
-            
-            // Add pulsing animation if there are active chats
-            if (this.chatCount > 0) {
-                liveChatCountElement.classList.add('active');
-            } else {
-                liveChatCountElement.classList.remove('active');
+                }
+                if (this.chatInputArea) {
+                    this.chatInputArea.classList.add('hidden');
+                }
             }
         }
-        
-        // Also update the sidebar badge
-        if (this.chatNotificationBadge && this.chatCount > 0) {
-            this.chatNotificationBadge.textContent = this.chatCount;
+
+        showNotificationBadge() {
+            if (!this.chatNotificationBadge) return;
+
+            const currentCount = parseInt(this.chatNotificationBadge.textContent) || 0;
+            this.chatNotificationBadge.textContent = currentCount + 1;
             this.chatNotificationBadge.classList.remove('hidden');
-        } else if (this.chatNotificationBadge && this.chatCount === 0) {
-            this.chatNotificationBadge.classList.add('hidden');
         }
-    }
 
-    // NEW METHOD: Refresh dashboard count (only if on dashboard)
-    refreshDashboardCount() {
-        // Only refresh if we're on the dashboard
-        const dashboardContent = document.getElementById('dashboard-content');
-        if (dashboardContent && !dashboardContent.classList.contains('hidden')) {
-            // Call the loadDashboardData function if it exists
-            if (typeof loadDashboardData === 'function') {
-                loadDashboardData();
+        hideNotificationBadge() {
+            if (this.chatNotificationBadge) {
+                this.chatNotificationBadge.classList.add('hidden');
+            }
+        }
+
+        // NEW METHOD: Update the dashboard chat count display
+        updateChatCountDisplay() {
+            const liveChatCountElement = document.getElementById('live-chat-count');
+            if (liveChatCountElement) {
+                liveChatCountElement.textContent = this.chatCount;
+
+                // Add pulsing animation if there are active chats
+                if (this.chatCount > 0) {
+                    liveChatCountElement.classList.add('active');
+                } else {
+                    liveChatCountElement.classList.remove('active');
+                }
+            }
+
+            // Also update the sidebar badge
+            if (this.chatNotificationBadge && this.chatCount > 0) {
+                this.chatNotificationBadge.textContent = this.chatCount;
+                this.chatNotificationBadge.classList.remove('hidden');
+            } else if (this.chatNotificationBadge && this.chatCount === 0) {
+                this.chatNotificationBadge.classList.add('hidden');
+            }
+        }
+
+        // NEW METHOD: Refresh dashboard count (only if on dashboard)
+        refreshDashboardCount() {
+            // Only refresh if we're on the dashboard
+            const dashboardContent = document.getElementById('dashboard-content');
+            if (dashboardContent && !dashboardContent.classList.contains('hidden')) {
+                // Call the loadDashboardData function if it exists
+                if (typeof loadDashboardData === 'function') {
+                    loadDashboardData();
+                }
             }
         }
     }
-}
 
 
     async function loadDashboardData() {
@@ -433,7 +433,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // MODIFIED to load only customers
     async function loadUsers() {
         const usersTableBody = document.getElementById('users-table-body');
         usersTableBody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-gray-500">Loading customers...</td></tr>`;
@@ -447,13 +446,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             usersTableBody.innerHTML = customers.map(customer => `
-                <tr>
-                    <td class="font-mono text-gray-500">${customer.customer_id}</td>
-                    <td class="font-semibold">${customer.name}</td>
-                    <td>${customer.email}</td>
-                    <td><button class="action-btn">Edit</button></td>
-                </tr>
-            `).join('');
+            <tr>
+                <td class="font-mono text-gray-500">${customer.customer_id}</td>
+                <td class="font-semibold">${customer.name}</td>
+                <td>${customer.email}</td>
+                <td><button class="action-btn" onclick="viewCustomer(${customer.customer_id})">View</button></td>
+            </tr>
+        `).join('');
         } catch (err) {
             usersTableBody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-red-600">${err.message}</td></tr>`;
         }
@@ -476,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="font-mono text-gray-500">${seller.supplier_id}</td>
                 <td class="font-semibold">${seller.supplier_name}</td>
                 <td>${seller.email}</td>
-                <td><button class="action-btn">Edit</button></td>
+                <td><button class="action-btn" onclick="viewSeller(${seller.supplier_id})">View</button></td>
             </tr>
         `).join('');
         } catch (err) {
@@ -484,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    //--- BOOK EDIT MODAL UTIL ---
+
     function ensureAdminBookEditModal() {
         if (!document.getElementById('admin-book-edit-modal')) {
             const mdl = document.createElement('div');
@@ -815,6 +814,182 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Function to view customer details
+    window.viewCustomer = async function (customerId) {
+        try {
+            const response = await fetch(`/api/admin/customers/${customerId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch customer details');
+            }
+
+            const customer = await response.json();
+            displayCustomerDetails(customer);
+        } catch (error) {
+            console.error('Error fetching customer details:', error);
+            alert('Failed to load customer details');
+        }
+    }
+
+    window.viewSeller = async function (sellerId) {
+        try {
+            const response = await fetch(`/api/admin/sellers/${sellerId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch seller details');
+            }
+
+            const seller = await response.json();
+            displaySellerDetails(seller);
+        } catch (error) {
+            console.error('Error fetching seller details:', error);
+            alert('Failed to load seller details');
+        }
+    }
+
+
+    function displayCustomerDetails(customer) {
+        const customerDetails = document.getElementById('customer-details');
+
+        customerDetails.innerHTML = `
+    <div class="detail-section">
+      <h3>Personal Information</h3>
+      <div class="detail-item"><strong>Name:</strong> ${customer.name}</div>
+      <div class="detail-item"><strong>Email:</strong> ${customer.email}</div>
+      <div class="detail-item"><strong>Phone:</strong> ${customer.phone_number || 'Not provided'}</div>
+      <div class="detail-item"><strong>Address:</strong> ${customer.address || 'Not provided'}</div>
+      <div class="detail-item"><strong>Member Since:</strong> ${new Date(customer.created_at).toLocaleDateString()}</div>
+      <div class="detail-item"><strong>Last Login:</strong> ${customer.last_login_at ? new Date(customer.last_login_at).toLocaleDateString() : 'Never'}</div>
+      <div class="detail-item"><strong>Verified:</strong> ${customer.is_verified ? 'Yes' : 'No'}</div>
+    </div>
+
+    <div class="detail-section">
+      <h3>Statistics</h3>
+      <div class="detail-item"><strong>Total Orders:</strong> ${customer.total_orders}</div>
+      <div class="detail-item"><strong>Total Spent:</strong> $${parseFloat(customer.total_spent).toFixed(2)}</div>
+      <div class="detail-item"><strong>Total Reviews:</strong> ${customer.total_reviews}</div>
+      <div class="detail-item"><strong>Last Order:</strong> ${customer.last_order_date ? new Date(customer.last_order_date).toLocaleDateString() : 'No orders'}</div>
+    </div>
+
+    <div class="detail-section">
+      <h3>Recent Orders</h3>
+      ${customer.recent_orders.length > 0 ?
+                customer.recent_orders.map(order => `
+          <div class="detail-item">
+            <strong>Order #${order.order_id}:</strong> 
+            $${parseFloat(order.total_amount).toFixed(2)} - 
+            ${order.status} - 
+            ${new Date(order.order_date).toLocaleDateString()}
+          </div>
+        `).join('') :
+                '<div class="detail-item">No recent orders</div>'
+            }
+    </div>
+
+    <div class="detail-section">
+      <h3>Recent Reviews</h3>
+      ${customer.recent_reviews.length > 0 ?
+                customer.recent_reviews.map(review => `
+          <div class="detail-item">
+            <strong>${review.book_title}:</strong> 
+            ${review.rating}/5 stars - 
+            "${review.comment}" - 
+            ${new Date(review.review_date).toLocaleDateString()}
+          </div>
+        `).join('') :
+                '<div class="detail-item">No recent reviews</div>'
+            }
+    </div>
+  `;
+
+        document.getElementById('customer-modal').classList.remove('hidden');
+    }
+
+    // Function to display seller details in modal
+    function displaySellerDetails(seller) {
+        const sellerDetails = document.getElementById('seller-details');
+
+        sellerDetails.innerHTML = `
+    <div class="detail-section">
+      <h3>Business Information</h3>
+      <div class="detail-item"><strong>Name:</strong> ${seller.supplier_name}</div>
+      <div class="detail-item"><strong>Email:</strong> ${seller.email}</div>
+      <div class="detail-item"><strong>Phone:</strong> ${seller.phone_number || 'Not provided'}</div>
+      <div class="detail-item"><strong>Address:</strong> ${seller.address || 'Not provided'}</div>
+      <div class="detail-item"><strong>Joined:</strong> ${seller.created_at ? new Date(seller.created_at).toLocaleDateString() : 'Unknown'}</div>
+    </div>
+
+    <div class="detail-section">
+      <h3>Business Statistics</h3>
+      <div class="detail-item"><strong>Books Supplied:</strong> ${seller.total_books_supplied}</div>
+      <div class="detail-item"><strong>Total Revenue:</strong> $${parseFloat(seller.total_revenue).toFixed(2)}</div>
+      <div class="detail-item"><strong>Total Orders:</strong> ${seller.total_orders}</div>
+    </div>
+
+    <div class="detail-section">
+      <h3>Books Supplied</h3>
+      ${seller.books_supplied.length > 0 ?
+                seller.books_supplied.map(book => `
+          <div class="detail-item">
+            <strong>${book.title}</strong> by ${book.authors || 'Unknown'} - 
+            $${parseFloat(book.price).toFixed(2)} - 
+            Stock: ${book.stock}
+          </div>
+        `).join('') :
+                '<div class="detail-item">No books supplied</div>'
+            }
+    </div>
+
+    <div class="detail-section">
+      <h3>Recent Sales</h3>
+      ${seller.recent_sales.length > 0 ?
+                seller.recent_sales.map(sale => `
+          <div class="detail-item">
+            <strong>${sale.book_title}:</strong> 
+            ${sale.quantity} × $${parseFloat(sale.item_price).toFixed(2)} = 
+            $${parseFloat(sale.total).toFixed(2)} - 
+            ${new Date(sale.order_date).toLocaleDateString()}
+          </div>
+        `).join('') :
+                '<div class="detail-item">No recent sales</div>'
+            }
+    </div>
+  `;
+
+        document.getElementById('seller-modal').classList.remove('hidden');
+    }
+
+    window.closeCustomerModal = function () {
+        document.getElementById('customer-modal').classList.add('hidden');
+    };
+
+    window.closeSellerModal = function () {
+        document.getElementById('seller-modal').classList.add('hidden');
+    };
+
+
+    // Close modal when clicking outside of it
+    window.onclick = function (event) {
+        const customerModal = document.getElementById('customer-modal');
+        const sellerModal = document.getElementById('seller-modal');
+
+        if (event.target === customerModal) {
+            closeCustomerModal();
+        }
+        if (event.target === sellerModal) {
+            closeSellerModal();
+        }
+    }
+
+
     // Update order status from dropdown
     document.getElementById('order-status-update-btn').onclick = async function () {
         const orderId = this.getAttribute('data-order-id');
@@ -852,8 +1027,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- NOTIFICATION SYSTEM ---
-    // Notification elements
     const notificationBtn = document.getElementById('notification-btn');
     const notificationDropdown = document.getElementById('notification-dropdown');
     const notificationBadge = document.getElementById('notification-badge');

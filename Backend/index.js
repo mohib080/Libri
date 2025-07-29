@@ -2260,6 +2260,154 @@ app.get('/api/admin/sellers', authenticateToken, isAdmin, async (req, res) => {
     }
 });
 
+// Get detailed customer information
+app.get('/api/admin/customers/:customerId', authenticateToken, isAdmin, async (req, res) => {
+    const customerId = parseInt(req.params.customerId, 10);
+
+    if (isNaN(customerId)) {
+        return res.status(400).json({ error: 'Invalid customer ID' });
+    }
+
+    let client;
+    try {
+        client = await pool.connect();
+
+        // Get customer details with order statistics
+        const customerResult = await client.query(`
+      SELECT 
+        c.*,
+        COUNT(DISTINCT o.order_id) as total_orders,
+        COALESCE(SUM(o.total_amount), 0) as total_spent,
+        COUNT(DISTINCT r.review_id) as total_reviews,
+        MAX(o.order_date) as last_order_date
+      FROM customer c
+      LEFT JOIN "order" o ON c.customer_id = o.customer_id
+      LEFT JOIN review r ON c.customer_id = r.customer_id
+      WHERE c.customer_id = $1
+      GROUP BY c.customer_id
+    `, [customerId]);
+
+        if (customerResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Customer not found' });
+        }
+
+        const customer = customerResult.rows[0];
+
+        // Get recent orders
+        const ordersResult = await client.query(`
+      SELECT order_id, order_date, total_amount, status
+      FROM "order"
+      WHERE customer_id = $1
+      ORDER BY order_date DESC
+      LIMIT 5
+    `, [customerId]);
+
+        customer.recent_orders = ordersResult.rows;
+
+        // Get recent reviews
+        const reviewsResult = await client.query(`
+      SELECT r.review_id, r.rating, r.comment, r.review_date, b.title as book_title
+      FROM review r
+      JOIN book b ON r.book_id = b.book_id
+      WHERE r.customer_id = $1
+      ORDER BY r.review_date DESC
+      LIMIT 5
+    `, [customerId]);
+
+        customer.recent_reviews = reviewsResult.rows;
+
+        res.json(customer);
+    } catch (err) {
+        console.error('Error fetching customer details:', err);
+        res.status(500).json({ error: 'Failed to fetch customer details' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// Get detailed seller information
+app.get('/api/admin/sellers/:sellerId', authenticateToken, isAdmin, async (req, res) => {
+    const sellerId = parseInt(req.params.sellerId, 10);
+
+    if (isNaN(sellerId)) {
+        return res.status(400).json({ error: 'Invalid seller ID' });
+    }
+
+    let client;
+    try {
+        client = await pool.connect();
+
+        // Get seller details with business statistics
+        const sellerResult = await client.query(`
+      SELECT 
+        s.*,
+        COUNT(DISTINCT bs.book_id) as total_books_supplied,
+        COALESCE(SUM(oi.quantity * oi.item_price), 0) as total_revenue,
+        COUNT(DISTINCT oi.order_id) as total_orders
+      FROM supplier s
+      LEFT JOIN book_supply bs ON s.supplier_id = bs.supplier_id
+      LEFT JOIN order_item oi ON bs.book_id = oi.book_id
+      WHERE s.supplier_id = $1
+      GROUP BY s.supplier_id
+    `, [sellerId]);
+
+        if (sellerResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Seller not found' });
+        }
+
+        const seller = sellerResult.rows[0];
+
+        // Get books supplied by this seller
+        const booksResult = await client.query(`
+      SELECT 
+        b.book_id, 
+        b.title, 
+        b.price,
+        STRING_AGG(DISTINCT a.name, ', ') as authors,
+        COALESCE(SUM(i.quantity_in_stock), 0) as stock
+      FROM book_supply bs
+      JOIN book b ON bs.book_id = b.book_id
+      LEFT JOIN book_author ba ON b.book_id = ba.book_id
+      LEFT JOIN author a ON ba.author_id = a.author_id
+      LEFT JOIN inventory i ON b.book_id = i.book_id
+      WHERE bs.supplier_id = $1
+      GROUP BY b.book_id, b.title, b.price
+      ORDER BY b.title
+      LIMIT 10
+    `, [sellerId]);
+
+        seller.books_supplied = booksResult.rows;
+
+        // Get recent sales
+        const salesResult = await client.query(`
+      SELECT 
+        o.order_id,
+        o.order_date,
+        b.title as book_title,
+        oi.quantity,
+        oi.item_price,
+        (oi.quantity * oi.item_price) as total
+      FROM order_item oi
+      JOIN book_supply bs ON oi.book_id = bs.book_id
+      JOIN book b ON oi.book_id = b.book_id
+      JOIN "order" o ON oi.order_id = o.order_id
+      WHERE bs.supplier_id = $1 AND o.status = 'delivered'
+      ORDER BY o.order_date DESC
+      LIMIT 5
+    `, [sellerId]);
+
+        seller.recent_sales = salesResult.rows;
+
+        res.json(seller);
+    } catch (err) {
+        console.error('Error fetching seller details:', err);
+        res.status(500).json({ error: 'Failed to fetch seller details' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+
 // Add this route to your existing routes
 app.get('/api/admin/live-chat-count', authenticateToken, async (req, res) => {
     if (!req.user.isAdmin) {
