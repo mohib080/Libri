@@ -1322,7 +1322,7 @@ app.get('/api/orders', authenticateToken, async (req, res) => {
     }
 });
 
-// Cancel order (FIXED)
+// Cancel order
 app.put('/api/orders/:orderId/cancel', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     const orderId = parseInt(req.params.orderId);
@@ -1357,6 +1357,23 @@ app.put('/api/orders/:orderId/cancel', authenticateToken, async (req, res) => {
             WHERE order_id = $1
         `, [orderId]);
 
+        // Fetch all items in the order
+        const itemsResult = await client.query(`
+            SELECT book_id, quantity
+            FROM order_item
+            WHERE order_id = $1
+        `, [orderId]);
+
+        // Restore inventory for each item
+        for (const item of itemsResult.rows) {
+            await client.query(`
+                UPDATE inventory
+                SET quantity_in_stock = quantity_in_stock + $1,
+                    last_update = NOW()
+                WHERE book_id = $2
+            `, [item.quantity, item.book_id]);
+        }
+
         // Add cancellation record
         await client.query(`
             INSERT INTO order_cancellation (order_id, customer_id, cancelled_by, reason, status)
@@ -1367,13 +1384,14 @@ app.put('/api/orders/:orderId/cancel', authenticateToken, async (req, res) => {
         res.json({ message: 'Order cancelled successfully' });
 
     } catch (error) {
-        await client.query('ROLLBACK');
+        if (client) await client.query('ROLLBACK');
         console.error('Error cancelling order:', error);
         res.status(500).json({ error: 'Failed to cancel order' });
     } finally {
         if (client) client.release();
     }
 });
+
 
 
 // POST /api/seller/signup - Handles new seller registration and immediate login
