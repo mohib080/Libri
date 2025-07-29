@@ -187,9 +187,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             ordersTableBody.innerHTML = orders.map(order => `
                 <tr>
-                    <td class="font-mono text-gray-500">${order.order_id}</td><td class="font-semibold">${order.customer_name}</td>
-                    <td>${new Date(order.order_date).toLocaleDateString()}</td><td class="font-medium">$${Number(order.total_amount).toFixed(2)}</td>
-                    <td>${getStatusBadge(order.status)}</td><td><button class="action-btn">View</button></td>
+                    <td class="font-mono text-gray-500">${order.order_id}</td>
+                    <td class="font-semibold">${order.customer_name}</td>
+                    <td>${new Date(order.order_date).toLocaleDateString()}</td>
+                    <td class="font-medium">$${Number(order.total_amount).toFixed(2)}</td>
+                    <td>${getStatusBadge(order.status)}</td>
+                    <td><button class="action-btn view-order-btn" data-order-id="${order.order_id}">View</button></td>
                 </tr>
             `).join('');
         } catch (err) {
@@ -197,6 +200,147 @@ document.addEventListener('DOMContentLoaded', () => {
             ordersTableBody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-red-600">Error: ${err.message}</td></tr>`;
         }
     }
+
+    // Modal close logic
+    document.getElementById('orderModalClose').onclick = () => {
+        document.getElementById('orderModal').style.display = 'none';
+    };
+
+    document.getElementById('orderModal').onclick = (e) => {
+        if (e.target === document.getElementById('orderModal')) {
+            document.getElementById('orderModal').style.display = 'none';
+        }
+    };
+
+    // --- Order Modal Logic ---
+    document.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.view-order-btn');
+        if (btn) {
+            const orderId = btn.getAttribute('data-order-id');
+            await openOrderModal(orderId);
+        }
+    });
+
+    // Load & show order in modal
+    async function openOrderModal(orderId) {
+        const modal = document.getElementById('orderModal');
+        modal.style.display = 'flex';
+        document.getElementById('order-modal-toast').textContent = '';
+        document.getElementById('order-modal-toast').className = '';
+
+        try {
+            const resp = await fetch(`/api/admin/orders/${orderId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!resp.ok) throw new Error("Failed to load order details!");
+            
+            const order = await resp.json();
+            
+            // Populate order details
+            document.getElementById('order-modal-id').textContent = order.order_id;
+            document.getElementById('order-modal-date').textContent = new Date(order.order_date).toLocaleString();
+            document.getElementById('order-modal-customer').textContent = order.customer_name || 'N/A';
+            document.getElementById('order-modal-email').textContent = order.customer_email || 'N/A';
+            document.getElementById('order-modal-phone').textContent = order.customer_phone || 'N/A';
+            document.getElementById('order-modal-customer-address').textContent = order.customer_address || 'N/A';
+            document.getElementById('order-modal-shipping-method').textContent = order.shipping_method || 'Standard';
+            document.getElementById('order-modal-tracking').textContent = order.tracking_number || 'Not assigned';
+
+            // Populate shipping address
+            const shippingElement = document.getElementById('order-modal-shipping');
+            if (order.shipping) {
+                shippingElement.innerHTML = `
+                    <div>${order.shipping.address || 'N/A'}</div>
+                    <div>${order.shipping.city || ''} ${order.shipping.postal_code || ''}</div>
+                    <div>${order.shipping.country || ''}</div>
+                `;
+            } else {
+                shippingElement.textContent = 'No shipping address provided';
+            }
+
+            // Populate order items
+            const tbody = document.getElementById('order-modal-items-tbody');
+            tbody.innerHTML = '';
+            (order.items || []).forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <img src="${item.image_url || '/images/default-book.jpg'}" 
+                            alt="${item.title}" 
+                            style="width:34px;height:45px;vertical-align:middle;border-radius:5px;">
+                        <span>${item.title || 'Unknown Book'}</span><br>
+                        <small>by ${item.authors || 'Unknown Author'}</small>
+                    </td>
+                    <td>${item.format_name || 'N/A'}</td>
+                    <td>${item.quantity}</td>
+                    <td>$${parseFloat(item.item_price || 0).toFixed(2)}</td>
+                    <td>$${(parseFloat(item.item_price || 0) * parseInt(item.quantity || 0)).toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('order-modal-total').textContent = parseFloat(order.total_amount || 0).toFixed(2);
+
+            // Status badge
+            document.getElementById('order-modal-status-badge').innerHTML = `
+                <span class="badge badge-status-${order.status}">
+                    ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                </span>
+            `;
+
+            // Set status dropdown
+            const dropdown = document.getElementById('order-status-dropdown');
+            dropdown.value = order.status;
+
+            // Save order ID for update
+            dropdown.setAttribute('data-order-id', order.order_id);
+            document.getElementById('order-status-update-btn').setAttribute('data-order-id', order.order_id);
+            
+        } catch (err) {
+            console.error('Error loading order details:', err);
+            document.getElementById('order-modal-toast').textContent = 'Could not load order details.';
+            document.getElementById('order-modal-toast').className = 'toast-error';
+        }
+    }
+
+    // Update order status from dropdown
+    document.getElementById('order-status-update-btn').onclick = async function () {
+        const orderId = this.getAttribute('data-order-id');
+        const status = document.getElementById('order-status-dropdown').value;
+        const toastElement = document.getElementById('order-modal-toast');
+        
+        if (!confirm(`Change order #${orderId} status to "${status}"?`)) return;
+
+        try {
+            const resp = await fetch(`/api/admin/orders/${orderId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status })
+            });
+            const res = await resp.json();
+            if (!resp.ok) throw new Error(res.error || "Failed to update status");
+
+            toastElement.textContent = "Status updated successfully!";
+            toastElement.className = 'toast-success';
+            
+            // Update the status badge
+            document.getElementById('order-modal-status-badge').innerHTML = `
+                <span class="badge badge-status-${status}">
+                    ${status.charAt(0).toUpperCase() + status.slice(1)}
+                </span>
+            `;
+
+            // Refresh the orders table
+            loadOrders();
+            
+        } catch (err) {
+            toastElement.textContent = err.message;
+            toastElement.className = 'toast-error';
+        }
+    };
 
     // --- NOTIFICATION SYSTEM ---
     // Notification elements
@@ -291,6 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
         }
+
         async function markNotificationAsRead(notificationId) {
             try {
                 await fetch(`/api/admin/notifications/${notificationId}/read`, {
@@ -325,8 +470,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadNotifications(); // This will restore the correct button state
             }
         }
-
-
 
         // Event listeners
         notificationBtn.addEventListener('click', (e) => {

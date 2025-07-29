@@ -1586,6 +1586,91 @@ app.get('/api/admin/total-sales', authenticateToken, isAdmin, async (req, res) =
     }
 });
 
+// Get full details for a single order (for admin)
+app.get('/api/admin/orders/:orderId', authenticateToken, isAdmin, async (req, res) => {
+    const orderId = parseInt(req.params.orderId, 10);
+    let client;
+    try {
+        client = await pool.connect();
+        
+        // Get base order with customer details
+        const result = await client.query(`
+            SELECT 
+                o.*,
+                c.name AS customer_name, 
+                c.email AS customer_email,
+                c.phone_number AS customer_phone,
+                c.address AS customer_address
+            FROM "order" o
+            JOIN customer c ON o.customer_id = c.customer_id
+            WHERE o.order_id = $1
+        `, [orderId]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Order not found" });
+        }
+        
+        const order = result.rows[0];
+        
+        // Get order items with book details
+        const itemsResult = await client.query(`
+            SELECT 
+                oi.*,
+                b.title,
+                b.image_url,
+                f.format_name,
+                STRING_AGG(DISTINCT a.name, ', ') AS authors
+            FROM order_item oi
+            LEFT JOIN book b ON oi.book_id = b.book_id
+            LEFT JOIN format f ON oi.format_id = f.format_id
+            LEFT JOIN book_author ba ON b.book_id = ba.book_id
+            LEFT JOIN author a ON ba.author_id = a.author_id
+            WHERE oi.order_id = $1
+            GROUP BY oi.order_item_id, oi.order_id, oi.book_id, oi.order_date, 
+                     oi.quantity, oi.item_price, oi.format_id, b.title, 
+                     b.image_url, f.format_name
+        `, [orderId]);
+        
+        order.items = itemsResult.rows;
+        
+        // Get shipping details
+        const shippingResult = await client.query(
+            `SELECT * FROM shipping WHERE order_id = $1`, [orderId]
+        );
+        order.shipping = shippingResult.rows[0] || null;
+        
+        res.json(order);
+    } catch (err) {
+        console.error('Admin order details error', err);
+        res.status(500).json({ error: 'Failed to load order details' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+// Update status for an order (admin)
+app.put('/api/admin/orders/:orderId/status', authenticateToken, isAdmin, async (req, res) => {
+    const orderId = parseInt(req.params.orderId, 10);
+    const { status } = req.body;
+    
+    if (!['pending','processing','shipped','delivered','cancelled'].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+    }
+    
+    let client;
+    try {
+        client = await pool.connect();
+        await client.query('UPDATE "order" SET status=$1 WHERE order_id=$2', [status, orderId]);
+        res.json({ message: 'Order status updated!', status });
+    } catch (err) {
+        console.error('Admin update status error', err);
+        res.status(500).json({ error: 'Update failed.' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+
 app.get('/api/admin/books', authenticateToken, isAdmin, async (req, res) => {
     try {
         const result = await pool.query(`
