@@ -1846,9 +1846,9 @@ app.post('/api/seller/books', authenticateToken, isSeller, async (req, res) => {
 
         // Step 2: Insert the new book
         const bookResult = await client.query(
-            `INSERT INTO book (title, description, price, isbn, publisher, publication_date, format_id) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING book_id`,
-            [title, description, price, isbn, publisher, publicationDate, format]
+            `INSERT INTO book (title, description, price, isbn, publisher, publication_date) 
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING book_id`,
+            [title, description, price, isbn, publisher, publicationDate]
         );
         const newBookId = bookResult.rows[0].book_id;
 
