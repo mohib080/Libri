@@ -161,7 +161,7 @@ function getOrderActions(order) {
     actions.push(`<button onclick="showOrderDetails(${order.order_id})" class="btn-outline">View Details</button>`);
 
     if (order.status === 'pending') {
-        actions.push(`<button onclick="showCancelModal(${order.order_id})" class="btn-danger">Cancel Order</button>`);
+        actions.push(`<button class="btn-danger" onclick="showCancelModal(${order.order_id})">Cancel Order</button>`);
     }
 
     if (order.status === 'delivered') {
@@ -384,7 +384,7 @@ function getOrderActions(order) {
 
     // Cancel button (only for 'pending' orders)
     if (order.status === 'pending') {
-        actions.push(`<button class="btn-danger" onclick="showCancellationModal(${order.order_id})">Cancel Order</button>`);
+        actions.push(`<button class="btn-danger" onclick="showCancelModal(${order.order_id})">Cancel Order</button>`);
     }
     
     // Re-order button (only for 'delivered' orders)
@@ -423,25 +423,34 @@ async function cancelOrder(orderId, reason, details) {
     const token = getAuthToken();
     if (!token) return;
 
-    const data = await handleApiCall(
-        () => fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
+    try {
+        const response = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ reason, details })
-        }),
-        'Failed to cancel order'
-    );
+        });
 
-    if (data) {
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to cancel order: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+
+        const data = await response.json();
+
         showNotification('Order cancelled successfully', 'success');
         cancellationModal.style.display = 'none';
         currentOrderIdToCancel = null;
         await fetchOrders(); // Refresh orders list
+
+    } catch (error) {
+        showNotification(error.message || 'Failed to cancel order', 'error');
+        console.error('Cancel order error:', error);
     }
 }
+
 
 // Reorder items
 async function reorderItems(orderId) {
