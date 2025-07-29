@@ -16,7 +16,7 @@
             <h1 class="logo"><i class="fas fa-graduation-cap"></i> Libri</h1>
 
             <div class="nav-area">
-              
+
                 <a href="seller-login.html" class="seller-btn" title="Seller Login">
                     <i class="fas fa-store"></i> Seller
                 </a>
@@ -29,7 +29,6 @@
                 <a href="wishlist.html" class="wishlist-btn" id="wishlist-nav-btn" title="Wishlist"><i
                         class="fas fa-heart"></i> <span id="wishlist-item-count" class="wishlist-count">0</span></a>
 
-        
                 <div class="notification-container">
                     <button class="notification-btn" id="notification-btn" title="Notifications">
                         <i class="fas fa-bell"></i>
@@ -110,6 +109,35 @@
 
     <div id="notification-area" class="notification-area"></div>
 
+    <!-- Chat Widget -->
+    <div id="chat-widget" class="chat-widget">
+        <div id="chat-toggle" class="chat-toggle">
+            <i class="fas fa-comments"></i>
+            <span id="chat-badge" class="chat-badge hidden">1</span>
+        </div>
+
+        <div id="chat-container" class="chat-container hidden">
+            <div class="chat-header">
+                <h4>Customer Support</h4>
+                <button id="close-chat" class="close-chat">&times;</button>
+            </div>
+
+            <div id="chat-status" class="chat-status">
+                Click "Start Chat" to begin
+            </div>
+
+            <div id="chat-messages" class="chat-messages">
+                <!-- Messages will appear here -->
+            </div>
+
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Type your message..." disabled>
+                <button id="send-message" disabled>Send</button>
+                <button id="start-chat">Start Chat</button>
+                <button id="end-chat" class="hidden">End Chat</button>
+            </div>
+        </div>
+    </div>
 
     <script src="../js/user.js"></script>
 

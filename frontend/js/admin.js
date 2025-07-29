@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sellers: document.getElementById('sellers-link'), // Added sellers link
         books: document.getElementById('books-link'),
         orders: document.getElementById('orders-link'),
+        chat: document.getElementById('chat-link'), // Added chat link
     };
 
     const sections = {
@@ -36,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sellers: document.getElementById('sellers-content'), // Added sellers section
         books: document.getElementById('books-content'),
         orders: document.getElementById('orders-content'),
+        chat: document.getElementById('chat-content'), // Added chat section
     };
 
     const logoutButton = document.getElementById('logout-button');
@@ -54,13 +56,359 @@ document.addEventListener('DOMContentLoaded', () => {
     links.sellers.addEventListener('click', (e) => { e.preventDefault(); showSection('sellers'); loadSellers(); }); // Added listener
     links.books.addEventListener('click', (e) => { e.preventDefault(); showSection('books'); loadBooks(); });
     links.orders.addEventListener('click', (e) => { e.preventDefault(); showSection('orders'); loadOrders(); });
+    links.chat.addEventListener('click', (e) => { e.preventDefault(); showSection('chat'); }); // Added chat listener
 
     logoutButton.addEventListener('click', () => {
         localStorage.clear();
         window.location.href = 'index.html';
     });
 
-    // --- Data Fetching and Rendering ---
+    class AdminChatSystem {
+    constructor() {
+        this.ws = null;
+        this.currentSessionId = null;
+        this.activeSessions = new Map();
+        this.chatCount = 0; // Add this property to track chat count
+        this.initializeElements();
+        this.attachEventListeners();
+        this.connectWebSocket();
+    }
+
+    initializeElements() {
+        this.chatLink = document.getElementById('chat-link');
+        this.chatContent = document.getElementById('chat-content');
+        this.chatSessionsList = document.getElementById('chat-sessions-list');
+        this.chatArea = document.getElementById('chat-area');
+        this.chatInputArea = document.getElementById('chat-input-area');
+        this.adminChatInput = document.getElementById('admin-chat-input');
+        this.adminSendButton = document.getElementById('admin-send-message');
+        this.adminEndButton = document.getElementById('admin-end-chat');
+        this.chatNotificationBadge = document.getElementById('chat-notification-badge');
+    }
+
+    attachEventListeners() {
+        if (!this.chatLink) return; // Exit if chat elements don't exist
+
+        this.adminSendButton?.addEventListener('click', () => this.sendMessage());
+        this.adminEndButton?.addEventListener('click', () => this.endChat());
+
+        this.adminChatInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.sendMessage();
+            }
+        });
+    }
+
+    connectWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/chat`;
+
+        this.ws = new WebSocket(wsUrl);
+
+        this.ws.onopen = () => {
+            console.log('Admin WebSocket connected');
+            this.ws.send(JSON.stringify({
+                type: 'authenticate',
+                token: token,
+                userType: 'admin'
+            }));
+        };
+
+        this.ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            this.handleMessage(message);
+        };
+
+        this.ws.onclose = () => {
+            console.log('Admin WebSocket disconnected');
+            // Attempt to reconnect after 3 seconds
+            setTimeout(() => this.connectWebSocket(), 3000);
+        };
+
+        this.ws.onerror = (error) => {
+            console.error('Admin WebSocket error:', error);
+        };
+    }
+
+    handleMessage(message) {
+        switch (message.type) {
+            case 'authenticated':
+                console.log('Admin authenticated');
+                break;
+
+            case 'pending_chats':
+                this.updateChatSessions(message.chats);
+                this.refreshDashboardCount(); // Add this line
+                break;
+
+            case 'new_chat_request':
+                this.addNewChatSession(message);
+                this.showNotificationBadge();
+                this.refreshDashboardCount(); // Add this line
+                break;
+
+            case 'new_message':
+                this.handleNewMessage(message);
+                break;
+
+            case 'chat_history':
+                this.displayChatHistory(message.messages);
+                break;
+
+            case 'chat_ended':
+                this.handleChatEnded(message.sessionId);
+                this.refreshDashboardCount(); // Add this line
+                break;
+        }
+    }
+
+    updateChatSessions(chats) {
+        if (!this.chatSessionsList) return;
+
+        // Update chat count
+        this.chatCount = chats.length;
+        this.updateChatCountDisplay();
+
+        this.chatSessionsList.innerHTML = '';
+
+        if (chats.length === 0) {
+            this.chatSessionsList.innerHTML = '<div class="p-4 text-center text-gray-500">No active chat sessions</div>';
+            return;
+        }
+
+        chats.forEach(chat => {
+            this.addChatSessionToList(chat);
+        });
+    }
+
+    addNewChatSession(chatData) {
+        const chat = {
+            session_id: chatData.sessionId,
+            customer_id: chatData.customerId,
+            customer_name: `Customer ${chatData.customerId}`,
+            started_at: new Date().toISOString()
+        };
+
+        this.addChatSessionToList(chat);
+        
+        // Increment chat count
+        this.chatCount++;
+        this.updateChatCountDisplay();
+    }
+
+    addChatSessionToList(chat) {
+        if (!this.chatSessionsList) return;
+
+        const sessionDiv = document.createElement('div');
+        sessionDiv.classList.add('bg-white', 'p-4', 'rounded-lg', 'shadow-sm', 'border', 'cursor-pointer', 'hover:bg-blue-50', 'transition-colors');
+        sessionDiv.dataset.sessionId = chat.session_id;
+
+        sessionDiv.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div>
+                    <h4 class="font-semibold text-gray-800">${chat.customer_name}</h4>
+                    <p class="text-sm text-gray-600">ID: ${chat.customer_id}</p>
+                    <p class="text-xs text-gray-500">Started: ${new Date(chat.started_at).toLocaleTimeString()}</p>
+                </div>
+                <button class="join-chat-btn px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors" 
+                        onclick="window.adminChatSystem.joinChat(${chat.session_id})">
+                    Join
+                </button>
+            </div>
+        `;
+
+        this.chatSessionsList.appendChild(sessionDiv);
+    }
+
+    joinChat(sessionId) {
+        this.currentSessionId = sessionId;
+
+        // Update UI
+        document.querySelectorAll('[data-session-id]').forEach(item => {
+            item.classList.remove('bg-blue-100', 'border-blue-300');
+            item.classList.add('bg-white');
+        });
+
+        const selectedSession = document.querySelector(`[data-session-id="${sessionId}"]`);
+        if (selectedSession) {
+            selectedSession.classList.remove('bg-white');
+            selectedSession.classList.add('bg-blue-100', 'border-blue-300');
+        }
+
+        // Show chat area
+        if (this.chatArea) {
+            this.chatArea.innerHTML = '<div id="admin-chat-messages" class="h-full p-4 overflow-y-auto bg-gray-50"></div>';
+        }
+        if (this.chatInputArea) {
+            this.chatInputArea.classList.remove('hidden');
+        }
+
+        // Send join message to WebSocket
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+                type: 'admin_join',
+                sessionId: sessionId
+            }));
+        }
+    }
+
+    sendMessage() {
+        const messageText = this.adminChatInput?.value.trim();
+        if (messageText && this.currentSessionId && this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+                type: 'send_message',
+                sessionId: this.currentSessionId,
+                messageText: messageText
+            }));
+
+            this.addMessageToChat('admin', messageText);
+            this.adminChatInput.value = '';
+        }
+    }
+
+    endChat() {
+        if (this.currentSessionId && this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+                type: 'end_chat',
+                sessionId: this.currentSessionId
+            }));
+        }
+    }
+
+    handleNewMessage(message) {
+        if (message.sessionId === this.currentSessionId) {
+            this.addMessageToChat(message.senderType, message.messageText, message.timestamp);
+        }
+
+        // Show notification if not in chat section
+        if (this.chatContent?.classList.contains('hidden')) {
+            this.showNotificationBadge();
+        }
+    }
+
+    addMessageToChat(senderType, messageText, timestamp = null) {
+        const messagesContainer = document.getElementById('admin-chat-messages');
+        if (!messagesContainer) return;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('mb-4');
+
+        const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+        const isAdmin = senderType === 'admin';
+
+        messageDiv.innerHTML = `
+            <div class="flex ${isAdmin ? 'justify-end' : 'justify-start'}">
+                <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isAdmin ? 'bg-blue-600 text-white' : 'bg-white text-gray-800 border'}">
+                    <div class="text-xs ${isAdmin ? 'text-blue-100' : 'text-gray-500'} mb-1">
+                        ${isAdmin ? 'You' : 'Customer'}
+                    </div>
+                    <div class="text-sm">${messageText}</div>
+                    <div class="text-xs ${isAdmin ? 'text-blue-200' : 'text-gray-400'} mt-1">${time}</div>
+                </div>
+            </div>
+        `;
+
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    displayChatHistory(messages) {
+        const messagesContainer = document.getElementById('admin-chat-messages');
+        if (!messagesContainer) return;
+
+        messagesContainer.innerHTML = '';
+
+        messages.forEach(message => {
+            this.addMessageToChat(
+                message.sender_type,
+                message.message_text,
+                message.sent_at
+            );
+        });
+    }
+
+    handleChatEnded(sessionId) {
+        // Remove from sessions list
+        const sessionElement = document.querySelector(`[data-session-id="${sessionId}"]`);
+        if (sessionElement) {
+            sessionElement.remove();
+            
+            // Decrement chat count
+            this.chatCount = Math.max(0, this.chatCount - 1);
+            this.updateChatCountDisplay();
+        }
+
+        // Clear chat if it was the current session
+        if (this.currentSessionId === sessionId) {
+            this.currentSessionId = null;
+            if (this.chatArea) {
+                this.chatArea.innerHTML = `
+                    <div class="no-chat-selected flex flex-col items-center justify-center h-full text-gray-500">
+                        <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                            </path>
+                        </svg>
+                        <p>Chat session ended</p>
+                    </div>
+                `;
+            }
+            if (this.chatInputArea) {
+                this.chatInputArea.classList.add('hidden');
+            }
+        }
+    }
+
+    showNotificationBadge() {
+        if (!this.chatNotificationBadge) return;
+
+        const currentCount = parseInt(this.chatNotificationBadge.textContent) || 0;
+        this.chatNotificationBadge.textContent = currentCount + 1;
+        this.chatNotificationBadge.classList.remove('hidden');
+    }
+
+    hideNotificationBadge() {
+        if (this.chatNotificationBadge) {
+            this.chatNotificationBadge.classList.add('hidden');
+        }
+    }
+
+    // NEW METHOD: Update the dashboard chat count display
+    updateChatCountDisplay() {
+        const liveChatCountElement = document.getElementById('live-chat-count');
+        if (liveChatCountElement) {
+            liveChatCountElement.textContent = this.chatCount;
+            
+            // Add pulsing animation if there are active chats
+            if (this.chatCount > 0) {
+                liveChatCountElement.classList.add('active');
+            } else {
+                liveChatCountElement.classList.remove('active');
+            }
+        }
+        
+        // Also update the sidebar badge
+        if (this.chatNotificationBadge && this.chatCount > 0) {
+            this.chatNotificationBadge.textContent = this.chatCount;
+            this.chatNotificationBadge.classList.remove('hidden');
+        } else if (this.chatNotificationBadge && this.chatCount === 0) {
+            this.chatNotificationBadge.classList.add('hidden');
+        }
+    }
+
+    // NEW METHOD: Refresh dashboard count (only if on dashboard)
+    refreshDashboardCount() {
+        // Only refresh if we're on the dashboard
+        const dashboardContent = document.getElementById('dashboard-content');
+        if (dashboardContent && !dashboardContent.classList.contains('hidden')) {
+            // Call the loadDashboardData function if it exists
+            if (typeof loadDashboardData === 'function') {
+                loadDashboardData();
+            }
+        }
+    }
+}
+
 
     async function loadDashboardData() {
         const headers = { 'Authorization': `Bearer ${token}` };
@@ -596,8 +944,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-
-
         function displayNotifications(notifications) {
             if (notifications.length === 0) {
                 notificationsList.innerHTML = '<div class="p-4 text-center text-gray-500">No notifications</div>';
@@ -615,7 +961,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 markAllReadBtn.disabled = true;
                 markAllReadBtn.classList.add('opacity-50', 'cursor-not-allowed');
             }
-
 
             notificationsList.innerHTML = notifications.map(formatNotificationMessage).join('');
 
@@ -690,7 +1035,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-
         // Event listeners
         notificationBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -715,6 +1059,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } else {
         console.log('Notification elements not found - notification system disabled');
+    }
+
+    // Initialize admin chat system
+    if (document.getElementById('chat-link')) {
+        window.adminChatSystem = new AdminChatSystem();
+
+        // Hide chat notification badge when chat section is opened
+        links.chat.addEventListener('click', () => {
+            if (window.adminChatSystem) {
+                window.adminChatSystem.hideNotificationBadge();
+            }
+        });
     }
 
     // Initial load

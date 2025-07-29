@@ -8,7 +8,336 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const { jsPDF } = require('jspdf');
 const autoTable = require('jspdf-autotable').default;
+const port = 3000;
+const WebSocket = require('ws');
+const http = require('http');
 
+
+const server = http.createServer(app);
+
+
+const wss = new WebSocket.Server({
+    server,
+    path: '/chat'
+});
+
+
+const activeConnections = new Map();
+
+
+wss.on('connection', async (ws, req) => {
+    console.log('New WebSocket connection');
+
+    ws.on('message', async (data) => {
+        try {
+            const message = JSON.parse(data);
+
+            switch (message.type) {
+                case 'authenticate':
+                    await handleAuthentication(ws, message);
+                    break;
+                case 'start_chat':
+                    await handleStartChat(ws, message);
+                    break;
+                case 'send_message':
+                    await handleSendMessage(ws, message);
+                    break;
+                case 'admin_join':
+                    await handleAdminJoin(ws, message);
+                    break;
+                case 'end_chat':
+                    await handleEndChat(ws, message);
+                    break;
+            }
+        } catch (error) {
+            console.error('WebSocket message error:', error);
+            ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
+        }
+    });
+
+    ws.on('close', () => {
+        for (const [key, value] of activeConnections.entries()) {
+            if (value.ws === ws) {
+                activeConnections.delete(key);
+                break;
+            }
+        }
+    });
+});
+
+async function handleAuthentication(ws, message) {
+    try {
+        const { token, userType } = message;
+
+        if (userType === 'customer') {
+            const decoded = jwt.verify(token, 'your_secret_key');
+            const customerId = decoded.customerId;
+
+            activeConnections.set(`customer_${customerId}`, {
+                ws,
+                customerId,
+                userType: 'customer',
+                sessionId: null
+            });
+
+            ws.send(JSON.stringify({
+                type: 'authenticated',
+                customerId,
+                userType: 'customer'
+            }));
+        } else if (userType === 'admin') {
+            const decoded = jwt.verify(token, 'your_secret_key');
+            if (!decoded.isAdmin) {
+                throw new Error('Not an admin');
+            }
+
+            activeConnections.set(`admin_${decoded.adminId || 'main'}`, {
+                ws,
+                adminId: decoded.adminId || 'main',
+                userType: 'admin'
+            });
+
+            ws.send(JSON.stringify({
+                type: 'authenticated',
+                userType: 'admin'
+            }));
+
+            await sendPendingChatsToAdmin(ws);
+        }
+    } catch (error) {
+        ws.send(JSON.stringify({ type: 'auth_error', message: 'Authentication failed' }));
+    }
+}
+
+async function handleStartChat(ws, message) {
+    let client;
+    try {
+        const connection = findConnectionByWs(ws);
+        if (!connection || connection.userType !== 'customer') {
+            return;
+        }
+
+        client = await pool.connect();
+
+        const sessionResult = await client.query(`
+            INSERT INTO chat_session (customer_id, started_at)
+            VALUES ($1, NOW())
+            RETURNING session_id
+        `, [connection.customerId]);
+
+        const sessionId = sessionResult.rows[0].session_id;
+        connection.sessionId = sessionId;
+
+        // Send session info to customer
+        ws.send(JSON.stringify({
+            type: 'chat_started',
+            sessionId: sessionId,
+            message: 'Chat session started. An admin will join you shortly.'
+        }));
+
+        // Notify all admin connections about new chat
+        notifyAdminsOfNewChat(sessionId, connection.customerId);
+
+    } catch (error) {
+        console.error('Error starting chat:', error);
+        ws.send(JSON.stringify({ type: 'error', message: 'Failed to start chat' }));
+    } finally {
+        if (client) client.release();
+    }
+}
+
+// Send message
+async function handleSendMessage(ws, message) {
+    let client;
+    try {
+        const connection = findConnectionByWs(ws);
+        if (!connection) return;
+
+        const { sessionId, messageText } = message;
+
+        client = await pool.connect();
+
+        // Insert message into database
+        const senderType = connection.userType === 'admin' ? 'admin' : 'customer';
+        await client.query(`
+            INSERT INTO chat_message (session_id, sender_type, message_text, sent_at)
+            VALUES ($1, $2, $3, NOW())
+        `, [sessionId, senderType, messageText]);
+
+        // Broadcast message to all participants in this session
+        broadcastToSession(sessionId, {
+            type: 'new_message',
+            sessionId,
+            senderType,
+            messageText,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('Error sending message:', error);
+        ws.send(JSON.stringify({ type: 'error', message: 'Failed to send message' }));
+    } finally {
+        if (client) client.release();
+    }
+}
+
+// Admin join chat
+async function handleAdminJoin(ws, message) {
+    try {
+        const connection = findConnectionByWs(ws);
+        if (!connection || connection.userType !== 'admin') {
+            return;
+        }
+
+        const { sessionId } = message;
+        connection.sessionId = sessionId;
+
+        // Notify customer that admin joined
+        const customerConnection = findCustomerBySession(sessionId);
+        if (customerConnection) {
+            customerConnection.ws.send(JSON.stringify({
+                type: 'admin_joined',
+                message: 'An admin has joined the chat'
+            }));
+        }
+
+        // Send chat history to admin
+        await sendChatHistory(ws, sessionId);
+
+    } catch (error) {
+        console.error('Error admin joining chat:', error);
+        ws.send(JSON.stringify({ type: 'error', message: 'Failed to join chat' }));
+    }
+}
+
+// End chat session
+async function handleEndChat(ws, message) {
+    let client;
+    try {
+        const connection = findConnectionByWs(ws);
+        if (!connection) return;
+
+        const { sessionId } = message;
+
+        client = await pool.connect();
+
+        // Update session end time
+        await client.query(`
+            UPDATE chat_session 
+            SET ended_at = NOW() 
+            WHERE session_id = $1
+        `, [sessionId]);
+
+        // Notify all participants
+        broadcastToSession(sessionId, {
+            type: 'chat_ended',
+            message: 'Chat session has ended'
+        });
+
+        // Remove session from connections
+        for (const [key, conn] of activeConnections.entries()) {
+            if (conn.sessionId === sessionId) {
+                conn.sessionId = null;
+            }
+        }
+
+    } catch (error) {
+        console.error('Error ending chat:', error);
+    } finally {
+        if (client) client.release();
+    }
+}
+
+// Helper functions
+function findConnectionByWs(ws) {
+    for (const connection of activeConnections.values()) {
+        if (connection.ws === ws) {
+            return connection;
+        }
+    }
+    return null;
+}
+
+function findCustomerBySession(sessionId) {
+    for (const connection of activeConnections.values()) {
+        if (connection.sessionId === sessionId && connection.userType === 'customer') {
+            return connection;
+        }
+    }
+    return null;
+}
+
+function broadcastToSession(sessionId, message) {
+    for (const connection of activeConnections.values()) {
+        if (connection.sessionId === sessionId) {
+            connection.ws.send(JSON.stringify(message));
+        }
+    }
+}
+
+function notifyAdminsOfNewChat(sessionId, customerId) {
+    for (const connection of activeConnections.values()) {
+        if (connection.userType === 'admin') {
+            connection.ws.send(JSON.stringify({
+                type: 'new_chat_request',
+                sessionId,
+                customerId,
+                message: `New chat request from customer ${customerId}`
+            }));
+        }
+    }
+}
+
+async function sendChatHistory(ws, sessionId) {
+    let client;
+    try {
+        client = await pool.connect();
+        const result = await client.query(`
+            SELECT sender_type, message_text, sent_at
+            FROM chat_message
+            WHERE session_id = $1
+            ORDER BY sent_at ASC
+        `, [sessionId]);
+
+        ws.send(JSON.stringify({
+            type: 'chat_history',
+            sessionId,
+            messages: result.rows
+        }));
+    } catch (error) {
+        console.error('Error sending chat history:', error);
+    } finally {
+        if (client) client.release();
+    }
+}
+
+async function sendPendingChatsToAdmin(ws) {
+    let client;
+    try {
+        client = await pool.connect();
+        const result = await client.query(`
+            SELECT cs.session_id, cs.customer_id, cs.started_at, c.name as customer_name
+            FROM chat_session cs
+            JOIN customer c ON cs.customer_id = c.customer_id
+            WHERE cs.ended_at IS NULL
+            ORDER BY cs.started_at DESC
+        `);
+
+        ws.send(JSON.stringify({
+            type: 'pending_chats',
+            chats: result.rows
+        }));
+    } catch (error) {
+        console.error('Error sending pending chats:', error);
+    } finally {
+        if (client) client.release();
+    }
+}
+
+// Start server with WebSocket support
+server.listen(port, () => {
+    console.log(`Server running on port ${port} with WebSocket support`);
+});
 
 
 
@@ -18,7 +347,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use(express.static(path.join(__dirname, '../frontend/css')));
 app.use(express.static(path.join(__dirname, '../frontend/js')));
 
-const port = 3000;
+
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -1931,6 +2260,35 @@ app.get('/api/admin/sellers', authenticateToken, isAdmin, async (req, res) => {
     }
 });
 
+// Add this route to your existing routes
+app.get('/api/admin/live-chat-count', authenticateToken, async (req, res) => {
+    if (!req.user.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    let client;
+    try {
+        client = await pool.connect();
+
+        // Count active chat sessions (sessions that haven't ended)
+        const result = await client.query(`
+            SELECT COUNT(*) as count
+            FROM chat_session 
+            WHERE ended_at IS NULL
+        `);
+
+        const liveChatCount = parseInt(result.rows[0].count) || 0;
+
+        res.json({ liveChatCount });
+    } catch (error) {
+        console.error('Error fetching live chat count:', error);
+        res.status(500).json({ error: 'Failed to fetch live chat count' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+
 app.get('/api/seller/dashboard-stats', authenticateToken, isSeller, async (req, res) => {
     const supplierId = req.user.supplierId;
     let client;
@@ -2547,120 +2905,120 @@ function generateReceiptPDF(order) {
     doc.text('Total:', 120, finalY + 17);
     doc.text(`$${parseFloat(order.total_amount).toFixed(2)}`, 170, finalY + 17, { align: 'right' });
 
-    const footerY = finalY + 35;function generateReceiptPDF(order) {
-    const doc = new jsPDF();
-    let y = 20;
-    const pageW = doc.internal.pageSize.getWidth();
-    const xMargin = 20;
+    const footerY = finalY + 35; function generateReceiptPDF(order) {
+        const doc = new jsPDF();
+        let y = 20;
+        const pageW = doc.internal.pageSize.getWidth();
+        const xMargin = 20;
 
-    // --- 1. Modern Header with Emoji ---
-    // Using a Unicode emoji for the icon.
-    doc.setFontSize(26);
-    doc.setFont('helvetica', 'bold');
-    doc.text('🎓 Libri', xMargin, y);
-    
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Order Receipt', pageW - xMargin, y, { align: 'right' });
-    y += 10;
-    doc.setDrawColor(220, 220, 220); // Light gray line
-    doc.line(xMargin, y, pageW - xMargin, y);
+        // --- 1. Modern Header with Emoji ---
+        // Using a Unicode emoji for the icon.
+        doc.setFontSize(26);
+        doc.setFont('helvetica', 'bold');
+        doc.text('🎓 Libri', xMargin, y);
 
-    // --- 2. Two-Column Layout for Details ---
-    const x1 = xMargin;
-    const x2 = pageW / 2 + 10;
-    y += 15;
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Order Receipt', pageW - xMargin, y, { align: 'right' });
+        y += 10;
+        doc.setDrawColor(220, 220, 220); // Light gray line
+        doc.line(xMargin, y, pageW - xMargin, y);
 
-    // Left Column: Order Details
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Order ID:', x1, y);
-    doc.text('Order Date:', x1, y + 7);
-    doc.text('Status:', x1, y + 14);
+        // --- 2. Two-Column Layout for Details ---
+        const x1 = xMargin;
+        const x2 = pageW / 2 + 10;
+        y += 15;
 
-    doc.setFont('helvetica', 'normal');
-    doc.text(`#${order.order_id}`, x1 + 35, y);
-    doc.text(new Date(order.order_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), x1 + 35, y + 7);
-    doc.text(order.status.toUpperCase(), x1 + 35, y + 14);
-    
-    // Right Column: Customer Details
-    doc.setFont('helvetica', 'bold');
-    doc.text('Billed To:', x2, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(order.customer_name, x2, y + 7);
-    doc.text(order.customer_email, x2, y + 14);
-    if(order.customer_phone) doc.text(order.customer_phone, x2, y + 21);
+        // Left Column: Order Details
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Order ID:', x1, y);
+        doc.text('Order Date:', x1, y + 7);
+        doc.text('Status:', x1, y + 14);
 
-    y += 35; // Extra space before table
+        doc.setFont('helvetica', 'normal');
+        doc.text(`#${order.order_id}`, x1 + 35, y);
+        doc.text(new Date(order.order_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), x1 + 35, y + 7);
+        doc.text(order.status.toUpperCase(), x1 + 35, y + 14);
 
-    // --- 3. Enhanced AutoTable Styling ---
-    const tableHeaders = [['Item', 'Format', 'Qty', 'Price', 'Total']];
-    const tableData = order.items.map(item => [
-        `${item.book_title}\n${item.authors ? `by ${item.authors}` : ''}`,
-        item.format_name || 'Standard',
-        item.quantity.toString(),
-        `$${parseFloat(item.item_price).toFixed(2)}`,
-        `$${(item.item_price * item.quantity).toFixed(2)}`
-    ]);
+        // Right Column: Customer Details
+        doc.setFont('helvetica', 'bold');
+        doc.text('Billed To:', x2, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(order.customer_name, x2, y + 7);
+        doc.text(order.customer_email, x2, y + 14);
+        if (order.customer_phone) doc.text(order.customer_phone, x2, y + 21);
 
-    autoTable(doc, {
-        startY: y,
-        head: tableHeaders,
-        body: tableData,
-        theme: 'striped',
-        headStyles: {
-            fillColor: [41, 128, 185], // A modern blue
-            textColor: 255,
-            fontStyle: 'bold',
-            halign: 'center'
-        },
-        columnStyles: {
-            0: { cellWidth: 70 }, // Item
-            1: { halign: 'center' }, // Format
-            2: { halign: 'center' }, // Qty
-            3: { halign: 'right' },  // Price
-            4: { halign: 'right' }   // Total
-        },
-        margin: { left: xMargin, right: xMargin },
-    });
+        y += 35; // Extra space before table
 
-    // --- 4. Professional Totals Section ---
-    const subtotal = order.items.reduce((sum, item) => sum + (item.item_price * item.quantity), 0);
-    const shippingCost = 5.00;
-    let finalY = doc.lastAutoTable.finalY + 10;
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    const totalsX = pageW - xMargin - 60;
+        // --- 3. Enhanced AutoTable Styling ---
+        const tableHeaders = [['Item', 'Format', 'Qty', 'Price', 'Total']];
+        const tableData = order.items.map(item => [
+            `${item.book_title}\n${item.authors ? `by ${item.authors}` : ''}`,
+            item.format_name || 'Standard',
+            item.quantity.toString(),
+            `$${parseFloat(item.item_price).toFixed(2)}`,
+            `$${(item.item_price * item.quantity).toFixed(2)}`
+        ]);
 
-    doc.text('Subtotal:', totalsX, finalY);
-    doc.text(`$${subtotal.toFixed(2)}`, pageW - xMargin, finalY, { align: 'right' });
+        autoTable(doc, {
+            startY: y,
+            head: tableHeaders,
+            body: tableData,
+            theme: 'striped',
+            headStyles: {
+                fillColor: [41, 128, 185], // A modern blue
+                textColor: 255,
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { cellWidth: 70 }, // Item
+                1: { halign: 'center' }, // Format
+                2: { halign: 'center' }, // Qty
+                3: { halign: 'right' },  // Price
+                4: { halign: 'right' }   // Total
+            },
+            margin: { left: xMargin, right: xMargin },
+        });
 
-    finalY += 7;
-    doc.text('Shipping:', totalsX, finalY);
-    doc.text(`$${shippingCost.toFixed(2)}`, pageW - xMargin, finalY, { align: 'right' });
+        // --- 4. Professional Totals Section ---
+        const subtotal = order.items.reduce((sum, item) => sum + (item.item_price * item.quantity), 0);
+        const shippingCost = 5.00;
+        let finalY = doc.lastAutoTable.finalY + 10;
 
-    finalY += 7;
-    doc.setDrawColor(41, 128, 185);
-    doc.line(totalsX - 2, finalY, pageW - xMargin, finalY); // Line above total
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        const totalsX = pageW - xMargin - 60;
 
-    finalY += 5;
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Total:', totalsX, finalY);
-    doc.text(`$${parseFloat(order.total_amount).toFixed(2)}`, pageW - xMargin, finalY, { align: 'right' });
+        doc.text('Subtotal:', totalsX, finalY);
+        doc.text(`$${subtotal.toFixed(2)}`, pageW - xMargin, finalY, { align: 'right' });
 
-    // --- 5. Styled Footer ---
-    const footerY = doc.internal.pageSize.getHeight() - 15;
-    doc.setDrawColor(220, 220, 220);
-    doc.line(xMargin, footerY - 5, pageW - xMargin, footerY - 5);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Thank you for your business!', pageW / 2, footerY, { align: 'center' });
-    doc.text('For support, contact support@libri.com', pageW / 2, footerY + 5, { align: 'center' });
+        finalY += 7;
+        doc.text('Shipping:', totalsX, finalY);
+        doc.text(`$${shippingCost.toFixed(2)}`, pageW - xMargin, finalY, { align: 'right' });
 
-    return Buffer.from(doc.output('arraybuffer'));
-}
+        finalY += 7;
+        doc.setDrawColor(41, 128, 185);
+        doc.line(totalsX - 2, finalY, pageW - xMargin, finalY); // Line above total
+
+        finalY += 5;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Total:', totalsX, finalY);
+        doc.text(`$${parseFloat(order.total_amount).toFixed(2)}`, pageW - xMargin, finalY, { align: 'right' });
+
+        // --- 5. Styled Footer ---
+        const footerY = doc.internal.pageSize.getHeight() - 15;
+        doc.setDrawColor(220, 220, 220);
+        doc.line(xMargin, footerY - 5, pageW - xMargin, footerY - 5);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Thank you for your business!', pageW / 2, footerY, { align: 'center' });
+        doc.text('For support, contact support@libri.com', pageW / 2, footerY + 5, { align: 'center' });
+
+        return Buffer.from(doc.output('arraybuffer'));
+    }
 
     doc.setFontSize(10).setFont('helvetica', 'normal');
     doc.text('Thank you for using Libri!', 105, footerY, { align: 'center' });

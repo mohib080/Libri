@@ -14,6 +14,208 @@ if (savedThemeOnLoad === "dark-mode") {
     document.body.classList.add('dark-mode');
 }
 
+// Chat System Implementation
+class ChatSystem {
+    constructor() {
+        this.ws = null;
+        this.sessionId = null;
+        this.isConnected = false;
+        this.initializeElements();
+        this.attachEventListeners();
+    }
+
+    initializeElements() {
+        this.chatWidget = document.getElementById('chat-widget');
+        this.chatToggle = document.getElementById('chat-toggle');
+        this.chatContainer = document.getElementById('chat-container');
+        this.chatMessages = document.getElementById('chat-messages');
+        this.chatInput = document.getElementById('chat-input');
+        this.chatStatus = document.getElementById('chat-status');
+        this.sendButton = document.getElementById('send-message');
+        this.startButton = document.getElementById('start-chat');
+        this.endButton = document.getElementById('end-chat');
+        this.closeButton = document.getElementById('close-chat');
+        this.chatBadge = document.getElementById('chat-badge');
+    }
+
+    attachEventListeners() {
+        if (!this.chatToggle) return; // Exit if chat elements don't exist
+
+        this.chatToggle.addEventListener('click', () => this.toggleChat());
+        this.closeButton.addEventListener('click', () => this.closeChat());
+        this.startButton.addEventListener('click', () => this.startChat());
+        this.endButton.addEventListener('click', () => this.endChat());
+        this.sendButton.addEventListener('click', () => this.sendMessage());
+
+        this.chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.sendMessage();
+            }
+        });
+    }
+
+    connectWebSocket() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            this.updateStatus('Please login to use chat');
+            return;
+        }
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/chat`;
+
+        this.ws = new WebSocket(wsUrl);
+
+        this.ws.onopen = () => {
+            console.log('WebSocket connected');
+            this.ws.send(JSON.stringify({
+                type: 'authenticate',
+                token: token,
+                userType: 'customer'
+            }));
+        };
+
+        this.ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            this.handleMessage(message);
+        };
+
+        this.ws.onclose = () => {
+            console.log('WebSocket disconnected');
+            this.isConnected = false;
+            this.updateStatus('Disconnected from chat');
+        };
+
+        this.ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            this.updateStatus('Connection error');
+        };
+    }
+
+    handleMessage(message) {
+        switch (message.type) {
+            case 'authenticated':
+                this.isConnected = true;
+                this.updateStatus('Connected. Click "Start Chat" to begin.');
+                break;
+
+            case 'chat_started':
+                this.sessionId = message.sessionId;
+                this.updateStatus('Chat started. Waiting for admin...');
+                this.startButton.classList.add('hidden');
+                this.endButton.classList.remove('hidden');
+                this.showNotificationBadge();
+                break;
+
+            case 'admin_joined':
+                this.updateStatus('Admin joined the chat');
+                this.chatInput.disabled = false;
+                this.sendButton.disabled = false;
+                this.addMessage('system', message.message);
+                break;
+
+            case 'new_message':
+                this.addMessage(message.senderType, message.messageText, message.timestamp);
+                this.showNotificationBadge();
+                break;
+
+            case 'chat_ended':
+                this.updateStatus('Chat ended');
+                this.resetChat();
+                this.addMessage('system', message.message);
+                break;
+
+            case 'error':
+                this.updateStatus('Error: ' + message.message);
+                break;
+        }
+    }
+
+    toggleChat() {
+        this.chatContainer.classList.toggle('hidden');
+        this.hideNotificationBadge();
+
+        if (!this.chatContainer.classList.contains('hidden') && !this.isConnected) {
+            this.connectWebSocket();
+        }
+    }
+
+    closeChat() {
+        this.chatContainer.classList.add('hidden');
+        this.hideNotificationBadge();
+    }
+
+    startChat() {
+        if (this.isConnected && this.ws) {
+            this.ws.send(JSON.stringify({
+                type: 'start_chat'
+            }));
+        }
+    }
+
+    endChat() {
+        if (this.sessionId && this.ws) {
+            this.ws.send(JSON.stringify({
+                type: 'end_chat',
+                sessionId: this.sessionId
+            }));
+        }
+    }
+
+    sendMessage() {
+        const messageText = this.chatInput.value.trim();
+        if (messageText && this.sessionId && this.ws) {
+            this.ws.send(JSON.stringify({
+                type: 'send_message',
+                sessionId: this.sessionId,
+                messageText: messageText
+            }));
+
+            this.addMessage('customer', messageText);
+            this.chatInput.value = '';
+        }
+    }
+
+    addMessage(senderType, messageText, timestamp = null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('chat-message', `message-${senderType}`);
+
+        const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+
+        messageDiv.innerHTML = `
+            <div class="message-content">${messageText}</div>
+            <div class="message-time">${time}</div>
+        `;
+
+        this.chatMessages.appendChild(messageDiv);
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    }
+
+    updateStatus(status) {
+        if (this.chatStatus) {
+            this.chatStatus.textContent = status;
+        }
+    }
+
+    resetChat() {
+        this.sessionId = null;
+        this.chatInput.disabled = true;
+        this.sendButton.disabled = true;
+        this.startButton.classList.remove('hidden');
+        this.endButton.classList.add('hidden');
+    }
+
+    showNotificationBadge() {
+        if (this.chatContainer.classList.contains('hidden')) {
+            this.chatBadge.classList.remove('hidden');
+        }
+    }
+
+    hideNotificationBadge() {
+        this.chatBadge.classList.add('hidden');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const darkModeToggle = document.getElementById("dark-mode-toggle");
     if (darkModeToggle) {
@@ -779,4 +981,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     typePlaceholder();
+
+    // Initialize chat system when page loads
+    const token = localStorage.getItem('token');
+    if (token) {
+        window.chatSystem = new ChatSystem();
+    }
 });
