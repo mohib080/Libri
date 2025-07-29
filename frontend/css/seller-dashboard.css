@@ -549,7 +549,7 @@ tbody tr:hover {
 }
 
 /* Make the text span take up the remaining space */
-#notifications-link > span:first-of-type {
+#notifications-link>span:first-of-type {
     flex-grow: 1;
 }
 
@@ -577,13 +577,22 @@ tbody tr:hover {
     justify-content: center;
     font-weight: bold;
     animation: pulse 2s infinite;
-    margin-left: 0.5rem; /* Small margin from the text */
+    margin-left: 0.5rem;
+    /* Small margin from the text */
 }
 
 @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(231, 76, 60, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+    }
 }
 
 /* Rest of your notification styles remain the same... */
@@ -742,13 +751,27 @@ tbody tr:hover {
 
 /* Toast Animation Styles */
 @keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 @keyframes slideOut {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
 }
 
 /* Remove the main-content margin adjustment since we're not using header anymore */
@@ -784,4 +807,193 @@ tbody tr:hover {
 
 .notification-dropdown-sidebar::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
+}
+
+
+/* Add to your existing CSS */
+
+.notification {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.notification:hover {
+    background-color: #f9fafb;
+}
+
+.notification.unread {
+    background-color: #eff6ff;
+    border-left: 3px solid #3b82f6;
+}
+
+.notification.read {
+    opacity: 0.7;
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.notification-title {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.notification-time {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.notification-body {
+    font-size: 13px;
+    color: #374151;
+}
+
+.notification-details {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0;
+}
+
+.book-title {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.rating {
+    color: #f59e0b;
+}
+
+.deleted-rating {
+    color: #6b7280;
+    text-decoration: line-through;
+}
+
+.review-comment {
+    font-style: italic;
+    color: #6b7280;
+    margin: 8px 0;
+    padding: 8px;
+    background-color: #f9fafb;
+    border-radius: 4px;
+}
+
+.deleted-comment {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+
+.deletion-info {
+    font-size: 12px;
+    color: #ef4444;
+    margin-top: 8px;
+}
+
+.text-red-500 {
+    color: #ef4444;
+}
+
+.no-notifications {
+    text-align: center;
+    color: #6b7280;
+    padding: 20px;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #ef4444;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.notification-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 350px;
+    max-height: 400px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.notification-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.mark-all-read-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.mark-all-read-btn:hover {
+    background-color: #0056b3;
+}
+
+.mark-all-read-btn:active {
+    transform: translateY(1px);
+}
+
+.notification-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+    background-color: #e3f2fd;
+    border-left: 3px solid #2196f3;
+}
+
+.no-notifications {
+    padding: 20px;
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
 }

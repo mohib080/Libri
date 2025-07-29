@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dashboardContent = document.getElementById('dashboard-content');
     const inventoryContent = document.getElementById('inventory-content');
     const ordersContent = document.getElementById('orders-content');
-    const notificationsContent = document.getElementById('notifications-content'); // ADDED
+    const notificationsContent = document.getElementById('notifications-content');
 
     const totalSalesEl = document.querySelector('#dashboard-content .stat-card:nth-child(1) p');
     const totalOrdersEl = document.querySelector('#dashboard-content .stat-card:nth-child(2) p');
@@ -32,10 +32,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const lowStockAlertsEl = document.querySelector('#dashboard-content .stat-card:nth-child(4) p');
     const recentOrdersTbody = document.querySelector('#dashboard-content table tbody');
 
-    // --- NOTIFICATION VARIABLES (ADDED) ---
+    // --- NOTIFICATION VARIABLES ---
     let notificationPollingInterval;
 
-    // --- NOTIFICATION SYSTEM FUNCTIONS (ADDED) ---
+    // --- NOTIFICATION SYSTEM FUNCTIONS (MODIFIED) ---
     async function initializeNotifications() {
         await fetchNotificationCount();
         setupNotificationEventListeners();
@@ -45,51 +45,98 @@ document.addEventListener('DOMContentLoaded', () => {
         const notificationsLink = document.getElementById('notifications-link');
         const notificationDropdown = document.getElementById('notificationDropdown');
         const markAllRead = document.getElementById('markAllRead');
-        
+        const markAllReadMain = document.getElementById('markAllReadMain'); // NEW: Main page button
+
         // Only show notification dropdown on click
         notificationsLink.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
-            
+
             const isVisible = notificationDropdown.style.display === 'block';
             notificationDropdown.style.display = isVisible ? 'none' : 'block';
-            
+
             if (!isVisible) {
                 await fetchNotifications();
             }
         });
-        
+
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.notification-container')) {
                 notificationDropdown.style.display = 'none';
             }
         });
-        
-        // Mark all notifications as read
-        markAllRead.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            try {
-                const response = await fetch('/api/supplier/notifications/read-all', {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
+
+        // Mark all notifications as read - Dropdown button
+        if (markAllRead) {
+            markAllRead.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                try {
+                    // Immediately update the badge to 0 for instant feedback
+                    updateNotificationBadge(0);
+
+                    const response = await fetch('/api/supplier/notifications/read-all', {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Refresh the notifications display
+                        await fetchNotifications();
+                        showToast('All notifications marked as read', 'success');
+                    } else {
+                        // If the API call failed, fetch the actual count to restore correct badge
+                        await fetchNotificationCount();
+                        showToast('Failed to mark notifications as read', 'error');
                     }
-                });
-                
-                if (response.ok) {
-                    await fetchNotifications();
+                } catch (error) {
+                    console.error('Error marking all notifications as read:', error);
+                    // If there was an error, fetch the actual count to restore correct badge
                     await fetchNotificationCount();
-                    showToast('All notifications marked as read', 'success');
-                } else {
-                    showToast('Failed to mark notifications as read', 'error');
+                    showToast('Error marking notifications as read', 'error');
                 }
-            } catch (error) {
-                console.error('Error marking all notifications as read:', error);
-                showToast('Error marking notifications as read', 'error');
-            }
-        });
+            });
+        }
+
+        // NEW: Mark all notifications as read - Main page button
+        if (markAllReadMain) {
+            markAllReadMain.addEventListener('click', async (e) => {
+                e.preventDefault();
+
+                try {
+                    // Immediately update the badge to 0 for instant feedback
+                    updateNotificationBadge(0);
+
+                    const response = await fetch('/api/supplier/notifications/read-all', {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Refresh the notifications display
+                        await loadAllNotifications();
+                        showToast('All notifications marked as read', 'success');
+                    } else {
+                        // If the API call failed, fetch the actual count to restore correct badge
+                        await fetchNotificationCount();
+                        showToast('Failed to mark notifications as read', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error marking all notifications as read:', error);
+                    // If there was an error, fetch the actual count to restore correct badge
+                    await fetchNotificationCount();
+                    showToast('Error marking notifications as read', 'error');
+                }
+            });
+        }
     }
 
     async function fetchNotificationCount() {
@@ -99,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
                 updateNotificationBadge(data.unreadCount);
@@ -116,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            
+
             if (response.ok) {
                 const notifications = await response.json();
                 displayNotifications(notifications);
@@ -138,9 +185,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // MODIFIED: Enhanced notification display with support for review deletions
     function displayNotifications(notifications) {
         const notificationList = document.getElementById('notificationList');
-        
+
         if (notifications.length === 0) {
             notificationList.innerHTML = `
                 <div class="no-notifications">
@@ -149,35 +197,102 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             return;
         }
-        
+
         const notificationsHTML = notifications.map(notification => {
             const timeAgo = formatTimeAgo(new Date(notification.created_at));
             const unreadClass = notification.is_read ? '' : 'unread';
-            
+
+            // Get notification icon based on type
+            const notificationIcon = getNotificationIcon(notification.type);
+
             return `
                 <div class="notification-item ${unreadClass}" onclick="handleNotificationClick(${notification.notification_id}, '${notification.type}', ${JSON.stringify(notification.data).replace(/"/g, '&quot;')})">
-                    <div class="notification-title">${escapeHtml(notification.title)}</div>
+                    <div class="notification-header">
+                        <span class="notification-icon ${notification.type}">${notificationIcon}</span>
+                        <div class="notification-title">${escapeHtml(notification.title)}</div>
+                        <div class="notification-time">${timeAgo}</div>
+                    </div>
                     <div class="notification-message">${escapeHtml(notification.message)}</div>
-                    <div class="notification-time">${timeAgo}</div>
+                    ${renderNotificationDetails(notification)}
                 </div>
             `;
         }).join('');
-        
+
         notificationList.innerHTML = notificationsHTML;
     }
 
+    // NEW: Function to get appropriate icon for notification type
+    function getNotificationIcon(type) {
+        const icons = {
+            'new_review': '⭐',
+            'review_deleted': '🗑️',
+            'order': '📦',
+            'low_stock': '⚠️',
+            'default': '🔔'
+        };
+        return icons[type] || icons.default;
+    }
+
+    // NEW: Function to render notification details based on type
+    function renderNotificationDetails(notification) {
+        const data = notification.data || {};
+
+        switch (notification.type) {
+            case 'new_review':
+                return `
+                    <div class="notification-details">
+                        ${data.book_title ? `<div class="detail-item"><strong>Book:</strong> ${escapeHtml(data.book_title)}</div>` : ''}
+                        ${data.rating ? `<div class="detail-item"><strong>Rating:</strong> ${'★'.repeat(data.rating)}${'☆'.repeat(5 - data.rating)} (${data.rating}/5)</div>` : ''}
+                        ${data.customer_name ? `<div class="detail-item"><strong>Customer:</strong> ${escapeHtml(data.customer_name)}</div>` : ''}
+                        ${data.comment ? `<div class="detail-item review-comment"><strong>Comment:</strong> "${escapeHtml(data.comment)}"</div>` : ''}
+                    </div>
+                `;
+
+            case 'review_deleted':
+                return `
+                    <div class="notification-details deleted-review">
+                        ${data.book_title ? `<div class="detail-item"><strong>Book:</strong> ${escapeHtml(data.book_title)}</div>` : ''}
+                        ${data.rating ? `<div class="detail-item deleted-rating"><strong>Deleted Rating:</strong> ${'★'.repeat(data.rating)}${'☆'.repeat(5 - data.rating)} (${data.rating}/5)</div>` : ''}
+                        ${data.customer_name ? `<div class="detail-item"><strong>Customer:</strong> ${escapeHtml(data.customer_name)}</div>` : ''}
+                        ${data.comment ? `<div class="detail-item deleted-comment"><strong>Deleted Comment:</strong> "${escapeHtml(data.comment)}"</div>` : ''}
+                        ${data.deleted_date ? `<div class="detail-item deletion-info"><strong>Deleted on:</strong> ${formatTimeAgo(new Date(data.deleted_date))}</div>` : ''}
+                    </div>
+                `;
+
+            default:
+                if (data.book_title || data.customer_name) {
+                    return `
+                        <div class="notification-details">
+                            ${data.book_title ? `<div class="detail-item"><strong>Book:</strong> ${escapeHtml(data.book_title)}</div>` : ''}
+                            ${data.customer_name ? `<div class="detail-item"><strong>Customer:</strong> ${escapeHtml(data.customer_name)}</div>` : ''}
+                        </div>
+                    `;
+                }
+                return '';
+        }
+    }
+
+    // MODIFIED: Enhanced notification click handler
     async function handleNotificationClick(notificationId, type, data) {
         // Mark notification as read
         await markNotificationAsRead(notificationId);
-        
+
         // Handle different notification types
-        switch(type) {
+        switch (type) {
             case 'new_review':
                 if (data && data.book_id) {
                     console.log('Navigate to book reviews:', data);
-                    showToast(`Review for "${data.book_title}" - Rating: ${data.rating} stars`, 'info');
+                    showToast(`New review for "${data.book_title}" - Rating: ${data.rating} stars`, 'info');
                 }
                 break;
+
+            case 'review_deleted':
+                if (data && data.book_id) {
+                    console.log('Review deleted for book:', data);
+                    showToast(`Review deleted for "${data.book_title}" - Was ${data.rating} stars`, 'warning');
+                }
+                break;
+
             default:
                 console.log('Notification clicked:', type, data);
         }
@@ -192,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (response.ok) {
                 await fetchNotifications();
                 await fetchNotificationCount();
@@ -202,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Full notifications page
+    // MODIFIED: Enhanced full notifications page with review deletion support
     async function loadAllNotifications() {
         const container = document.getElementById('all-notifications-container');
         container.innerHTML = '<div class="loading">Loading all notifications...</div>';
@@ -226,6 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // MODIFIED: Enhanced display for all notifications
     function displayAllNotifications(notifications) {
         const container = document.getElementById('all-notifications-container');
 
@@ -234,25 +350,43 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const notificationsHTML = notifications.map(notification => {
+        // Group notifications by type for better organization
+        const groupedNotifications = {
+            review_deleted: [],
+            new_review: [],
+            other: []
+        };
+
+        notifications.forEach(notification => {
+            if (groupedNotifications[notification.type]) {
+                groupedNotifications[notification.type].push(notification);
+            } else {
+                groupedNotifications.other.push(notification);
+            }
+        });
+
+        // Render notifications with priority (deleted reviews first, then new reviews, then others)
+        const orderedNotifications = [
+            ...groupedNotifications.review_deleted,
+            ...groupedNotifications.new_review,
+            ...groupedNotifications.other
+        ];
+
+        const notificationsHTML = orderedNotifications.map(notification => {
             const timeAgo = formatTimeAgo(new Date(notification.created_at));
             const unreadClass = notification.is_read ? '' : 'unread';
             const data = notification.data || {};
-            
+            const notificationIcon = getNotificationIcon(notification.type);
+
             return `
-                <div class="notification-card ${unreadClass}" onclick="handleNotificationClick(${notification.notification_id}, '${notification.type}', ${JSON.stringify(notification.data).replace(/"/g, '&quot;')})">
+                <div class="notification-card ${unreadClass} ${notification.type}" onclick="handleNotificationClick(${notification.notification_id}, '${notification.type}', ${JSON.stringify(notification.data).replace(/"/g, '&quot;')})">
                     <div class="notification-card-header">
+                        <div class="notification-card-icon">${notificationIcon}</div>
                         <div class="notification-card-title">${escapeHtml(notification.title)}</div>
                         <div class="notification-card-time">${timeAgo}</div>
                     </div>
                     <div class="notification-card-message">${escapeHtml(notification.message)}</div>
-                    ${data.book_title ? `
-                        <div class="notification-card-details">
-                            <strong>Book:</strong> ${escapeHtml(data.book_title)}<br>
-                            ${data.rating ? `<strong>Rating:</strong> ${data.rating} stars<br>` : ''}
-                            ${data.customer_name ? `<strong>Customer:</strong> ${escapeHtml(data.customer_name)}` : ''}
-                        </div>
-                    ` : ''}
+                    ${renderNotificationCardDetails(notification)}
                 </div>
             `;
         }).join('');
@@ -260,15 +394,54 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = notificationsHTML;
     }
 
+    // NEW: Function to render detailed notification card content
+    function renderNotificationCardDetails(notification) {
+        const data = notification.data || {};
+
+        switch (notification.type) {
+            case 'new_review':
+                return `
+                    <div class="notification-card-details">
+                        ${data.book_title ? `<div class="detail-row"><strong>Book:</strong> ${escapeHtml(data.book_title)}</div>` : ''}
+                        ${data.rating ? `<div class="detail-row"><strong>Rating:</strong> <span class="rating-stars">${'★'.repeat(data.rating)}${'☆'.repeat(5 - data.rating)}</span> (${data.rating}/5)</div>` : ''}
+                        ${data.customer_name ? `<div class="detail-row"><strong>Customer:</strong> ${escapeHtml(data.customer_name)}</div>` : ''}
+                        ${data.comment ? `<div class="detail-row review-comment-full"><strong>Comment:</strong><br>"${escapeHtml(data.comment)}"</div>` : ''}
+                    </div>
+                `;
+
+            case 'review_deleted':
+                return `
+                    <div class="notification-card-details deleted-review-details">
+                        ${data.book_title ? `<div class="detail-row"><strong>Book:</strong> ${escapeHtml(data.book_title)}</div>` : ''}
+                        ${data.rating ? `<div class="detail-row"><strong>Deleted Rating:</strong> <span class="deleted-rating-stars">${'★'.repeat(data.rating)}${'☆'.repeat(5 - data.rating)}</span> (${data.rating}/5)</div>` : ''}
+                        ${data.customer_name ? `<div class="detail-row"><strong>Customer:</strong> ${escapeHtml(data.customer_name)}</div>` : ''}
+                        ${data.comment ? `<div class="detail-row deleted-comment-full"><strong>Deleted Comment:</strong><br><span class="deleted-text">"${escapeHtml(data.comment)}"</span></div>` : ''}
+                        ${data.deleted_date ? `<div class="detail-row deletion-timestamp"><strong>Deleted on:</strong> ${new Date(data.deleted_date).toLocaleString()}</div>` : ''}
+                    </div>
+                `;
+
+            default:
+                if (data.book_title || data.customer_name) {
+                    return `
+                        <div class="notification-card-details">
+                            ${data.book_title ? `<div class="detail-row"><strong>Book:</strong> ${escapeHtml(data.book_title)}</div>` : ''}
+                            ${data.customer_name ? `<div class="detail-row"><strong>Customer:</strong> ${escapeHtml(data.customer_name)}</div>` : ''}
+                        </div>
+                    `;
+                }
+                return '';
+        }
+    }
+
     function formatTimeAgo(date) {
         const now = new Date();
         const diffInSeconds = Math.floor((now - date) / 1000);
-        
+
         if (diffInSeconds < 60) return 'Just now';
         if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
         if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
         if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
-        
+
         return date.toLocaleDateString();
     }
 
@@ -288,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.textContent = message;
-        
+
         Object.assign(toast.style, {
             position: 'fixed',
             top: '20px',
@@ -300,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
             zIndex: '10000',
             animation: 'slideIn 0.3s ease-out'
         });
-        
+
         const colors = {
             success: '#28a745',
             error: '#dc3545',
@@ -308,9 +481,9 @@ document.addEventListener('DOMContentLoaded', () => {
             warning: '#ffc107'
         };
         toast.style.backgroundColor = colors[type] || colors.info;
-        
+
         document.body.appendChild(toast);
-        
+
         setTimeout(() => {
             toast.style.animation = 'slideOut 0.3s ease-in';
             setTimeout(() => {
@@ -364,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- SIDEBAR NAVIGATION LOGIC (MODIFIED TO INCLUDE NOTIFICATIONS) ---
+    // --- SIDEBAR NAVIGATION LOGIC (UNCHANGED) ---
     function setupNavigation() {
         const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
         const contentSections = document.querySelectorAll('.main-content .content-section');
@@ -397,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadSuppliedBooks();
                 } else if (link.id === 'orders-link') {
                     loadDeliveredBooksStats();
-                } else if (link.id === 'notifications-link') { // ADDED
+                } else if (link.id === 'notifications-link') {
                     loadAllNotifications();
                 }
             });
@@ -528,20 +701,19 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = statsHTML;
     }
 
+    // Make functions globally available
     window.loadSuppliedBooks = loadSuppliedBooks;
     window.loadDeliveredBooksStats = loadDeliveredBooksStats;
-    window.loadAllNotifications = loadAllNotifications; 
+    window.loadAllNotifications = loadAllNotifications;
+    window.handleNotificationClick = handleNotificationClick;
 
-   
+    // Initialize everything
     fetchDashboardData();
     setupNavigation();
-    initializeNotifications(); 
-    
+    initializeNotifications();
+
     notificationPollingInterval = setInterval(fetchNotificationCount, 30000);
-
-
     loadSuppliedBooks();
-
 
     window.addEventListener('beforeunload', () => {
         if (notificationPollingInterval) {
