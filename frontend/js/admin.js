@@ -201,10 +201,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             <input type="checkbox" id="edit-book-is-featured" ${book.is_featured ? 'checked' : ''}
                               ${book.review_count < 5 ? 'disabled' : ''}>
                             Is Featured
-                            ${book.review_count < 5 
-                                ? `<span class="feature-disabled">(At least 5 reviews needed)</span>` 
-                                : `<span class="feature-possible">(Eligible)</span>`
-                            }
+                            ${book.review_count < 5
+                        ? `<span class="feature-disabled">(At least 5 reviews needed)</span>`
+                        : `<span class="feature-possible">(Eligible)</span>`
+                    }
                         </label>
                     </div>
                     <button id="admin-book-save-flags-btn" class="action-btn">Save</button>
@@ -212,10 +212,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div>
                         <b>Reviews:</b>
                         <div style="max-height:200px; overflow-y:auto; margin:8px 0;">
-                            ${
-                              !book.reviews || book.reviews.length === 0
-                              ? '<div><i>No reviews for this book.</i></div>'
-                              : book.reviews.map(rv => `
+                            ${!book.reviews || book.reviews.length === 0
+                        ? '<div><i>No reviews for this book.</i></div>'
+                        : book.reviews.map(rv => `
                                 <div class="review-row" id="review-row-${rv.review_id}">
                                     <b>${rv.customer_name || 'Unknown User'}</b>
                                     <span>rated <b>${rv.rating}</b> &mdash; <i>${new Date(rv.review_date).toLocaleString()}</i></span><br>
@@ -225,13 +224,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </span>
                                 </div>
                               `).join('')
-                            }
+                    }
                         </div>
                     </div>
                 `;
 
                 // Save handler
-                document.getElementById('admin-book-save-flags-btn').onclick = function() {
+                document.getElementById('admin-book-save-flags-btn').onclick = function () {
                     const isActive = document.getElementById('edit-book-is-active').checked;
                     const isFeatured = document.getElementById('edit-book-is-featured').checked;
                     if (isFeatured && book.review_count < 5) {
@@ -246,19 +245,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         },
                         body: JSON.stringify({ isActive, isFeatured })
                     })
-                    .then(r => r.json())
-                    .then(ret => {
-                        if (ret.error) return alert('Update failed: ' + ret.error);
-                        alert('Book status updated.');
-                        loadBooks();
-                        closeEditBookModal();
-                    })
-                    .catch(() => alert('Network or server error.'));
+                        .then(r => r.json())
+                        .then(ret => {
+                            if (ret.error) return alert('Update failed: ' + ret.error);
+                            alert('Book status updated.');
+                            loadBooks();
+                            closeEditBookModal();
+                        })
+                        .catch(() => alert('Network or server error.'));
                 };
 
                 // Review delete
                 content.querySelectorAll('.admin-del-review-btn').forEach(btn => {
-                    btn.onclick = function() {
+                    btn.onclick = function () {
                         const confirmDel = confirm('Delete this review?');
                         if (!confirmDel) return;
                         const reviewId = btn.getAttribute('data-reviewid');
@@ -266,13 +265,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             method: 'DELETE',
                             headers: { Authorization: `Bearer ${token}` }
                         })
-                        .then(r => r.json())
-                        .then(ret => {
-                            if (ret.error) return alert('Delete failed: ' + ret.error);
-                            document.getElementById(`review-row-${reviewId}`).remove();
-                            loadBooks();
-                        })
-                        .catch(() => alert('Network/software error!'));
+                            .then(r => r.json())
+                            .then(ret => {
+                                if (ret.error) return alert('Delete failed: ' + ret.error);
+                                document.getElementById(`review-row-${reviewId}`).remove();
+                                loadBooks();
+                            })
+                            .catch(() => alert('Network/software error!'));
                     };
                 });
             })
@@ -399,9 +398,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (!resp.ok) throw new Error("Failed to load order details!");
-            
+
             const order = await resp.json();
-            
+
             // Populate order details
             document.getElementById('order-modal-id').textContent = order.order_id;
             document.getElementById('order-modal-date').textContent = new Date(order.order_date).toLocaleString();
@@ -460,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Save order ID for update
             dropdown.setAttribute('data-order-id', order.order_id);
             document.getElementById('order-status-update-btn').setAttribute('data-order-id', order.order_id);
-            
+
         } catch (err) {
             console.error('Error loading order details:', err);
             document.getElementById('order-modal-toast').textContent = 'Could not load order details.';
@@ -473,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const orderId = this.getAttribute('data-order-id');
         const status = document.getElementById('order-status-dropdown').value;
         const toastElement = document.getElementById('order-modal-toast');
-        
+
         if (!confirm(`Change order #${orderId} status to "${status}"?`)) return;
 
         try {
@@ -498,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             // Refresh the orders table
             loadOrders();
-            
+
         } catch (err) {
             toastElement.textContent = err.message;
             toastElement.className = 'toast-error';
@@ -552,19 +551,63 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        function formatNotificationMessage(notification) {
+            switch (notification.type) {
+                case 'new_signup':
+                    return `
+                <div class="notification-item ${!notification.is_read ? 'unread' : ''}" data-id="${notification.notification_id}">
+                    <div class="notification-title">👤 ${notification.title}</div>
+                    <div class="notification-message">${notification.message}</div>
+                    <div class="notification-time">${new Date(notification.created_at).toLocaleString()}</div>
+                </div>
+            `;
+                case 'new_review':
+                    const data = notification.data || {};
+                    return `
+                <div class="notification-item ${!notification.is_read ? 'unread' : ''}" data-id="${notification.notification_id}">
+                    <div class="notification-title">⭐ ${notification.title}</div>
+                    <div class="notification-message">
+                        ${data.customer_name} left a ${data.rating}/5 review for "${data.book_title}"
+                        ${data.comment ? `<br><em>"${data.comment.substring(0, 100)}${data.comment.length > 100 ? '...' : ''}"</em>` : ''}
+                    </div>
+                    <div class="notification-time">${new Date(notification.created_at).toLocaleString()}</div>
+                </div>
+            `;
+                case 'review_deleted':
+                    const deleteData = notification.data || {};
+                    return `
+                <div class="notification-item ${!notification.is_read ? 'unread' : ''}" data-id="${notification.notification_id}">
+                    <div class="notification-title">🗑️ ${notification.title}</div>
+                    <div class="notification-message">
+                        ${deleteData.customer_name} deleted their ${deleteData.rating}/5 review for "${deleteData.book_title}"
+                        ${deleteData.comment ? `<br><em>Previous comment: "${deleteData.comment.substring(0, 80)}${deleteData.comment.length > 80 ? '...' : ''}"</em>` : ''}
+                    </div>
+                    <div class="notification-time">${new Date(notification.created_at).toLocaleString()}</div>
+                </div>
+            `;
+                default:
+                    return `
+                <div class="notification-item ${!notification.is_read ? 'unread' : ''}" data-id="${notification.notification_id}">
+                    <div class="notification-title">${notification.title}</div>
+                    <div class="notification-message">${notification.message}</div>
+                    <div class="notification-time">${new Date(notification.created_at).toLocaleString()}</div>
+                </div>
+            `;
+            }
+        }
+
+
+
         function displayNotifications(notifications) {
             if (notifications.length === 0) {
                 notificationsList.innerHTML = '<div class="p-4 text-center text-gray-500">No notifications</div>';
-                // Disable the button when there are no notifications
                 markAllReadBtn.disabled = true;
                 markAllReadBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 return;
             }
 
-            // Check if there are any unread notifications
             const hasUnreadNotifications = notifications.some(notification => !notification.is_read);
 
-            // Enable/disable the button based on unread notifications
             if (hasUnreadNotifications) {
                 markAllReadBtn.disabled = false;
                 markAllReadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -573,15 +616,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 markAllReadBtn.classList.add('opacity-50', 'cursor-not-allowed');
             }
 
-            notificationsList.innerHTML = notifications.map(notification => `
-        <div class="notification-item ${!notification.is_read ? 'unread' : ''}" data-id="${notification.notification_id}">
-            <div class="notification-title">${notification.title}</div>
-            <div class="notification-message">${notification.message}</div>
-            <div class="notification-time">${new Date(notification.created_at).toLocaleString()}</div>
-        </div>
-    `).join('');
 
-            // Add click handlers to mark notifications as read
+            notificationsList.innerHTML = notifications.map(formatNotificationMessage).join('');
+
             document.querySelectorAll('.notification-item').forEach(item => {
                 item.addEventListener('click', async () => {
                     const notificationId = item.dataset.id;
@@ -589,7 +626,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.classList.remove('unread');
                     updateNotificationCount();
 
-                    // Check if we need to disable the button after marking one as read
+                    // Optional: Navigate to books section for both review types
+                    const notification = notifications.find(n => n.notification_id == notificationId);
+                    if (notification && (notification.type === 'new_review' || notification.type === 'review_deleted')) {
+                        showSection('books');
+                        loadBooks();
+                        notificationDropdown.classList.add('hidden');
+                    }
+
                     const remainingUnread = document.querySelectorAll('.notification-item.unread');
                     if (remainingUnread.length === 0) {
                         markAllReadBtn.disabled = true;
@@ -612,27 +656,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function markAllNotificationsAsRead() {
             try {
-                // Immediately hide the badge and disable the button for instant feedback
-                notificationBadge.classList.add('hidden');
-                markAllReadBtn.disabled = true;
-                markAllReadBtn.classList.add('opacity-50', 'cursor-not-allowed');
-
-                await fetch('/api/admin/notifications/read-all', {
+                // Make the API call first
+                const response = await fetch('/api/admin/notifications/read-all', {
                     method: 'PUT',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                // Update both the notification list AND the counter
-                loadNotifications(); // Reload to update UI
-                updateNotificationCount(); // Update the badge counter
+                if (!response.ok) {
+                    throw new Error('Failed to mark notifications as read');
+                }
+
+                // Immediately update UI after successful API call
+                notificationBadge.textContent = '0';
+                notificationBadge.classList.add('hidden');
+
+                // Mark all notifications as read in the current UI
+                document.querySelectorAll('.notification-item.unread').forEach(item => {
+                    item.classList.remove('unread');
+                });
+
+                // Disable the mark all read button
+                markAllReadBtn.disabled = true;
+                markAllReadBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+                // Reload notifications to ensure consistency (this shouldn't change the count since we already set it to 0)
+                loadNotifications();
 
             } catch (err) {
                 console.error('Error marking all notifications as read:', err);
-                // If there's an error, restore the badge and button state
+                // If there's an error, restore the correct state by fetching from server
                 updateNotificationCount();
-                loadNotifications(); // This will restore the correct button state
+                loadNotifications();
             }
         }
+
 
         // Event listeners
         notificationBtn.addEventListener('click', (e) => {
