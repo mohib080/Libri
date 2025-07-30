@@ -2857,12 +2857,12 @@ app.get('/api/seller/supplied-books', authenticateToken, isSeller, async (req, r
                 b.publication_date,
                 b.language,
                 COALESCE(AVG(r.rating), 0)::numeric(3, 2) AS average_rating,
-                COUNT(r.review_id) AS review_count,
+                COUNT(DISTINCT r.review_id) AS review_count,
                 bc.category_name,
                 sc.sub_category_name,
                 COALESCE(SUM(i.quantity_in_stock), 0) AS total_stock,
                 COUNT(DISTINCT oi.order_item_id) AS total_orders,
-                COALESCE(SUM(oi.quantity * oi.item_price), 0) AS total_revenue
+                STRING_AGG(DISTINCT f.format_name, ', ') AS available_formats
             FROM book_supply bs
             JOIN book b ON bs.book_id = b.book_id
             LEFT JOIN book_author ba ON b.book_id = ba.book_id
@@ -2872,6 +2872,7 @@ app.get('/api/seller/supplied-books', authenticateToken, isSeller, async (req, r
             LEFT JOIN sub_category sc ON bsc.sub_category_id = sc.sub_category_id
             LEFT JOIN book_category bc ON sc.category_id = bc.category_id
             LEFT JOIN inventory i ON b.book_id = i.book_id
+            LEFT JOIN format f ON f.format_id = i.format_id
             LEFT JOIN order_item oi ON b.book_id = oi.book_id
             WHERE bs.supplier_id = $1
             GROUP BY 
@@ -2890,6 +2891,7 @@ app.get('/api/seller/supplied-books', authenticateToken, isSeller, async (req, r
         if (client) client.release();
     }
 });
+
 
 app.get('/api/seller/delivered-books-stats', authenticateToken, isSeller, async (req, res) => {
     const supplierId = req.user.supplierId;
