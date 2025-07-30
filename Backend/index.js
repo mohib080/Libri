@@ -420,7 +420,8 @@ app.get('/api/books', async (req, res) => {
         query += `
             GROUP BY b.book_id, bc.category_id, bc.category_name,
                      sc.sub_category_id, sc.sub_category_name
-            ORDER BY b.title ASC
+            ORDER BY b.average_rating DESC, b.title ASC
+            LIMIT 10
         `;
 
         const result = await client.query(query, queryParams);
