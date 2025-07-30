@@ -14,7 +14,6 @@ CREATE TABLE supplier_notifications (
 CREATE OR REPLACE FUNCTION notify_supplier_new_review()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Insert notifications for all suppliers of the reviewed book
     INSERT INTO supplier_notifications (supplier_id, type, title, message, data, created_at)
     SELECT 
         bs.supplier_id,

@@ -165,12 +165,12 @@ DECLARE
     book_title VARCHAR(255);
     supplier_id INTEGER;
 BEGIN
-    -- Get book title
+
     SELECT title INTO book_title
     FROM book
     WHERE book_id = NEW.book_id;
     
-    -- Get supplier information from book_supply table
+
     SELECT bs.supplier_id, s.supplier_name
     INTO supplier_id, supplier_name
     FROM book_supply bs
@@ -178,7 +178,7 @@ BEGIN
     WHERE bs.book_id = NEW.book_id
     LIMIT 1;
     
-    -- Insert notification for admin
+
     INSERT INTO admin_notifications (type, title, message, data, created_at)
     VALUES (
         'inventory_update',
@@ -202,13 +202,61 @@ BEGIN
     RETURN NEW;
 END;
 $BODY$
-LANGUAGE plpgsql VOLATILE
-COST 100;
-
-
+LANGUAGE plpgsql;
 
 
 CREATE TRIGGER trigger_admin_inventory_added
-    AFTER INSERT ON public.inventory
+    AFTER INSERT ON inventory
     FOR EACH ROW
     EXECUTE PROCEDURE notify_admin_inventory_update();
+
+
+CREATE OR REPLACE FUNCTION notify_admin_inventory_update_from_customer_when_stock_zero()
+RETURNS TRIGGER AS $BODY$
+DECLARE
+    customer_name VARCHAR(255);
+    book_title VARCHAR(255);
+BEGIN
+    SELECT title INTO book_title
+    FROM book
+    WHERE book_id = NEW.book_id;
+
+    SELECT c.name INTO customer_name
+    FROM order_item oi
+    JOIN "order" o ON oi.order_id = o.order_id
+    JOIN customer c ON o.customer_id = c.customer_id
+    JOIN inventory i on oi.inventory_id = i.inventory_id;
+    WHERE oi.book_id = NEW.book_id AND oi.format_id = NEW.format_id  AND i.quantity_in_stock = 0;
+    ORDER BY o.order_date DESC
+    LIMIT 1;
+
+    INSERT INTO admin_notifications (type, title, message, data, created_at)
+    VALUES (
+        'inventory_update',
+        'Book Stock Depleted',
+        'Customer "' || COALESCE(customer_name, 'Unknown') || '" ordered the last copy of "' || 
+        COALESCE(book_title, 'Unknown Book') || '". Stock is now zero.',
+        jsonb_build_object(
+            'book_id', NEW.book_id,
+            'book_title', book_title,
+            'customer_name', customer_name,
+            'old_quantity', COALESCE(OLD.quantity_in_stock, 0),
+            'new_quantity', NEW.quantity_in_stock,
+            'format_id', NEW.format_id,
+            'update_date', NEW.last_update,
+            'inventory_id', NEW.inventory_id
+        ),
+        NOW()
+    );
+
+    RETURN NEW;
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+
+CREATE TRIGGER trigger_user_ordered_last_copy
+AFTER UPDATE ON public.inventory
+FOR EACH ROW
+WHEN (OLD.quantity_in_stock IS DISTINCT FROM NEW.quantity_in_stock AND NEW.quantity_in_stock = 0)
+EXECUTE FUNCTION notify_admin_inventory_update_from_customer_when_stock_zero();
