@@ -933,7 +933,6 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
 
 
 
-//cart adding route
 app.post('/api/cart/add', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
     const { bookId, quantity } = req.body;
@@ -948,44 +947,79 @@ app.post('/api/cart/add', authenticateToken, async (req, res) => {
         client = await pool.connect();
         await client.query('BEGIN');
 
+        // 1. Get or create cart
         let cartResult = await client.query('SELECT cart_id FROM cart WHERE customer_id = $1 FOR UPDATE', [customerId]);
         let cartId;
 
         if (cartResult.rows.length === 0) {
-            const newCart = await client.query('INSERT INTO cart (customer_id, created_at, updated_at) VALUES ($1, NOW(), NOW()) RETURNING cart_id', [customerId]);
+            const newCart = await client.query(
+                'INSERT INTO cart (customer_id, created_at, updated_at) VALUES ($1, NOW(), NOW()) RETURNING cart_id',
+                [customerId]
+            );
             cartId = newCart.rows[0].cart_id;
         } else {
             cartId = cartResult.rows[0].cart_id;
         }
 
-        // 2. Check if book exists in inventory and is active
-        const bookCheck = await client.query('SELECT price, is_active FROM book WHERE book_id = $1', [bookId]);
+        // 2. Check if book exists and is active
+        const bookCheck = await client.query(
+            'SELECT price, is_active FROM book WHERE book_id = $1',
+            [bookId]
+        );
         if (bookCheck.rows.length === 0 || !bookCheck.rows[0].is_active) {
             await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Book not found or is not available.' });
         }
-        const cartItemResult = await client.query('SELECT * FROM cart_item WHERE cart_id = $1 AND book_id = $2 FOR UPDATE', [cartId, bookId]);
+
+        // 3. Check stock in inventory
+        const inventoryResult = await client.query(
+            'SELECT quantity_in_stock FROM inventory WHERE book_id = $1 FOR UPDATE',
+            [bookId]
+        );
+
+        if (inventoryResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Stock not available.' });
+        }
+
+        const stock = inventoryResult.rows[0].quantity_in_stock;
+        if (stock < quantity) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Only ${stock} in stock. Cannot add ${quantity}.` });
+        }
+
+        // 4. Check if item already in cart
+        const cartItemResult = await client.query(
+            'SELECT * FROM cart_item WHERE cart_id = $1 AND book_id = $2 FOR UPDATE',
+            [cartId, bookId]
+        );
 
         if (cartItemResult.rows.length > 0) {
             await client.query('ROLLBACK');
             return res.status(409).json({ message: 'Book already in the cart.' });
         }
-        else {
-            await client.query('INSERT INTO cart_item (cart_id, book_id, quantity, format_id) VALUES ($1, $2, $3, $4)', [cartId, bookId, quantity, formatId]);
-            res.status(201).json({ message: 'Book added to cart successfully.' });
-        }
+
+        // 5. Add to cart
+        await client.query(
+            'INSERT INTO cart_item (cart_id, book_id, quantity, format_id) VALUES ($1, $2, $3, $4)',
+            [cartId, bookId, quantity, formatId]
+        );
+
+        // 6. Update cart timestamp
         await client.query('UPDATE cart SET updated_at = NOW() WHERE cart_id = $1', [cartId]);
 
         await client.query('COMMIT');
+        res.status(201).json({ message: 'Book added to cart successfully.' });
 
     } catch (err) {
-        await client.query('ROLLBACK');
+        if (client) await client.query('ROLLBACK');
         console.error('Error adding item to cart:', err);
         res.status(500).json({ error: 'Failed to add item to cart.' });
     } finally {
         if (client) client.release();
     }
 });
+
 
 // Update cart item format
 app.put('/api/cart/update-format', authenticateToken, async (req, res) => {
