@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const bookForm = document.getElementById('bookInfoForm');
-
     const paymentMethodSelect = document.getElementById('payment-method');
     const cardNumber = document.getElementById('card-number');
     const cardHolderName = document.getElementById('card-holder-name');
@@ -41,10 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     paymentMethodSelect.addEventListener('change', updateCardFieldRequirements);
-    // Run it once immediately in case the user loads with COD selected
     updateCardFieldRequirements();
-
-
 
     bookForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -53,6 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = {
             title: document.getElementById('book-title').value,
             authorName: document.getElementById('author-name').value,
+            categoryName: document.getElementById('category').value.trim(),
+            subCategoryName: document.getElementById('subcategory').value.trim(),
             format: document.getElementById('format').value,
             description: document.getElementById('description').value,
             price: document.getElementById('price').value,
@@ -77,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             showNotification(data.message, 'success');
             bookForm.reset();
-
         } catch (error) {
             showNotification(error.message, 'error');
         }
@@ -89,7 +86,6 @@ function showNotification(message, type) {
     notificationElement.textContent = message;
     notificationElement.className = `p-3 my-4 text-sm text-center rounded-md ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
     notificationElement.style.display = 'block';
-
     setTimeout(() => {
         notificationElement.style.display = 'none';
     }, 5000);

@@ -134,8 +134,6 @@ async function handleStartChat(ws, message) {
             sessionId: sessionId,
             message: 'Chat session started. An admin will join you shortly.'
         }));
-
-        // Notify all admin connections about new chat
         notifyAdminsOfNewChat(sessionId, connection.customerId);
 
     } catch (error) {
@@ -145,8 +143,6 @@ async function handleStartChat(ws, message) {
         if (client) client.release();
     }
 }
-
-// Send message
 async function handleSendMessage(ws, message) {
     let client;
     try {
@@ -157,14 +153,14 @@ async function handleSendMessage(ws, message) {
 
         client = await pool.connect();
 
-        // Insert message into database
+
         const senderType = connection.userType === 'admin' ? 'admin' : 'customer';
         await client.query(`
             INSERT INTO chat_message (session_id, sender_type, message_text, sent_at)
             VALUES ($1, $2, $3, NOW())
         `, [sessionId, senderType, messageText]);
 
-        // Broadcast message to all participants in this session
+
         broadcastToSession(sessionId, {
             type: 'new_message',
             sessionId,
@@ -181,7 +177,7 @@ async function handleSendMessage(ws, message) {
     }
 }
 
-// Admin join chat
+
 async function handleAdminJoin(ws, message) {
     try {
         const connection = findConnectionByWs(ws);
@@ -201,7 +197,7 @@ async function handleAdminJoin(ws, message) {
             }));
         }
 
-        // Send chat history to admin
+       
         await sendChatHistory(ws, sessionId);
 
     } catch (error) {
@@ -210,7 +206,7 @@ async function handleAdminJoin(ws, message) {
     }
 }
 
-// End chat session
+
 async function handleEndChat(ws, message) {
     let client;
     try {
@@ -221,20 +217,19 @@ async function handleEndChat(ws, message) {
 
         client = await pool.connect();
 
-        // Update session end time
+     
         await client.query(`
             UPDATE chat_session 
             SET ended_at = NOW() 
             WHERE session_id = $1
         `, [sessionId]);
 
-        // Notify all participants
+       
         broadcastToSession(sessionId, {
             type: 'chat_ended',
             message: 'Chat session has ended'
         });
 
-        // Remove session from connections
         for (const [key, conn] of activeConnections.entries()) {
             if (conn.sessionId === sessionId) {
                 conn.sessionId = null;
@@ -248,7 +243,7 @@ async function handleEndChat(ws, message) {
     }
 }
 
-// Helper functions
+
 function findConnectionByWs(ws) {
     for (const connection of activeConnections.values()) {
         if (connection.ws === ws) {
@@ -334,14 +329,12 @@ async function sendPendingChatsToAdmin(ws) {
     }
 }
 
-// Start server with WebSocket support
+
 server.listen(port, () => {
     console.log(`Server running on port ${port} with WebSocket support`);
 });
 
 
-
-// Serve static files from frontend directories
 app.use(express.static(path.join(__dirname, '../frontend/html')));
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use(express.static(path.join(__dirname, '../frontend/css')));
@@ -579,7 +572,6 @@ app.get('/api/books/:id', async (req, res) => {
     }
 });
 
-// --- CATEGORY ROUTES ---
 app.get('/api/categories', async (req, res) => {
     let client;
     try {
@@ -607,7 +599,7 @@ app.get('/api/subcategories', async (req, res) => {
             query += ` WHERE category_id = $1`;
             queryParams.push(parseInt(categoryId, 10));
         }
-        query += ` ORDER BY sub_category_name`; // Always add ORDER BY at the end
+        query += ` ORDER BY sub_category_name`; 
         const result = await client.query(query, queryParams);
         res.json(result.rows);
     } catch (err) {
@@ -661,19 +653,18 @@ app.get('/api/books/:bookId/reviews', async (req, res) => {
 app.post('/signup', async (req, res) => {
     const { name, email, password, phone_number, address } = req.body;
 
-    // Basic backend input validation
+    
     if (!name || !email || !password) {
         return res.status(400).json({ error: 'Name, email, and password are required' });
     }
 
     try {
-        // Check if email already exists
+        
         const emailCheck = await pool.query('SELECT 1 FROM customer WHERE email = $1', [email]);
         if (emailCheck.rows.length > 0) {
             return res.status(400).json({ error: 'Email already exists' });
         }
 
-        // Check if username already exists
         const nameCheck = await pool.query('SELECT 1 FROM customer WHERE name = $1', [name]);
         if (nameCheck.rows.length > 0) {
             return res.status(400).json({ error: 'Username already exists' });
@@ -698,7 +689,7 @@ app.post('/signup', async (req, res) => {
                 email: newCustomer.rows[0].email,
                 role: newCustomer.rows[0].role
             },
-            'your_secret_key', // Replace this with a real secret in production!
+            'your_secret_key', 
             { expiresIn: '24h' }
         );
 
@@ -769,7 +760,7 @@ app.post('/signin', async (req, res) => {
     }
 });
 
-// --- JWT AUTH MIDDLEWARE ---
+// JWT AUTH MIDDLEWARE
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -806,7 +797,7 @@ const isAdmin = (req, res, next) => {
     }
 };
 
-// --- PROFILE API (secured) ---
+// PROFILE API (secured) 
 app.get('/api/profile', authenticateToken, async (req, res) => {
     try {
         const customerResult = await pool.query(
@@ -889,7 +880,7 @@ app.get('/api/cart', authenticateToken, async (req, res) => {
             cartId = cartResult.rows[0].cart_id;
         }
 
-        // Modified cart items query to handle multiple authors and ensure format_id consistency
+        // query to handle multiple authors and ensure format_id consistency
         const cartItemsResult = await client.query(`
             SELECT
                 crt.cart_item_id,
@@ -1378,16 +1369,16 @@ app.post('/api/books/:bookId/reviews', authenticateToken, async (req, res) => {
     let client;
     try {
         client = await pool.connect();
-        await client.query('BEGIN'); // Start transaction
+        await client.query('BEGIN'); 
 
-        // 1. Check if the book exists
+        // Check if the book exists
         const bookExists = await client.query('SELECT 1 FROM book WHERE book_id = $1', [bookId]);
         if (bookExists.rows.length === 0) {
             await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Book not found.' });
         }
 
-        // 2. Check if the customer has already reviewed this book (optional, but good practice)
+        // Check if the customer has already reviewed this book
         const existingReview = await client.query(
             'SELECT review_id FROM review WHERE book_id = $1 AND customer_id = $2',
             [bookId, customerId]
@@ -1397,14 +1388,14 @@ app.post('/api/books/:bookId/reviews', authenticateToken, async (req, res) => {
             return res.status(409).json({ error: 'You have already reviewed this book.' });
         }
 
-        // 3. Insert the new review
+        // Insert the new review
         await client.query(
             `INSERT INTO review (book_id, customer_id, rating, comment, review_date)
              VALUES ($1, $2, $3, $4, NOW())`,
             [bookId, customerId, rating, comment]
         );
 
-        // 4. Update the book's average rating and review count
+        // Update the book's average rating and review count
         await client.query(
             `UPDATE book
              SET
@@ -1414,11 +1405,11 @@ app.post('/api/books/:bookId/reviews', authenticateToken, async (req, res) => {
             [bookId]
         );
 
-        await client.query('COMMIT'); // Commit transaction
+        await client.query('COMMIT');
         res.status(201).json({ message: 'Review submitted successfully.' });
 
     } catch (err) {
-        await client.query('ROLLBACK'); // Rollback on error
+        await client.query('ROLLBACK');
         console.error('Error submitting review:', err);
         res.status(500).json({ error: 'Failed to submit review.' });
     } finally {
@@ -1441,9 +1432,9 @@ app.delete('/api/books/:bookId/reviews/:reviewId', authenticateToken, async (req
     let client;
     try {
         client = await pool.connect();
-        await client.query('BEGIN'); // Start transaction
+        await client.query('BEGIN');
 
-        // 1. Verify the review exists and belongs to the authenticated customer and the specified book
+        // Verify the review exists and belongs to the authenticated customer and the specified book
         const reviewCheckResult = await client.query(
             'SELECT review_id FROM review WHERE review_id = $1 AND book_id = $2 AND customer_id = $3',
             [reviewId, bookId, customerId]
@@ -1451,14 +1442,14 @@ app.delete('/api/books/:bookId/reviews/:reviewId', authenticateToken, async (req
 
         if (reviewCheckResult.rows.length === 0) {
             await client.query('ROLLBACK');
-            // Return 404 if not found, or 403 if found but doesn't belong to user
+            
             return res.status(404).json({ error: 'Review not found or you do not have permission to delete it.' });
         }
 
-        // 2. Delete the review
+        //Delete the review
         await client.query('DELETE FROM review WHERE review_id = $1', [reviewId]);
 
-        // 3. Update the book's average rating and review count
+        // Update the book's average rating and review count
         // Recalculate average_rating and review_count after deletion
         await client.query(
             `UPDATE book
@@ -1469,11 +1460,11 @@ app.delete('/api/books/:bookId/reviews/:reviewId', authenticateToken, async (req
             [bookId]
         );
 
-        await client.query('COMMIT'); // Commit transaction
+        await client.query('COMMIT');
         res.json({ message: 'Review removed successfully.' });
 
     } catch (err) {
-        await client.query('ROLLBACK'); // Rollback on error
+        await client.query('ROLLBACK');
         console.error('Error removing review:', err);
         res.status(500).json({ error: 'Failed to remove review.' });
     } finally {
@@ -1498,7 +1489,7 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
         const shippingCost = 5.00;
         const serverTotal = itemsTotal + shippingCost;
 
-        // 2. Create order
+        //Create order
         const orderResult = await client.query(`
             INSERT INTO "order" (customer_id, status, order_date, total_amount, shipping_method, tracking_number)
             VALUES ($1, 'pending', NOW(), $2, 'standard', 'LIBRI' || SUBSTRING(MD5(RANDOM()::TEXT), 1, 5))
@@ -1509,7 +1500,7 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
         const trackingNumber = orderResult.rows[0].tracking_number;
 
 
-        // 3. Add order items with format
+        //Add order items with format
         for (const item of items) {
             await client.query(`
                 INSERT INTO order_item (
@@ -1526,7 +1517,7 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
                 item.bookId,
                 item.quantity,
                 item.price,
-                item.formatId // Use formatId instead of format
+                item.formatId 
             ]);
 
             // Update inventory
@@ -1538,7 +1529,7 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
             `, [item.quantity, item.bookId]);
         }
 
-        // 4. Add shipping information
+        // Add shipping information
         if (shipping) {
             await client.query(`
                 INSERT INTO shipping (order_id, address, city, postal_code, country, delivery_estimate)
@@ -1546,7 +1537,7 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
             `, [orderId, shipping.address, shipping.city, shipping.postal_code, shipping.country]);
         }
 
-        // 5. Clear cart properly
+        //Clear cart properly
         await client.query(`
             DELETE FROM cart_item WHERE cart_id = (SELECT cart_id FROM cart WHERE customer_id = $1)
         `, [customerId]);
@@ -1721,9 +1712,6 @@ app.put('/api/orders/:orderId/cancel', authenticateToken, async (req, res) => {
     }
 });
 
-
-
-// POST /api/seller/signup - Handles new seller registration and immediate login
 app.post('/api/seller/signup', async (req, res) => {
     const { fullName, email, password } = req.body;
 
@@ -1742,8 +1730,6 @@ app.post('/api/seller/signup', async (req, res) => {
         );
 
         const newSupplier = newSupplierResult.rows[0];
-
-        // --- ADD THIS SECTION TO AUTOMATICALLY LOG IN ---
         // Create a JWT payload for the new seller
         const payload = {
             supplierId: newSupplier.supplier_id,
@@ -1753,7 +1739,7 @@ app.post('/api/seller/signup', async (req, res) => {
         };
 
         // Sign the token
-        const token = jwt.sign(payload, 'your_secret_key', { expiresIn: '1h' }); // Use process.env.JWT_SECRET in production
+        const token = jwt.sign(payload, 'your_secret_key', { expiresIn: '1h' });
 
         // Send back the token and user info
         res.status(201).json({
@@ -1767,7 +1753,7 @@ app.post('/api/seller/signup', async (req, res) => {
 
     } catch (err) {
         console.error('Seller signup error:', err);
-        if (err.code === '23505') { // Unique constraint violation (email)
+        if (err.code === '23505') {
             return res.status(409).json({ error: 'A supplier account with this email already exists.' });
         }
         res.status(500).json({ error: 'Failed to create seller account' });
@@ -1820,7 +1806,20 @@ app.post('/api/seller/login', async (req, res) => {
 
 
 app.post('/api/seller/books', authenticateToken, isSeller, async (req, res) => {
-    const { title, format, description, price, isbn, publisher, publicationDate, quantity, authorName } = req.body;
+    const {
+        title,
+        format,
+        description,
+        price,
+        isbn,
+        publisher,
+        publicationDate,
+        quantity,
+        authorName,
+        categoryName,
+        subCategoryName
+    } = req.body;
+
     const supplierId = req.user.supplierId;
     let client;
 
@@ -1828,11 +1827,16 @@ app.post('/api/seller/books', authenticateToken, isSeller, async (req, res) => {
         client = await pool.connect();
         await client.query('BEGIN');
 
-        // Step 1: Check if author exists; if not, create one.
+        // Initialize tracking variables
+        let categoryCreated = false;
+        let subcategoryCreated = false;
+
+        //Check if author exists; if not, create one
         let authorResult = await client.query(
             'SELECT author_id FROM author WHERE name = $1',
             [authorName]
         );
+
         let authorId;
         if (authorResult.rows.length === 0) {
             const newAuthorResult = await client.query(
@@ -1840,48 +1844,119 @@ app.post('/api/seller/books', authenticateToken, isSeller, async (req, res) => {
                 [authorName]
             );
             authorId = newAuthorResult.rows[0].author_id;
+            console.log(`Created new author: ${authorName} with ID: ${authorId}`);
         } else {
             authorId = authorResult.rows[0].author_id;
+            console.log(`Using existing author: ${authorName} with ID: ${authorId}`);
         }
 
-        // Step 2: Insert the new book
-        const bookResult = await client.query(
-            `INSERT INTO book (title, description, price, isbn, publisher, publication_date) 
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING book_id`,
-            [title, description, price, isbn, publisher, publicationDate]
-        );
-        const newBookId = bookResult.rows[0].book_id;
+        //Handle category - check if exists in book_category table, if not create it
+        let categoryId = null;
+        if (categoryName) {
+            let categoryResult = await client.query(
+                'SELECT category_id FROM book_category WHERE category_name ILIKE $1',
+                [categoryName]
+            );
 
-        // Step 3: Link book to author **(fix is here)**
+            if (categoryResult.rows.length === 0) {
+                const newCategoryResult = await client.query(
+                    'INSERT INTO book_category (category_name) VALUES ($1) RETURNING category_id',
+                    [categoryName]
+                );
+                categoryId = newCategoryResult.rows[0].category_id;
+                categoryCreated = true;
+                console.log(`Created new category: ${categoryName} with ID: ${categoryId}`);
+            } else {
+                categoryId = categoryResult.rows[0].category_id;
+                console.log(`Using existing category: ${categoryName} with ID: ${categoryId}`);
+            }
+        }
+
+        //Handle subcategory - check if exists, if not create it
+        let subCategoryId = null;
+        if (subCategoryName && categoryId) {
+            let subCategoryResult = await client.query(
+                'SELECT sub_category_id FROM sub_category WHERE sub_category_name ILIKE $1 AND category_id = $2',
+                [subCategoryName, categoryId]
+            );
+
+            if (subCategoryResult.rows.length === 0) {
+                const newSubCategoryResult = await client.query(
+                    'INSERT INTO sub_category (sub_category_name, category_id) VALUES ($1, $2) RETURNING sub_category_id',
+                    [subCategoryName, categoryId]
+                );
+                subCategoryId = newSubCategoryResult.rows[0].sub_category_id;
+                subcategoryCreated = true;
+                console.log(`Created new subcategory: ${subCategoryName} with ID: ${subCategoryId}`);
+            } else {
+                subCategoryId = subCategoryResult.rows[0].sub_category_id;
+                console.log(`Using existing subcategory: ${subCategoryName} with ID: ${subCategoryId}`);
+            }
+        }
+
+        //Insert the new book with category and subcategory
+        const bookResult = await client.query(
+            `INSERT INTO book (title, description, price, isbn, publisher, publication_date, category_id, sub_category_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING book_id`,
+            [title, description, price, isbn, publisher, publicationDate, categoryId, subCategoryId]
+        );
+
+        const newBookId = bookResult.rows[0].book_id;
+        console.log(`Created new book: ${title} with ID: ${newBookId}`);
+
+        //Link book to author
         await client.query(
             'INSERT INTO book_author (book_id, author_id) VALUES ($1, $2)',
             [newBookId, authorId]
         );
 
-        // Step 4: Add to inventory
+        //Add to inventory
         await client.query(
-            'INSERT INTO inventory (book_id, quantity_in_stock,format_id) VALUES ($1, $2, $3)',
+            'INSERT INTO inventory (book_id, quantity_in_stock, format_id) VALUES ($1, $2, $3)',
             [newBookId, quantity, format]
         );
 
-        // Step 5: Link book to supplier
+        //Link book to supplier
         await client.query(
             'INSERT INTO book_supply (book_id, supplier_id) VALUES ($1, $2)',
             [newBookId, supplierId]
         );
 
+        //Link book to subcategory in junction table if subcategory exists
+        if (subCategoryId) {
+            await client.query(
+                'INSERT INTO book_sub_category (book_id, sub_category_id) VALUES ($1, $2)',
+                [newBookId, subCategoryId]
+            );
+        }
+
         await client.query('COMMIT');
-        res.status(201).json({ message: 'Book added to inventory successfully!', bookId: newBookId });
+
+        res.status(201).json({
+            message: 'Book added to inventory successfully!',
+            bookId: newBookId,
+            details: {
+                bookTitle: title,
+                authorName: authorName,
+                categoryName: categoryName,
+                subCategoryName: subCategoryName,
+                categoryCreated: categoryCreated,
+                subcategoryCreated: subcategoryCreated
+            }
+        });
+
     } catch (err) {
         if (client) await client.query('ROLLBACK');
         console.error('Error adding book:', err);
-        res.status(500).json({ error: 'Failed to add book to inventory' });
+        res.status(500).json({
+            error: 'Failed to add book to inventory',
+            details: err.message
+        });
     } finally {
         if (client) client.release();
     }
 });
 
-// --- ADMIN ROUTES ---
 
 app.post('/api/admin/login', async (req, res) => {
     const { email, secretCode } = req.body;
@@ -1898,7 +1973,6 @@ app.post('/api/admin/login', async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(401).json({ error: 'Invalid email or secret code.' });
         }
-        // If you want to issue a JWT for admin session:
         const payload = { adminId: result.rows[0].admin_id, email: result.rows[0].email, isAdmin: true };
         const token = jwt.sign(payload, 'your_secret_key', { expiresIn: '2h' });
         res.json({ message: 'Admin login successful', token });
@@ -1954,14 +2028,11 @@ app.get('/api/admin/total-sales', authenticateToken, isAdmin, async (req, res) =
     }
 });
 
-// Get full details for a single order (for admin)
 app.get('/api/admin/orders/:orderId', authenticateToken, isAdmin, async (req, res) => {
     const orderId = parseInt(req.params.orderId, 10);
     let client;
     try {
         client = await pool.connect();
-
-        // Get base order with customer details
         const result = await client.query(`
             SELECT 
                 o.*,
@@ -2015,8 +2086,6 @@ app.get('/api/admin/orders/:orderId', authenticateToken, isAdmin, async (req, re
         if (client) client.release();
     }
 });
-
-// Update status for an order (admin)
 app.put('/api/admin/orders/:orderId/status', authenticateToken, isAdmin, async (req, res) => {
     const orderId = parseInt(req.params.orderId, 10);
     const { status } = req.body;
@@ -2071,7 +2140,6 @@ app.get('/api/admin/books', authenticateToken, isAdmin, async (req, res) => {
     }
 });
 
-// --- ADMIN: Get single book details (with author(s), categories, is_active/is_featured, and all reviews)
 app.get('/api/admin/books/:id', authenticateToken, isAdmin, async (req, res) => {
     const bookId = parseInt(req.params.id, 10);
     if (isNaN(bookId)) return res.status(400).json({ error: 'Invalid book ID' });
@@ -2079,7 +2147,6 @@ app.get('/api/admin/books/:id', authenticateToken, isAdmin, async (req, res) => 
     let client;
     try {
         client = await pool.connect();
-        // Book details
         const bookResult = await client.query(`
             SELECT 
                 b.book_id,
@@ -2130,7 +2197,6 @@ app.get('/api/admin/books/:id', authenticateToken, isAdmin, async (req, res) => 
     }
 });
 
-// --- ADMIN: Update book flags (is_active, is_featured)
 app.patch('/api/admin/books/:id/flags', authenticateToken, isAdmin, async (req, res) => {
     const bookId = parseInt(req.params.id, 10);
     const { isActive, isFeatured } = req.body;
@@ -2165,7 +2231,7 @@ app.patch('/api/admin/books/:id/flags', authenticateToken, isAdmin, async (req, 
     }
 });
 
-// --- ADMIN: Delete any review for a book
+//Delete any review for a book
 app.delete('/api/admin/books/:bookId/reviews/:reviewId', authenticateToken, isAdmin, async (req, res) => {
     const bookId = parseInt(req.params.bookId, 10);
     const reviewId = parseInt(req.params.reviewId, 10);
@@ -2229,7 +2295,7 @@ app.get('/api/admin/orders', authenticateToken, isAdmin, async (req, res) => {
     }
 });
 
-// Route to get ONLY customers
+// Route to get customers
 app.get('/api/admin/customers', authenticateToken, isAdmin, async (req, res) => {
     let client;
     try {
@@ -2244,7 +2310,7 @@ app.get('/api/admin/customers', authenticateToken, isAdmin, async (req, res) => 
     }
 });
 
-// Route to get ONLY sellers
+// Route to get sellers
 app.get('/api/admin/sellers', authenticateToken, isAdmin, async (req, res) => {
     let client;
     try {
@@ -2275,11 +2341,11 @@ app.get('/api/admin/customers/:customerId', authenticateToken, isAdmin, async (r
         // Get customer details with order statistics
         const customerResult = await client.query(`
       SELECT 
-        c.*,
-        COUNT(DISTINCT o.order_id) as total_orders,
-        COALESCE(SUM(o.total_amount), 0) as total_spent,
-        COUNT(DISTINCT r.review_id) as total_reviews,
-        MAX(o.order_date) as last_order_date
+            c.*,    
+            COUNT(DISTINCT o.order_id) as total_orders,
+            COALESCE(SUM(o.total_amount), 0) as total_spent,
+            COUNT(DISTINCT r.review_id) as total_reviews,
+            MAX(o.order_date) as last_order_date
       FROM customer c
       LEFT JOIN "order" o ON c.customer_id = o.customer_id
       LEFT JOIN review r ON c.customer_id = r.customer_id
@@ -2325,7 +2391,7 @@ app.get('/api/admin/customers/:customerId', authenticateToken, isAdmin, async (r
     }
 });
 
-// Get detailed seller information
+// Get seller information
 app.get('/api/admin/sellers/:sellerId', authenticateToken, isAdmin, async (req, res) => {
     const sellerId = parseInt(req.params.sellerId, 10);
 
@@ -2407,8 +2473,6 @@ app.get('/api/admin/sellers/:sellerId', authenticateToken, isAdmin, async (req, 
     }
 });
 
-
-// Add this route to your existing routes
 app.get('/api/admin/live-chat-count', authenticateToken, async (req, res) => {
     if (!req.user.isAdmin) {
         return res.status(403).json({ error: 'Admin access required' });
@@ -2418,7 +2482,7 @@ app.get('/api/admin/live-chat-count', authenticateToken, async (req, res) => {
     try {
         client = await pool.connect();
 
-        // Count active chat sessions (sessions that haven't ended)
+        // Count active chat sessions
         const result = await client.query(`
             SELECT COUNT(*) as count
             FROM chat_session 
@@ -2444,7 +2508,7 @@ app.get('/api/seller/dashboard-stats', authenticateToken, isSeller, async (req, 
     try {
         client = await pool.connect();
 
-        // 1. Get Total Sales for this seller's books
+        //Get Total Sales for this seller's books
         const salesQuery = `
             SELECT COALESCE(SUM(oi.item_price * oi.quantity), 0) AS total_sales
             FROM order_item oi
@@ -2453,7 +2517,7 @@ app.get('/api/seller/dashboard-stats', authenticateToken, isSeller, async (req, 
         `;
         const salesResult = await client.query(salesQuery, [supplierId]);
 
-        // 2. Get Total Orders containing this seller's books
+        // Get Total Orders containing this seller's books
         const ordersQuery = `
             SELECT COUNT(DISTINCT oi.order_id) AS total_orders
             FROM order_item oi
@@ -2462,7 +2526,7 @@ app.get('/api/seller/dashboard-stats', authenticateToken, isSeller, async (req, 
         `;
         const ordersResult = await client.query(ordersQuery, [supplierId]);
 
-        // 3. Get Total Books in Stock for this seller
+        //  Get Total Books in Stock for this seller
         const stockQuery = `
             SELECT COALESCE(SUM(i.quantity_in_stock), 0) AS books_in_stock
             FROM inventory i
@@ -2471,7 +2535,7 @@ app.get('/api/seller/dashboard-stats', authenticateToken, isSeller, async (req, 
         `;
         const stockResult = await client.query(stockQuery, [supplierId]);
 
-        // 4. Get Recent Orders for this seller's books
+        //Get Recent Orders for this seller's books
         const recentOrdersQuery = `
             SELECT
                 o.order_id,
@@ -2494,7 +2558,6 @@ app.get('/api/seller/dashboard-stats', authenticateToken, isSeller, async (req, 
             totalSales: parseFloat(salesResult.rows[0].total_sales),
             totalOrders: parseInt(ordersResult.rows[0].total_orders, 10),
             booksInStock: parseInt(stockResult.rows[0].books_in_stock, 10),
-            // For now, low stock alerts can be a static value or a future enhancement
             lowStockAlerts: 8,
             recentOrders: recentOrdersResult.rows
         });
@@ -2524,7 +2587,6 @@ app.get('/api/seller/profile', authenticateToken, isSeller, async (req, res) => 
     }
 });
 
-// UPDATE seller's profile information
 app.put('/api/seller/profile', authenticateToken, isSeller, async (req, res) => {
     const supplierId = req.user.supplierId;
     const { supplier_name, email, phone_number, address } = req.body;
@@ -2728,7 +2790,7 @@ app.put('/api/user/notifications/:id/read', authenticateToken, async (req, res) 
     }
 });
 
-// GET /api/seller/supplied-books - Get all books supplied by the logged-in seller
+r
 app.get('/api/seller/supplied-books', authenticateToken, isSeller, async (req, res) => {
     const supplierId = req.user.supplierId;
 
@@ -2783,8 +2845,6 @@ app.get('/api/seller/supplied-books', authenticateToken, isSeller, async (req, r
     }
 });
 
-
-/// GET /api/seller/delivered-books-stats - Get statistics of delivered books for the logged-in seller
 app.get('/api/seller/delivered-books-stats', authenticateToken, isSeller, async (req, res) => {
     const supplierId = req.user.supplierId;
 
@@ -3059,8 +3119,7 @@ function generateReceiptPDF(order) {
         const pageW = doc.internal.pageSize.getWidth();
         const xMargin = 20;
 
-        // --- 1. Modern Header with Emoji ---
-        // Using a Unicode emoji for the icon.
+        
         doc.setFontSize(26);
         doc.setFont('helvetica', 'bold');
         doc.text('🎓 Libri', xMargin, y);
@@ -3069,15 +3128,13 @@ function generateReceiptPDF(order) {
         doc.setFont('helvetica', 'normal');
         doc.text('Order Receipt', pageW - xMargin, y, { align: 'right' });
         y += 10;
-        doc.setDrawColor(220, 220, 220); // Light gray line
+        doc.setDrawColor(220, 220, 220); 
         doc.line(xMargin, y, pageW - xMargin, y);
 
-        // --- 2. Two-Column Layout for Details ---
         const x1 = xMargin;
         const x2 = pageW / 2 + 10;
         y += 15;
 
-        // Left Column: Order Details
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.text('Order ID:', x1, y);
@@ -3089,7 +3146,6 @@ function generateReceiptPDF(order) {
         doc.text(new Date(order.order_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), x1 + 35, y + 7);
         doc.text(order.status.toUpperCase(), x1 + 35, y + 14);
 
-        // Right Column: Customer Details
         doc.setFont('helvetica', 'bold');
         doc.text('Billed To:', x2, y);
         doc.setFont('helvetica', 'normal');
@@ -3099,7 +3155,6 @@ function generateReceiptPDF(order) {
 
         y += 35; // Extra space before table
 
-        // --- 3. Enhanced AutoTable Styling ---
         const tableHeaders = [['Item', 'Format', 'Qty', 'Price', 'Total']];
         const tableData = order.items.map(item => [
             `${item.book_title}\n${item.authors ? `by ${item.authors}` : ''}`,
@@ -3115,7 +3170,7 @@ function generateReceiptPDF(order) {
             body: tableData,
             theme: 'striped',
             headStyles: {
-                fillColor: [41, 128, 185], // A modern blue
+                fillColor: [41, 128, 185],
                 textColor: 255,
                 fontStyle: 'bold',
                 halign: 'center'
@@ -3130,7 +3185,7 @@ function generateReceiptPDF(order) {
             margin: { left: xMargin, right: xMargin },
         });
 
-        // --- 4. Professional Totals Section ---
+        // Totals Section
         const subtotal = order.items.reduce((sum, item) => sum + (item.item_price * item.quantity), 0);
         const shippingCost = 5.00;
         let finalY = doc.lastAutoTable.finalY + 10;
@@ -3156,7 +3211,6 @@ function generateReceiptPDF(order) {
         doc.text('Total:', totalsX, finalY);
         doc.text(`$${parseFloat(order.total_amount).toFixed(2)}`, pageW - xMargin, finalY, { align: 'right' });
 
-        // --- 5. Styled Footer ---
         const footerY = doc.internal.pageSize.getHeight() - 15;
         doc.setDrawColor(220, 220, 220);
         doc.line(xMargin, footerY - 5, pageW - xMargin, footerY - 5);
@@ -3180,21 +3234,18 @@ function generateReceiptPDF(order) {
 
 
 
-// --- STATIC FILE ROUTES ---
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/html/index.html'));
 });
 
-// Serve book-details.html
 app.get('/book-details.html', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/html/book-details.html'));
 });
 
-// Serve wishlist.html (NEW)
 app.get('/wishlist.html', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/html/wishlist.html'));
 });
-
 
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
