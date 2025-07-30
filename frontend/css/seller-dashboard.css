@@ -997,3 +997,35 @@ tbody tr:hover {
     color: #6c757d;
     font-style: italic;
 }
+
+
+/* Low stock alert styles */
+.urgent-alert {
+    animation: pulse-alert 2s infinite;
+}
+
+@keyframes pulse-alert {
+    0% {
+        box-shadow: 0 4px 12px var(--shadow-color);
+    }
+
+    50% {
+        box-shadow: 0 4px 20px rgba(249, 115, 22, 0.4);
+        transform: scale(1.02);
+    }
+
+    100% {
+        box-shadow: 0 4px 12px var(--shadow-color);
+    }
+}
+
+/* Enhanced stat card for low stock */
+.stat-card.low-stock-warning {
+    border-left: 4px solid #f97316;
+    background: linear-gradient(135deg, #fef3c7 0%, #ffffff 100%);
+}
+
+.stat-card.low-stock-critical {
+    border-left: 4px solid #dc2626;
+    background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+}

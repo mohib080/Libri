@@ -197,7 +197,7 @@ async function handleAdminJoin(ws, message) {
             }));
         }
 
-       
+
         await sendChatHistory(ws, sessionId);
 
     } catch (error) {
@@ -217,14 +217,14 @@ async function handleEndChat(ws, message) {
 
         client = await pool.connect();
 
-     
+
         await client.query(`
             UPDATE chat_session 
             SET ended_at = NOW() 
             WHERE session_id = $1
         `, [sessionId]);
 
-       
+
         broadcastToSession(sessionId, {
             type: 'chat_ended',
             message: 'Chat session has ended'
@@ -599,7 +599,7 @@ app.get('/api/subcategories', async (req, res) => {
             query += ` WHERE category_id = $1`;
             queryParams.push(parseInt(categoryId, 10));
         }
-        query += ` ORDER BY sub_category_name`; 
+        query += ` ORDER BY sub_category_name`;
         const result = await client.query(query, queryParams);
         res.json(result.rows);
     } catch (err) {
@@ -653,13 +653,13 @@ app.get('/api/books/:bookId/reviews', async (req, res) => {
 app.post('/signup', async (req, res) => {
     const { name, email, password, phone_number, address } = req.body;
 
-    
+
     if (!name || !email || !password) {
         return res.status(400).json({ error: 'Name, email, and password are required' });
     }
 
     try {
-        
+
         const emailCheck = await pool.query('SELECT 1 FROM customer WHERE email = $1', [email]);
         if (emailCheck.rows.length > 0) {
             return res.status(400).json({ error: 'Email already exists' });
@@ -689,7 +689,7 @@ app.post('/signup', async (req, res) => {
                 email: newCustomer.rows[0].email,
                 role: newCustomer.rows[0].role
             },
-            'your_secret_key', 
+            'your_secret_key',
             { expiresIn: '24h' }
         );
 
@@ -1369,7 +1369,7 @@ app.post('/api/books/:bookId/reviews', authenticateToken, async (req, res) => {
     let client;
     try {
         client = await pool.connect();
-        await client.query('BEGIN'); 
+        await client.query('BEGIN');
 
         // Check if the book exists
         const bookExists = await client.query('SELECT 1 FROM book WHERE book_id = $1', [bookId]);
@@ -1442,7 +1442,7 @@ app.delete('/api/books/:bookId/reviews/:reviewId', authenticateToken, async (req
 
         if (reviewCheckResult.rows.length === 0) {
             await client.query('ROLLBACK');
-            
+
             return res.status(404).json({ error: 'Review not found or you do not have permission to delete it.' });
         }
 
@@ -1517,7 +1517,7 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
                 item.bookId,
                 item.quantity,
                 item.price,
-                item.formatId 
+                item.formatId
             ]);
 
             // Update inventory
@@ -2554,11 +2554,22 @@ app.get('/api/seller/dashboard-stats', authenticateToken, isSeller, async (req, 
         `;
         const recentOrdersResult = await client.query(recentOrdersQuery, [supplierId]);
 
+        const lowStockQuery = `
+    SELECT COUNT(DISTINCT i.book_id) AS low_stock_count
+    FROM inventory i
+    JOIN book_supply bs ON i.book_id = bs.book_id
+    WHERE bs.supplier_id = $1 AND i.quantity_in_stock < 5;
+`;
+
+        const lowStockResult = await client.query(lowStockQuery, [supplierId]);
+        const lowStockCount = parseInt(lowStockResult.rows[0].low_stock_count, 10);
+
+
         res.json({
             totalSales: parseFloat(salesResult.rows[0].total_sales),
             totalOrders: parseInt(ordersResult.rows[0].total_orders, 10),
             booksInStock: parseInt(stockResult.rows[0].books_in_stock, 10),
-            lowStockAlerts: 8,
+            lowStockAlerts: lowStockCount,
             recentOrders: recentOrdersResult.rows
         });
 
@@ -2790,6 +2801,7 @@ app.put('/api/user/notifications/:id/read', authenticateToken, async (req, res) 
     }
 });
 
+
 app.get('/api/seller/supplied-books', authenticateToken, isSeller, async (req, res) => {
     const supplierId = req.user.supplierId;
 
@@ -2980,6 +2992,90 @@ app.put('/api/supplier/notifications/read-all', authenticateToken, isSeller, asy
     }
 });
 
+app.get('/api/seller/low-stock-count', authenticateToken, isSeller, async (req, res) => {
+    const supplierId = req.user.supplierId;
+    let client;
+
+    try {
+        client = await pool.connect();
+
+        // Query to count books with stock less than 5 for this seller
+        const result = await client.query(`
+            SELECT COUNT(DISTINCT i.book_id) AS low_stock_count
+            FROM inventory i
+            JOIN book_supply bs ON i.book_id = bs.book_id
+            WHERE bs.supplier_id = $1 AND i.quantity_in_stock < 5
+        `, [supplierId]);
+
+        const lowStockCount = parseInt(result.rows[0].low_stock_count, 10);
+        res.json({ lowStockCount });
+
+    } catch (err) {
+        console.error('Error fetching low stock count:', err);
+        res.status(500).json({ error: 'Failed to fetch low stock count' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+app.get('/api/seller/low-stock-books', authenticateToken, isSeller, async (req, res) => {
+    const supplierId = req.user.supplierId;
+    let client;
+
+    try {
+        client = await pool.connect();
+
+        const result = await client.query(`
+            SELECT 
+                b.book_id,
+                b.title,
+                STRING_AGG(DISTINCT a.name, ', ') AS authors,
+                i.quantity_in_stock,
+                f.format_name
+            FROM inventory i
+            JOIN book_supply bs ON i.book_id = bs.book_id
+            JOIN book b ON i.book_id = b.book_id
+            LEFT JOIN book_author ba ON b.book_id = ba.book_id
+            LEFT JOIN author a ON ba.author_id = a.author_id
+            LEFT JOIN format f ON i.format_id = f.format_id
+            WHERE bs.supplier_id = $1 AND i.quantity_in_stock < 5
+            GROUP BY b.book_id, b.title, i.quantity_in_stock, f.format_name
+            ORDER BY i.quantity_in_stock ASC
+        `, [supplierId]);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching low stock books:', err);
+        res.status(500).json({ error: 'Failed to fetch low stock books' });
+    } finally {
+        if (client) client.release();
+    }
+});
+
+
+async function showLowStockDetails() {
+    try {
+        const response = await fetch('/api/seller/low-stock-books', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const books = await response.json();
+            displayLowStockBooks(books);
+        }
+    } catch (error) {
+        console.error('Error fetching low stock books:', error);
+    }
+}
+
+function displayLowStockBooks(books) {
+    // You can implement this to show a modal or section with low stock books
+    console.log('Low stock books:', books);
+}
+
+
 
 app.get('/api/orders/:orderId/receipt', authenticateToken, async (req, res) => {
     const customerId = req.user.customerId;
@@ -3118,7 +3214,7 @@ function generateReceiptPDF(order) {
         const pageW = doc.internal.pageSize.getWidth();
         const xMargin = 20;
 
-        
+
         doc.setFontSize(26);
         doc.setFont('helvetica', 'bold');
         doc.text('🎓 Libri', xMargin, y);
@@ -3127,7 +3223,7 @@ function generateReceiptPDF(order) {
         doc.setFont('helvetica', 'normal');
         doc.text('Order Receipt', pageW - xMargin, y, { align: 'right' });
         y += 10;
-        doc.setDrawColor(220, 220, 220); 
+        doc.setDrawColor(220, 220, 220);
         doc.line(xMargin, y, pageW - xMargin, y);
 
         const x1 = xMargin;

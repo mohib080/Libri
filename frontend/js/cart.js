@@ -335,10 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 throw new Error('Failed to update format');
             }
-
-            showNotification('Format updated successfully!', 'success');
-            // Re-fetch cart to get updated prices and format info
-            fetchCart();
+            await fetchCart();
         } catch (error) {
             console.error('Error updating format:', error);
             showNotification('Failed to update format. Please try again.', 'error');
@@ -370,8 +367,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Failed to update cart');
             }
 
-            showNotification('Cart updated successfully!', 'success');
-            fetchCart();
+            // showNotification('Cart updated successfully!', 'success');
+            await fetchCart();
         } catch (error) {
             console.error('Error updating cart item:', error);
             showNotification('Failed to update cart. Please try again.', 'error');
