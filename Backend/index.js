@@ -2790,7 +2790,6 @@ app.put('/api/user/notifications/:id/read', authenticateToken, async (req, res) 
     }
 });
 
-r
 app.get('/api/seller/supplied-books', authenticateToken, isSeller, async (req, res) => {
     const supplierId = req.user.supplierId;
 

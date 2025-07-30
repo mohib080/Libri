@@ -1,0 +1,35 @@
+-- Reviews for Atomic Habits (book_id=2)
+INSERT INTO review (review_id,book_id, customer_id, rating, comment, review_date) VALUES
+(24, 103,51, 5.0, 'Insightful and practical guide to habit formation. Changed my routine for the better!', '2025-07-01 14:22:10'),
+(25, 104,52, 4.0, 'Well written, easy to follow. Some repetitive sections though.', '2025-06-15 10:05:30'),
+(26, 105,53, 5.0, 'Life-changing book with actionable advice. Highly recommend!', '2025-07-22 09:30:45');
+
+
+INSERT INTO review (review_id,book_id, customer_id, rating, comment, review_date) VALUES
+(27, 105,54, 4.0, 'Good introduction to personal finance, but a bit anecdotal.', '2025-05-12 16:45:00'),
+(28, 106,55, 5.0, 'Excellent concepts on money mindset. Inspired me to invest.', '2025-07-10 11:20:00'),
+(29, 108,57, 3.5, 'Valuable points but some ideas feel outdated.', '2025-07-25 18:35:20');
+
+-- Reviews for Sapiens (book_id=9)
+INSERT INTO review (review_id,book_id, customer_id, rating, comment, review_date) VALUES
+(30, 109,58, 5.0, 'Fascinating overview of human history. A must-read for everyone.', '2025-06-01 13:00:00'),
+(31, 109,59, 4.5, 'Very engaging and thought-provoking.', '2025-07-05 15:23:45'),
+(32, 109,60, 5.0, 'Eye-opening book with deep insights into our origins.', '2025-07-20 12:10:30');
+
+-- Reviews for Ikigai (book_id=5)
+INSERT INTO review (review_id,book_id, customer_id, rating, comment, review_date) VALUES
+(33, 110,61, 4.0, 'Beautiful philosophy and inspiring stories; helped me find purpose.', '2025-06-18 08:45:50'),
+(34, 110,62, 3.0, 'Interesting cultural insights but some chapters felt slow.', '2025-07-12 10:00:00'),
+(35, 110,63, 4.0, 'A calming read that encourages mindfulness and joy.', '2025-07-28 14:55:15');
+
+-- Reviews for The Psychology of Money (book_id=7)
+INSERT INTO review (review_id,book_id, customer_id, rating, comment, review_date) VALUES
+(36, 111,64, 5.0, 'Excellent read on how money psychology affects financial decisions.', '2025-07-01 14:00:00'),
+(37, 111,65, 5.0, 'Practical lessons combined with engaging anecdotes.', '2025-07-15 09:20:10'),
+(38, 111,66, 4.5, 'Made me rethink my approach to saving and investing.', '2025-07-29 17:40:00');
+
+-- Reviews for Algorithms 3rd Edition (book_id=14)
+INSERT INTO review (review_id,book_id, customer_id, rating, comment, review_date) VALUES
+(39, 113,67, 5.0, 'The definitive guide for algorithms; dense but very thorough.', '2025-06-05 13:30:00'),
+(40, 113,68, 4.5, 'Clear explanations and excellent examples for competitive programmers.', '2025-07-09 11:00:00'),
+(41, 113,69, 5.0, 'A must-have reference book for computer science students.', '2025-07-25 13:45:20');
