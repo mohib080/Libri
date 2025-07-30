@@ -1340,36 +1340,87 @@ app.post('/api/wishlist/move-to-cart', authenticateToken, async (req, res) => {
         client = await pool.connect();
         await client.query('BEGIN');
 
-        const wishlistResult = await client.query('SELECT wishlist_id FROM wishlist WHERE customer_id = $1', [customerId]);
+        const wishlistResult = await client.query(
+            'SELECT wishlist_id FROM wishlist WHERE customer_id = $1',
+            [customerId]
+        );
         if (wishlistResult.rows.length === 0) {
             await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Wishlist not found.' });
         }
+
         const wishlistId = wishlistResult.rows[0].wishlist_id;
 
-        const deleteResult = await client.query('DELETE FROM wishlist_item WHERE wishlist_id = $1 AND book_id = $2 RETURNING *', [wishlistId, bookId]);
+        const deleteResult = await client.query(
+            'DELETE FROM wishlist_item WHERE wishlist_id = $1 AND book_id = $2 RETURNING *',
+            [wishlistId, bookId]
+        );
         if (deleteResult.rows.length === 0) {
             await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Book not found in wishlist.' });
         }
 
-        let cartResult = await client.query('SELECT cart_id FROM cart WHERE customer_id = $1 FOR UPDATE', [customerId]);
+        // --- Inventory Check ---
+        const inventoryResult = await client.query(
+            'SELECT quantity_in_stock FROM inventory WHERE book_id = $1 FOR UPDATE',
+            [bookId]
+        );
+        if (inventoryResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Inventory record not found.' });
+        }
+
+        const stock = inventoryResult.rows[0].quantity_in_stock;
+        if (stock < 1) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                error: 'This book is currently out of stock and cannot be added to your cart.'
+            });
+        }
+
+        // --- Cart Logic ---
+        let cartResult = await client.query(
+            'SELECT cart_id FROM cart WHERE customer_id = $1 FOR UPDATE',
+            [customerId]
+        );
         let cartId;
+
         if (cartResult.rows.length === 0) {
-            const newCart = await client.query('INSERT INTO cart (customer_id) VALUES ($1) RETURNING cart_id', [customerId]);
+            const newCart = await client.query(
+                'INSERT INTO cart (customer_id, created_at, updated_at) VALUES ($1, NOW(), NOW()) RETURNING cart_id',
+                [customerId]
+            );
             cartId = newCart.rows[0].cart_id;
         } else {
             cartId = cartResult.rows[0].cart_id;
         }
 
-        const cartItemResult = await client.query('SELECT * FROM cart_item WHERE cart_id = $1 AND book_id = $2 FOR UPDATE', [cartId, bookId]);
+        const cartItemResult = await client.query(
+            'SELECT quantity FROM cart_item WHERE cart_id = $1 AND book_id = $2 FOR UPDATE',
+            [cartId, bookId]
+        );
+
         if (cartItemResult.rows.length > 0) {
-            // If item exists in cart, increment quantity
-            const newQuantity = cartItemResult.rows[0].quantity + 1;
-            await client.query('UPDATE cart_item SET quantity = $1 WHERE cart_id = $2 AND book_id = $3', [newQuantity, cartId, bookId]);
+            const currentQuantity = cartItemResult.rows[0].quantity;
+
+            if (currentQuantity + 1 > stock) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({
+                    error: `Only ${stock} in stock. You already have ${currentQuantity} in your cart. Cannot add more.`
+                });
+            }
+
+            // Increment quantity
+            await client.query(
+                'UPDATE cart_item SET quantity = $1 WHERE cart_id = $2 AND book_id = $3',
+                [currentQuantity + 1, cartId, bookId]
+            );
         } else {
-            // If item does not exist, add it with quantity 1
-            await client.query('INSERT INTO cart_item (cart_id, book_id, quantity) VALUES ($1, $2, 1)', [cartId, bookId]);
+            // Add to cart with quantity 1
+            await client.query(
+                'INSERT INTO cart_item (cart_id, book_id, quantity, format_id) VALUES ($1, $2, 1, 2)',
+                [cartId, bookId]
+            );
         }
 
         await client.query('UPDATE cart SET updated_at = NOW() WHERE cart_id = $1', [cartId]);
@@ -1385,6 +1436,7 @@ app.post('/api/wishlist/move-to-cart', authenticateToken, async (req, res) => {
         if (client) client.release();
     }
 });
+
 
 app.post('/api/books/:bookId/reviews', authenticateToken, async (req, res) => {
     const bookId = parseInt(req.params.bookId, 10);
