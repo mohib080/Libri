@@ -729,7 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="book-performance">
                     <span class="orders">Orders: ${book.total_orders}</span>
-                    <span class="revenue">Revenue: $${parseFloat(book.total_revenue).toFixed(2)}</span>
+                    <span class="revenue">Format: ${book.format_name || 'N/A'}</span>
                 </div>
                 <div class="book-meta">
                     <p><strong>ISBN:</strong> ${book.isbn || 'N/A'}</p>
