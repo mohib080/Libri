@@ -158,3 +158,57 @@ FOR EACH ROW
 EXECUTE FUNCTION notify_admin_payment_received();
 
 
+CREATE OR REPLACE FUNCTION notify_admin_inventory_update()
+RETURNS TRIGGER AS $BODY$
+DECLARE
+    supplier_name VARCHAR(255);
+    book_title VARCHAR(255);
+    supplier_id INTEGER;
+BEGIN
+    -- Get book title
+    SELECT title INTO book_title
+    FROM book
+    WHERE book_id = NEW.book_id;
+    
+    -- Get supplier information from book_supply table
+    SELECT bs.supplier_id, s.supplier_name
+    INTO supplier_id, supplier_name
+    FROM book_supply bs
+    JOIN supplier s ON bs.supplier_id = s.supplier_id
+    WHERE bs.book_id = NEW.book_id
+    LIMIT 1;
+    
+    -- Insert notification for admin
+    INSERT INTO admin_notifications (type, title, message, data, created_at)
+    VALUES (
+        'inventory_update',
+        'Inventory Updated by Supplier',
+        'Supplier "' || COALESCE(supplier_name, 'Unknown') || '" has updated inventory for "' || 
+        COALESCE(book_title, 'Unknown Book') || '". New stock: ' || NEW.quantity_in_stock,
+        jsonb_build_object(
+            'book_id', NEW.book_id,
+            'book_title', book_title,
+            'supplier_id', supplier_id,
+            'supplier_name', supplier_name,
+            'old_quantity', COALESCE(OLD.quantity_in_stock, 0),
+            'new_quantity', NEW.quantity_in_stock,
+            'format_id', NEW.format_id,
+            'update_date', NEW.last_update,
+            'inventory_id', NEW.inventory_id
+        ),
+        NOW()
+    );
+    
+    RETURN NEW;
+END;
+$BODY$
+LANGUAGE plpgsql VOLATILE
+COST 100;
+
+
+
+
+CREATE TRIGGER trigger_admin_inventory_added
+    AFTER INSERT ON public.inventory
+    FOR EACH ROW
+    EXECUTE PROCEDURE notify_admin_inventory_update();

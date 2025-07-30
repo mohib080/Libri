@@ -1020,8 +1020,7 @@ app.post('/api/cart/add', authenticateToken, async (req, res) => {
     }
 });
 
-
-// Update cart item format
+// Update cart item format with inventory check
 app.put('/api/cart/update-format', authenticateToken, async (req, res) => {
     const { bookId, formatId } = req.body;
     const customerId = req.user.customerId || req.user.userId;
@@ -1033,21 +1032,44 @@ app.put('/api/cart/update-format', authenticateToken, async (req, res) => {
     let client;
     try {
         client = await pool.connect();
+        await client.query('BEGIN');
+
+        const inventoryResult = await client.query(
+            `SELECT quantity_in_stock 
+             FROM inventory 
+             WHERE book_id = $1 AND format_id = $2 
+             FOR UPDATE`,
+            [bookId, formatId]
+        );
+
+        if (inventoryResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Selected format is not available for this book.' });
+        }
+
+        const stock = inventoryResult.rows[0].quantity_in_stock;
+        if (stock < 1) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Selected format is currently out of stock.' });
+        }
 
         const result = await client.query(
             `UPDATE cart_item
-   SET format_id = $1
-   FROM cart
-   WHERE cart_item.cart_id = cart.cart_id
-     AND cart.customer_id = $2
-     AND cart_item.book_id = $3
-   RETURNING cart_item.*`,
+             SET format_id = $1
+             FROM cart
+             WHERE cart_item.cart_id = cart.cart_id
+               AND cart.customer_id = $2
+               AND cart_item.book_id = $3
+             RETURNING cart_item.*`,
             [formatId, customerId, bookId]
         );
 
         if (result.rows.length === 0) {
+            await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Cart item not found' });
         }
+
+        await client.query('COMMIT');
 
         res.json({
             message: 'Cart item format updated successfully',
@@ -1055,12 +1077,14 @@ app.put('/api/cart/update-format', authenticateToken, async (req, res) => {
         });
 
     } catch (err) {
+        await client.query('ROLLBACK');
         console.error('Error updating cart item format:', err);
         res.status(500).json({ error: 'Failed to update cart item format' });
     } finally {
         if (client) client.release();
     }
 });
+
 
 
 app.put('/api/cart/update', authenticateToken, async (req, res) => {
@@ -2897,41 +2921,39 @@ app.get('/api/seller/supplied-books', authenticateToken, isSeller, async (req, r
         client = await pool.connect();
 
         const result = await client.query(`
-            SELECT 
-                b.book_id,
-                b.title,
-                STRING_AGG(DISTINCT a.name, ', ') AS authors,
-                b.description,
-                b.image_url,
-                b.price,
-                b.isbn,
-                b.publisher,
-                b.publication_date,
-                b.language,
-                COALESCE(AVG(r.rating), 0)::numeric(3, 2) AS average_rating,
-                COUNT(DISTINCT r.review_id) AS review_count,
-                bc.category_name,
-                sc.sub_category_name,
-                COALESCE(SUM(i.quantity_in_stock), 0) AS total_stock,
-                COUNT(DISTINCT oi.order_item_id) AS total_orders,
-                STRING_AGG(DISTINCT f.format_name, ', ') AS available_formats
-            FROM book_supply bs
-            JOIN book b ON bs.book_id = b.book_id
-            LEFT JOIN book_author ba ON b.book_id = ba.book_id
-            LEFT JOIN author a ON ba.author_id = a.author_id
-            LEFT JOIN review r ON b.book_id = r.book_id
-            LEFT JOIN book_sub_category bsc ON b.book_id = bsc.book_id
-            LEFT JOIN sub_category sc ON bsc.sub_category_id = sc.sub_category_id
-            LEFT JOIN book_category bc ON sc.category_id = bc.category_id
-            LEFT JOIN inventory i ON b.book_id = i.book_id
-            LEFT JOIN format f ON f.format_id = i.format_id
-            LEFT JOIN order_item oi ON b.book_id = oi.book_id
-            WHERE bs.supplier_id = $1
-            GROUP BY 
-                b.book_id, b.title, b.description, b.image_url, b.price, 
-                b.isbn, b.publisher, b.publication_date, b.language,
-                bc.category_name, sc.sub_category_name
-            ORDER BY b.title ASC
+        SELECT 
+            b.book_id,
+            b.title,
+            MAX(b.description) AS description,
+            MAX(b.image_url) AS image_url,
+            MAX(b.price) AS price,
+            MAX(b.isbn) AS isbn,
+            MAX(b.publisher) AS publisher,
+            MAX(b.publication_date) AS publication_date,
+            MAX(b.language) AS language,
+            STRING_AGG(DISTINCT a.name, ', ') AS authors,
+            COALESCE(AVG(DISTINCT r.rating), 0)::numeric(3, 2) AS average_rating,
+            COUNT(DISTINCT r.review_id) AS review_count,
+            STRING_AGG(DISTINCT bc.category_name, ', ') AS category_name,
+            STRING_AGG(DISTINCT sc.sub_category_name, ', ') AS sub_category_name,
+            COALESCE(SUM(DISTINCT i.quantity_in_stock), 0) AS total_stock,
+            COUNT(DISTINCT oi.order_item_id) AS total_orders,
+            STRING_AGG(DISTINCT f.format_name, ', ') AS available_formats
+        FROM book_supply bs
+        JOIN book b ON bs.book_id = b.book_id
+        LEFT JOIN book_author ba ON b.book_id = ba.book_id
+        LEFT JOIN author a ON ba.author_id = a.author_id
+        LEFT JOIN review r ON b.book_id = r.book_id
+        LEFT JOIN book_sub_category bsc ON b.book_id = bsc.book_id
+        LEFT JOIN sub_category sc ON bsc.sub_category_id = sc.sub_category_id
+        LEFT JOIN book_category bc ON sc.category_id = bc.category_id
+        LEFT JOIN inventory i ON b.book_id = i.book_id
+        LEFT JOIN format f ON f.format_id = i.format_id
+        LEFT JOIN order_item oi ON b.book_id = oi.book_id
+        WHERE bs.supplier_id = $1
+        GROUP BY b.book_id
+        ORDER BY b.title ASC
+
         `, [supplierId]);
 
         res.json(result.rows);
