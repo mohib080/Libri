@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NOTIFICATION VARIABLES ---
     let notificationPollingInterval;
 
-    // --- NOTIFICATION SYSTEM FUNCTIONS (MODIFIED) ---
+    // --- NOTIFICATION SYSTEM FUNCTIONS (UNCHANGED) ---
     async function initializeNotifications() {
         await fetchNotificationCount();
         setupNotificationEventListeners();
@@ -494,7 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     }
 
-    // --- API CALL TO FETCH DASHBOARD DATA (UNCHANGED) ---
+    // --- API CALL TO FETCH DASHBOARD DATA (MODIFIED FOR LOW STOCK ALERTS) ---
     async function fetchDashboardData() {
         try {
             const response = await fetch('/api/seller/dashboard-stats', {
@@ -515,12 +515,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- UI UPDATE FUNCTIONS (UNCHANGED) ---
+    // --- UI UPDATE FUNCTIONS (MODIFIED FOR LOW STOCK ALERTS) ---
     function updateDashboardUI(data) {
         totalSalesEl.textContent = `$${data.totalSales.toFixed(2)}`;
         totalOrdersEl.textContent = data.totalOrders;
         booksInStockEl.textContent = data.booksInStock;
-        lowStockAlertsEl.textContent = data.lowStockAlerts;
+        lowStockAlertsEl.textContent = data.lowStockAlerts || 0; // Use actual count from API
+
+        // Add visual indicators for low stock alerts
+        if (data.lowStockAlerts > 0) {
+            addLowStockIndicator(data.lowStockAlerts);
+        } else {
+            removeLowStockIndicator();
+        }
 
         if (data.recentOrders.length === 0) {
             recentOrdersTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No recent orders found.</td></tr>`;
@@ -534,6 +541,103 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td><span class="status-badge ${order.status.toLowerCase()}">${order.status}</span></td>
                 </tr>
             `).join('');
+        }
+    }
+
+    // --- LOW STOCK ALERT FUNCTIONS ---
+    function addLowStockIndicator(count) {
+        const lowStockCard = document.querySelector('#dashboard-content .stat-card:nth-child(4)');
+        if (lowStockCard && count > 0) {
+            // Remove any existing classes first
+            lowStockCard.classList.remove('low-stock-warning', 'low-stock-critical', 'urgent-alert');
+
+            // Add appropriate styling based on severity
+            if (count >= 5) {
+                lowStockCard.classList.add('low-stock-critical', 'urgent-alert');
+            } else {
+                lowStockCard.classList.add('low-stock-warning');
+            }
+
+            // Add click handler to show details
+            if (!lowStockCard.hasAttribute('data-click-handler')) {
+                lowStockCard.setAttribute('data-click-handler', 'true');
+                lowStockCard.style.cursor = 'pointer';
+                lowStockCard.addEventListener('click', showLowStockDetails);
+            }
+        }
+    }
+
+    function removeLowStockIndicator() {
+        const lowStockCard = document.querySelector('#dashboard-content .stat-card:nth-child(4)');
+        if (lowStockCard) {
+            lowStockCard.classList.remove('low-stock-warning', 'low-stock-critical', 'urgent-alert');
+            lowStockCard.style.cursor = 'default';
+        }
+    }
+
+    // Function to show detailed low stock information
+    async function showLowStockDetails() {
+        try {
+            const response = await fetch('/api/seller/low-stock-books', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const books = await response.json();
+                displayLowStockModal(books);
+            } else {
+                showToast('Failed to fetch low stock details', 'error');
+            }
+        } catch (error) {
+            console.error('Error fetching low stock books:', error);
+            showToast('Error fetching low stock details', 'error');
+        }
+    }
+
+    function displayLowStockModal(books) {
+        if (books.length === 0) {
+            showToast('No low stock items found', 'info');
+            return;
+        }
+
+        const modalHTML = `
+            <div id="lowStockModal" class="modal-overlay" onclick="closeLowStockModal(event)">
+                <div class="modal-content" onclick="event.stopPropagation()">
+                    <div class="modal-header">
+                        <h3>Low Stock Alert (Stock < 5)</h3>
+                        <button class="modal-close" onclick="closeLowStockModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="low-stock-list">
+                            ${books.map(book => `
+                                <div class="low-stock-item">
+                                    <div class="book-info">
+                                        <h4>${escapeHtml(book.title)}</h4>
+                                        <p>by ${escapeHtml(book.authors || 'Unknown Author')}</p>
+                                        <p class="format">${escapeHtml(book.format_name || 'N/A')}</p>
+                                    </div>
+                                    <div class="stock-info ${book.quantity_in_stock === 0 ? 'out-of-stock' : 'low-stock'}">
+                                        <span class="stock-count">${book.quantity_in_stock}</span>
+                                        <span class="stock-label">${book.quantity_in_stock === 0 ? 'Out of Stock' : 'In Stock'}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+
+    function closeLowStockModal(event) {
+        if (event && event.target !== event.currentTarget) return;
+        const modal = document.getElementById('lowStockModal');
+        if (modal) {
+            modal.remove();
         }
     }
 
@@ -706,6 +810,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadDeliveredBooksStats = loadDeliveredBooksStats;
     window.loadAllNotifications = loadAllNotifications;
     window.handleNotificationClick = handleNotificationClick;
+    window.closeLowStockModal = closeLowStockModal;
 
     // Initialize everything
     fetchDashboardData();
