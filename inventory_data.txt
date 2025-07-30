@@ -1,0 +1,50 @@
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (18, 1, 30, '2025-07-12 13:00:00', 1);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (19, 1, 30, '2025-07-30 13:00:00', 2);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (20, 1, 30, '2025-07-30 13:00:00', 3);
+
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (21, 2, 30, '2025-07-30 13:00:00', 1);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (22, 2, 30, '2025-07-30 13:00:00', 2);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (23, 2, 30, '2025-07-30 13:00:00', 3);
+
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (24, 3, 30, '2025-07-30 13:00:00', 1);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (25, 3, 30, '2025-07-30 13:00:00', 2);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (26, 3, 30, '2025-07-30 13:00:00', 3);
+
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (27, 4, 30, '2025-07-30 13:00:00', 1);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (28, 4, 30, '2025-07-30 13:00:00', 2);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (29, 4, 30, '2025-07-30 13:00:00', 3);
+
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (30, 5, 30, '2025-07-30 13:00:00', 1);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (31, 5, 30, '2025-07-30 13:00:00', 2);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (32, 5, 30, '2025-07-30 13:00:00', 3);
+
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (33, 6, 30, '2025-07-30 13:00:00', 1);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (34, 6, 30, '2025-07-30 13:00:00', 2);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (35, 6, 30, '2025-07-30 13:00:00', 3);
+
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (36, 7, 30, '2025-07-30 13:00:00', 1);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (37, 7, 30, '2025-07-30 13:00:00', 2);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (38, 7, 30, '2025-07-30 13:00:00', 3);
+
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (39, 8, 30, '2025-07-30 13:00:00', 1);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (40, 8, 30, '2025-07-30 13:00:00', 2);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (41, 8, 30, '2025-07-30 13:00:00', 3);
+
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (42, 9, 30, '2025-07-30 13:00:00', 1);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (43, 9, 30, '2025-07-30 13:00:00', 2);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (44, 9, 30, '2025-07-30 13:00:00', 3);
+
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (45, 10, 30, '2025-07-30 13:00:00', 1);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (46, 10, 30, '2025-07-30 13:00:00', 2);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (47, 10, 30, '2025-07-30 13:00:00', 3);
+
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (48, 12, 30, '2025-07-30 13:00:00', 1);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (49, 12, 30, '2025-07-30 13:00:00', 2);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (50, 12, 30, '2025-07-30 13:00:00', 3);
+
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (51, 14, 30, '2025-07-30 13:00:00', 1);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (52, 14, 30, '2025-07-30 13:00:00', 2);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (53, 14, 30, '2025-07-30 13:00:00', 3);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (54, 102, 71, '2025-07-30 13:00:00', 1);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (55, 102, 32, '2025-07-30 13:00:00', 2);
+INSERT INTO inventory (inventory_id, book_id, quantity_in_stock, last_update, format_id) VALUES (56, 102, 102, '2025-07-30 13:00:00', 3);
