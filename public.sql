@@ -12,7 +12,7 @@
  Target Server Version : 170005 (170005)
  File Encoding         : 65001
 
- Date: 30/07/2025 14:10:03
+ Date: 31/07/2025 22:01:41
 */
 
 
@@ -215,17 +215,6 @@ START 1
 CACHE 1;
 
 -- ----------------------------
--- Sequence structure for recommendation_recommendation_id_seq
--- ----------------------------
-DROP SEQUENCE IF EXISTS "public"."recommendation_recommendation_id_seq";
-CREATE SEQUENCE "public"."recommendation_recommendation_id_seq" 
-INCREMENT 1
-MINVALUE  1
-MAXVALUE 2147483647
-START 1
-CACHE 1;
-
--- ----------------------------
 -- Sequence structure for review_review_id_seq
 -- ----------------------------
 DROP SEQUENCE IF EXISTS "public"."review_review_id_seq";
@@ -349,6 +338,7 @@ CREATE TABLE "public"."admin_notifications" (
 -- Records of admin_notifications
 -- ----------------------------
 INSERT INTO "public"."admin_notifications" VALUES (1, NULL, 'new_signup', 'New User Registration', 'A new user "Messi" has registered with email: 2205888@ugrad.cse.buet.ac.bd', '{"customer_id": 10, "signup_date": "2025-07-24T02:39:54.913706", "customer_name": "Messi", "customer_email": "2205888@ugrad.cse.buet.ac.bd"}', 't', '2025-07-24 02:39:54.913706');
+INSERT INTO "public"."admin_notifications" VALUES (9, NULL, 'new_signup', 'New User Registration', 'A new user "John Smith" has registered with email: john.smith@email.com', '{"customer_id": 51, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "John Smith", "customer_email": "john.smith@email.com"}', 't', '2025-07-30 13:33:40.7515');
 INSERT INTO "public"."admin_notifications" VALUES (3, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "Atomic Habits" by Mohibul Islam Sawrav.', '{"rating": 5.0, "book_id": 2, "comment": "great book", "review_id": 19, "book_title": "Atomic Habits", "customer_id": 3, "review_date": "2025-07-30T00:17:11.266516", "customer_name": "Mohibul Islam Sawrav", "customer_email": "2205018@ugrad.cse.buet.ac.bd"}', 't', '2025-07-30 00:17:11.266516');
 INSERT INTO "public"."admin_notifications" VALUES (2, NULL, 'new_signup', 'New User Registration', 'A new user "Neymar" has registered with email: 2205666@ugrad.cse.buet.ac.bd', '{"customer_id": 11, "signup_date": "2025-07-24T02:48:10.804728", "customer_name": "Neymar", "customer_email": "2205666@ugrad.cse.buet.ac.bd"}', 't', '2025-07-24 02:48:10.804728');
 INSERT INTO "public"."admin_notifications" VALUES (4, NULL, 'review_deleted', 'Review Deleted', 'A 5.0-star review for "Atomic Habits" by Mohibul Islam Sawrav has been deleted.', '{"rating": 5.0, "book_id": 2, "comment": "great book", "review_id": 19, "book_title": "Atomic Habits", "customer_id": 3, "deleted_date": "2025-07-30T00:26:31.220061+06:00", "customer_name": "Mohibul Islam Sawrav", "customer_email": "2205018@ugrad.cse.buet.ac.bd"}', 't', '2025-07-30 00:26:31.220061');
@@ -356,74 +346,74 @@ INSERT INTO "public"."admin_notifications" VALUES (5, NULL, 'new_review', 'New B
 INSERT INTO "public"."admin_notifications" VALUES (6, NULL, 'review_deleted', 'Review Deleted', 'A 5.0-star review for "A Promised Land" by Mohibul Islam Sawrav has been deleted.', '{"rating": 5.0, "book_id": 4, "comment": "great book", "review_id": 20, "book_title": "A Promised Land", "customer_id": 3, "deleted_date": "2025-07-30T00:31:57.240357+06:00", "customer_name": "Mohibul Islam Sawrav", "customer_email": "2205018@ugrad.cse.buet.ac.bd"}', 't', '2025-07-30 00:31:57.240357');
 INSERT INTO "public"."admin_notifications" VALUES (7, NULL, 'review_deleted', 'Review Deleted', 'A 5.0-star review for "Harry Potter" by Mohibul Islam Sawrav has been deleted.', '{"rating": 5.0, "book_id": 14, "comment": "Best Fantasy Book I have read ever!!", "review_id": 16, "book_title": "Harry Potter", "customer_id": 3, "deleted_date": "2025-07-30T01:21:42.595752+06:00", "customer_name": "Mohibul Islam Sawrav", "customer_email": "2205018@ugrad.cse.buet.ac.bd"}', 't', '2025-07-30 01:21:42.595752');
 INSERT INTO "public"."admin_notifications" VALUES (8, NULL, 'payment_received', 'Payment Received', 'Received payment of $17.00 for Order #34 via Cash On Delivery from "Mohibul Islam Sawrav"', '{"amount": 17.00, "order_id": 34, "customer_id": 3, "payment_date": "2025-07-30T11:10:57.705865", "customer_name": "Mohibul Islam Sawrav", "customer_email": "2205018@ugrad.cse.buet.ac.bd", "payment_method": "Cash On Delivery"}', 't', '2025-07-30 11:10:57.705865');
-INSERT INTO "public"."admin_notifications" VALUES (9, NULL, 'new_signup', 'New User Registration', 'A new user "John Smith" has registered with email: john.smith@email.com', '{"customer_id": 51, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "John Smith", "customer_email": "john.smith@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (10, NULL, 'new_signup', 'New User Registration', 'A new user "Sarah Johnson" has registered with email: sarah.johnson@email.com', '{"customer_id": 52, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Sarah Johnson", "customer_email": "sarah.johnson@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (11, NULL, 'new_signup', 'New User Registration', 'A new user "Michael Brown" has registered with email: michael.brown@email.com', '{"customer_id": 53, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Michael Brown", "customer_email": "michael.brown@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (12, NULL, 'new_signup', 'New User Registration', 'A new user "Emily Davis" has registered with email: emily.davis@email.com', '{"customer_id": 54, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Emily Davis", "customer_email": "emily.davis@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (13, NULL, 'new_signup', 'New User Registration', 'A new user "David Wilson" has registered with email: david.wilson@email.com', '{"customer_id": 55, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "David Wilson", "customer_email": "david.wilson@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (14, NULL, 'new_signup', 'New User Registration', 'A new user "Jessica Miller" has registered with email: jessica.miller@email.com', '{"customer_id": 56, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Jessica Miller", "customer_email": "jessica.miller@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (15, NULL, 'new_signup', 'New User Registration', 'A new user "Christopher Garcia" has registered with email: christopher.garcia@email.com', '{"customer_id": 57, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Christopher Garcia", "customer_email": "christopher.garcia@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (16, NULL, 'new_signup', 'New User Registration', 'A new user "Amanda Martinez" has registered with email: amanda.martinez@email.com', '{"customer_id": 58, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Amanda Martinez", "customer_email": "amanda.martinez@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (17, NULL, 'new_signup', 'New User Registration', 'A new user "Matthew Rodriguez" has registered with email: matthew.rodriguez@email.com', '{"customer_id": 59, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Matthew Rodriguez", "customer_email": "matthew.rodriguez@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (18, NULL, 'new_signup', 'New User Registration', 'A new user "Ashley Lopez" has registered with email: ashley.lopez@email.com', '{"customer_id": 60, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Ashley Lopez", "customer_email": "ashley.lopez@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (19, NULL, 'new_signup', 'New User Registration', 'A new user "Joshua Gonzalez" has registered with email: joshua.gonzalez@email.com', '{"customer_id": 61, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Joshua Gonzalez", "customer_email": "joshua.gonzalez@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (20, NULL, 'new_signup', 'New User Registration', 'A new user "Nicole Wilson" has registered with email: nicole.wilson@email.com', '{"customer_id": 62, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Nicole Wilson", "customer_email": "nicole.wilson@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (21, NULL, 'new_signup', 'New User Registration', 'A new user "Daniel Anderson" has registered with email: daniel.anderson@email.com', '{"customer_id": 63, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Daniel Anderson", "customer_email": "daniel.anderson@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (22, NULL, 'new_signup', 'New User Registration', 'A new user "Stephanie Thomas" has registered with email: stephanie.thomas@email.com', '{"customer_id": 64, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Stephanie Thomas", "customer_email": "stephanie.thomas@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (23, NULL, 'new_signup', 'New User Registration', 'A new user "Ryan Jackson" has registered with email: ryan.jackson@email.com', '{"customer_id": 65, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Ryan Jackson", "customer_email": "ryan.jackson@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (24, NULL, 'new_signup', 'New User Registration', 'A new user "Michelle White" has registered with email: michelle.white@email.com', '{"customer_id": 66, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Michelle White", "customer_email": "michelle.white@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (25, NULL, 'new_signup', 'New User Registration', 'A new user "Kevin Harris" has registered with email: kevin.harris@email.com', '{"customer_id": 67, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Kevin Harris", "customer_email": "kevin.harris@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (26, NULL, 'new_signup', 'New User Registration', 'A new user "Lisa Martin" has registered with email: lisa.martin@email.com', '{"customer_id": 68, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Lisa Martin", "customer_email": "lisa.martin@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (27, NULL, 'new_signup', 'New User Registration', 'A new user "Jason Thompson" has registered with email: jason.thompson@email.com', '{"customer_id": 69, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Jason Thompson", "customer_email": "jason.thompson@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (28, NULL, 'new_signup', 'New User Registration', 'A new user "Laura Garcia" has registered with email: laura.garcia@email.com', '{"customer_id": 70, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Laura Garcia", "customer_email": "laura.garcia@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (29, NULL, 'new_signup', 'New User Registration', 'A new user "Andrew Martinez" has registered with email: andrew.martinez@email.com', '{"customer_id": 71, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Andrew Martinez", "customer_email": "andrew.martinez@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (30, NULL, 'new_signup', 'New User Registration', 'A new user "Crystal Robinson" has registered with email: crystal.robinson@email.com', '{"customer_id": 72, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Crystal Robinson", "customer_email": "crystal.robinson@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (31, NULL, 'new_signup', 'New User Registration', 'A new user "Brian Clark" has registered with email: brian.clark@email.com', '{"customer_id": 73, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Brian Clark", "customer_email": "brian.clark@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (32, NULL, 'new_signup', 'New User Registration', 'A new user "Jennifer Rodriguez" has registered with email: jennifer.rodriguez@email.com', '{"customer_id": 74, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Jennifer Rodriguez", "customer_email": "jennifer.rodriguez@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (33, NULL, 'new_signup', 'New User Registration', 'A new user "Tyler Lewis" has registered with email: tyler.lewis@email.com', '{"customer_id": 75, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Tyler Lewis", "customer_email": "tyler.lewis@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (34, NULL, 'new_signup', 'New User Registration', 'A new user "Karen Lee" has registered with email: karen.lee@email.com', '{"customer_id": 76, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Karen Lee", "customer_email": "karen.lee@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (35, NULL, 'new_signup', 'New User Registration', 'A new user "Adam Walker" has registered with email: adam.walker@email.com', '{"customer_id": 77, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Adam Walker", "customer_email": "adam.walker@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (36, NULL, 'new_signup', 'New User Registration', 'A new user "Maria Hall" has registered with email: maria.hall@email.com', '{"customer_id": 78, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Maria Hall", "customer_email": "maria.hall@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (37, NULL, 'new_signup', 'New User Registration', 'A new user "Mark Allen" has registered with email: mark.allen@email.com', '{"customer_id": 79, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Mark Allen", "customer_email": "mark.allen@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (38, NULL, 'new_signup', 'New User Registration', 'A new user "Janet Young" has registered with email: janet.young@email.com', '{"customer_id": 80, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Janet Young", "customer_email": "janet.young@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (39, NULL, 'new_signup', 'New User Registration', 'A new user "Scott King" has registered with email: scott.king@email.com', '{"customer_id": 81, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Scott King", "customer_email": "scott.king@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (40, NULL, 'new_signup', 'New User Registration', 'A new user "Donna Wright" has registered with email: donna.wright@email.com', '{"customer_id": 82, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Donna Wright", "customer_email": "donna.wright@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (41, NULL, 'new_signup', 'New User Registration', 'A new user "Gary Lopez" has registered with email: gary.lopez@email.com', '{"customer_id": 83, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Gary Lopez", "customer_email": "gary.lopez@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (42, NULL, 'new_signup', 'New User Registration', 'A new user "Carolyn Hill" has registered with email: carolyn.hill@email.com', '{"customer_id": 84, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Carolyn Hill", "customer_email": "carolyn.hill@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (43, NULL, 'new_signup', 'New User Registration', 'A new user "Timothy Green" has registered with email: timothy.green@email.com', '{"customer_id": 85, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Timothy Green", "customer_email": "timothy.green@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (44, NULL, 'new_signup', 'New User Registration', 'A new user "Sharon Adams" has registered with email: sharon.adams@email.com', '{"customer_id": 86, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Sharon Adams", "customer_email": "sharon.adams@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (45, NULL, 'new_signup', 'New User Registration', 'A new user "Steven Baker" has registered with email: steven.baker@email.com', '{"customer_id": 87, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Steven Baker", "customer_email": "steven.baker@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (46, NULL, 'new_signup', 'New User Registration', 'A new user "Kimberly Gonzalez" has registered with email: kimberly.gonzalez@email.com', '{"customer_id": 88, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Kimberly Gonzalez", "customer_email": "kimberly.gonzalez@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (47, NULL, 'new_signup', 'New User Registration', 'A new user "Anthony Nelson" has registered with email: anthony.nelson@email.com', '{"customer_id": 89, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Anthony Nelson", "customer_email": "anthony.nelson@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (48, NULL, 'new_signup', 'New User Registration', 'A new user "Lisa Carter" has registered with email: lisa.carter@email.com', '{"customer_id": 90, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Lisa Carter", "customer_email": "lisa.carter@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (49, NULL, 'new_signup', 'New User Registration', 'A new user "Paul Mitchell" has registered with email: paul.mitchell@email.com', '{"customer_id": 91, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Paul Mitchell", "customer_email": "paul.mitchell@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (50, NULL, 'new_signup', 'New User Registration', 'A new user "Helen Perez" has registered with email: helen.perez@email.com', '{"customer_id": 92, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Helen Perez", "customer_email": "helen.perez@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (51, NULL, 'new_signup', 'New User Registration', 'A new user "Kenneth Roberts" has registered with email: kenneth.roberts@email.com', '{"customer_id": 93, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Kenneth Roberts", "customer_email": "kenneth.roberts@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (52, NULL, 'new_signup', 'New User Registration', 'A new user "Dorothy Turner" has registered with email: dorothy.turner@email.com', '{"customer_id": 94, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Dorothy Turner", "customer_email": "dorothy.turner@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (53, NULL, 'new_signup', 'New User Registration', 'A new user "Edward Phillips" has registered with email: edward.phillips@email.com', '{"customer_id": 95, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Edward Phillips", "customer_email": "edward.phillips@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (54, NULL, 'new_signup', 'New User Registration', 'A new user "Betty Campbell" has registered with email: betty.campbell@email.com', '{"customer_id": 96, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Betty Campbell", "customer_email": "betty.campbell@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (55, NULL, 'new_signup', 'New User Registration', 'A new user "Ronald Parker" has registered with email: ronald.parker@email.com', '{"customer_id": 97, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Ronald Parker", "customer_email": "ronald.parker@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (56, NULL, 'new_signup', 'New User Registration', 'A new user "Sandra Evans" has registered with email: sandra.evans@email.com', '{"customer_id": 98, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Sandra Evans", "customer_email": "sandra.evans@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (57, NULL, 'new_signup', 'New User Registration', 'A new user "Jerry Edwards" has registered with email: jerry.edwards@email.com', '{"customer_id": 99, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Jerry Edwards", "customer_email": "jerry.edwards@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (58, NULL, 'new_signup', 'New User Registration', 'A new user "Nancy Collins" has registered with email: nancy.collins@email.com', '{"customer_id": 100, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Nancy Collins", "customer_email": "nancy.collins@email.com"}', 'f', '2025-07-30 13:33:40.7515');
-INSERT INTO "public"."admin_notifications" VALUES (59, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "The Night Circus" by John Smith.', '{"rating": 5.0, "book_id": 103, "comment": "Insightful and practical guide to habit formation. Changed my routine for the better!", "review_id": 24, "book_title": "The Night Circus", "customer_id": 51, "review_date": "2025-07-01T14:22:10", "customer_name": "John Smith", "customer_email": "john.smith@email.com"}', 'f', '2025-07-30 13:34:08.369729');
-INSERT INTO "public"."admin_notifications" VALUES (60, NULL, 'new_review', 'New Book Review', 'A new 4.0-star review has been submitted for "Where the Crawdads Sing" by Sarah Johnson.', '{"rating": 4.0, "book_id": 104, "comment": "Well written, easy to follow. Some repetitive sections though.", "review_id": 25, "book_title": "Where the Crawdads Sing", "customer_id": 52, "review_date": "2025-06-15T10:05:30", "customer_name": "Sarah Johnson", "customer_email": "sarah.johnson@email.com"}', 'f', '2025-07-30 13:34:08.369729');
-INSERT INTO "public"."admin_notifications" VALUES (61, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "Dune" by Michael Brown.', '{"rating": 5.0, "book_id": 105, "comment": "Life-changing book with actionable advice. Highly recommend!", "review_id": 26, "book_title": "Dune", "customer_id": 53, "review_date": "2025-07-22T09:30:45", "customer_name": "Michael Brown", "customer_email": "michael.brown@email.com"}', 'f', '2025-07-30 13:34:08.369729');
-INSERT INTO "public"."admin_notifications" VALUES (62, NULL, 'new_review', 'New Book Review', 'A new 4.0-star review has been submitted for "Dune" by Emily Davis.', '{"rating": 4.0, "book_id": 105, "comment": "Good introduction to personal finance, but a bit anecdotal.", "review_id": 27, "book_title": "Dune", "customer_id": 54, "review_date": "2025-05-12T16:45:00", "customer_name": "Emily Davis", "customer_email": "emily.davis@email.com"}', 'f', '2025-07-30 13:34:08.398102');
-INSERT INTO "public"."admin_notifications" VALUES (63, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "Thinking, Fast and Slow" by David Wilson.', '{"rating": 5.0, "book_id": 106, "comment": "Excellent concepts on money mindset. Inspired me to invest.", "review_id": 28, "book_title": "Thinking, Fast and Slow", "customer_id": 55, "review_date": "2025-07-10T11:20:00", "customer_name": "David Wilson", "customer_email": "david.wilson@email.com"}', 'f', '2025-07-30 13:34:08.398102');
-INSERT INTO "public"."admin_notifications" VALUES (64, NULL, 'new_review', 'New Book Review', 'A new 3.5-star review has been submitted for "Circe" by Christopher Garcia.', '{"rating": 3.5, "book_id": 108, "comment": "Valuable points but some ideas feel outdated.", "review_id": 29, "book_title": "Circe", "customer_id": 57, "review_date": "2025-07-25T18:35:20", "customer_name": "Christopher Garcia", "customer_email": "christopher.garcia@email.com"}', 'f', '2025-07-30 13:34:08.398102');
-INSERT INTO "public"."admin_notifications" VALUES (65, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "The Power of Habit" by Amanda Martinez.', '{"rating": 5.0, "book_id": 109, "comment": "Fascinating overview of human history. A must-read for everyone.", "review_id": 30, "book_title": "The Power of Habit", "customer_id": 58, "review_date": "2025-06-01T13:00:00", "customer_name": "Amanda Martinez", "customer_email": "amanda.martinez@email.com"}', 'f', '2025-07-30 13:34:08.40678');
-INSERT INTO "public"."admin_notifications" VALUES (66, NULL, 'new_review', 'New Book Review', 'A new 4.5-star review has been submitted for "The Power of Habit" by Matthew Rodriguez.', '{"rating": 4.5, "book_id": 109, "comment": "Very engaging and thought-provoking.", "review_id": 31, "book_title": "The Power of Habit", "customer_id": 59, "review_date": "2025-07-05T15:23:45", "customer_name": "Matthew Rodriguez", "customer_email": "matthew.rodriguez@email.com"}', 'f', '2025-07-30 13:34:08.40678');
-INSERT INTO "public"."admin_notifications" VALUES (67, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "The Power of Habit" by Ashley Lopez.', '{"rating": 5.0, "book_id": 109, "comment": "Eye-opening book with deep insights into our origins.", "review_id": 32, "book_title": "The Power of Habit", "customer_id": 60, "review_date": "2025-07-20T12:10:30", "customer_name": "Ashley Lopez", "customer_email": "ashley.lopez@email.com"}', 'f', '2025-07-30 13:34:08.40678');
-INSERT INTO "public"."admin_notifications" VALUES (68, NULL, 'new_review', 'New Book Review', 'A new 4.0-star review has been submitted for "The Subtle Art of Not Giving a F*ck" by Joshua Gonzalez.', '{"rating": 4.0, "book_id": 110, "comment": "Beautiful philosophy and inspiring stories; helped me find purpose.", "review_id": 33, "book_title": "The Subtle Art of Not Giving a F*ck", "customer_id": 61, "review_date": "2025-06-18T08:45:50", "customer_name": "Joshua Gonzalez", "customer_email": "joshua.gonzalez@email.com"}', 'f', '2025-07-30 13:34:08.410052');
-INSERT INTO "public"."admin_notifications" VALUES (69, NULL, 'new_review', 'New Book Review', 'A new 3.0-star review has been submitted for "The Subtle Art of Not Giving a F*ck" by Nicole Wilson.', '{"rating": 3.0, "book_id": 110, "comment": "Interesting cultural insights but some chapters felt slow.", "review_id": 34, "book_title": "The Subtle Art of Not Giving a F*ck", "customer_id": 62, "review_date": "2025-07-12T10:00:00", "customer_name": "Nicole Wilson", "customer_email": "nicole.wilson@email.com"}', 'f', '2025-07-30 13:34:08.410052');
-INSERT INTO "public"."admin_notifications" VALUES (70, NULL, 'new_review', 'New Book Review', 'A new 4.0-star review has been submitted for "The Subtle Art of Not Giving a F*ck" by Daniel Anderson.', '{"rating": 4.0, "book_id": 110, "comment": "A calming read that encourages mindfulness and joy.", "review_id": 35, "book_title": "The Subtle Art of Not Giving a F*ck", "customer_id": 63, "review_date": "2025-07-28T14:55:15", "customer_name": "Daniel Anderson", "customer_email": "daniel.anderson@email.com"}', 'f', '2025-07-30 13:34:08.410052');
-INSERT INTO "public"."admin_notifications" VALUES (71, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "Normal People" by Stephanie Thomas.', '{"rating": 5.0, "book_id": 111, "comment": "Excellent read on how money psychology affects financial decisions.", "review_id": 36, "book_title": "Normal People", "customer_id": 64, "review_date": "2025-07-01T14:00:00", "customer_name": "Stephanie Thomas", "customer_email": "stephanie.thomas@email.com"}', 'f', '2025-07-30 13:34:08.414406');
-INSERT INTO "public"."admin_notifications" VALUES (72, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "Normal People" by Ryan Jackson.', '{"rating": 5.0, "book_id": 111, "comment": "Practical lessons combined with engaging anecdotes.", "review_id": 37, "book_title": "Normal People", "customer_id": 65, "review_date": "2025-07-15T09:20:10", "customer_name": "Ryan Jackson", "customer_email": "ryan.jackson@email.com"}', 'f', '2025-07-30 13:34:08.414406');
-INSERT INTO "public"."admin_notifications" VALUES (73, NULL, 'new_review', 'New Book Review', 'A new 4.5-star review has been submitted for "Normal People" by Michelle White.', '{"rating": 4.5, "book_id": 111, "comment": "Made me rethink my approach to saving and investing.", "review_id": 38, "book_title": "Normal People", "customer_id": 66, "review_date": "2025-07-29T17:40:00", "customer_name": "Michelle White", "customer_email": "michelle.white@email.com"}', 'f', '2025-07-30 13:34:08.414406');
-INSERT INTO "public"."admin_notifications" VALUES (74, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "Born a Crime" by Kevin Harris.', '{"rating": 5.0, "book_id": 113, "comment": "The definitive guide for algorithms; dense but very thorough.", "review_id": 39, "book_title": "Born a Crime", "customer_id": 67, "review_date": "2025-06-05T13:30:00", "customer_name": "Kevin Harris", "customer_email": "kevin.harris@email.com"}', 'f', '2025-07-30 13:34:08.418019');
-INSERT INTO "public"."admin_notifications" VALUES (75, NULL, 'new_review', 'New Book Review', 'A new 4.5-star review has been submitted for "Born a Crime" by Lisa Martin.', '{"rating": 4.5, "book_id": 113, "comment": "Clear explanations and excellent examples for competitive programmers.", "review_id": 40, "book_title": "Born a Crime", "customer_id": 68, "review_date": "2025-07-09T11:00:00", "customer_name": "Lisa Martin", "customer_email": "lisa.martin@email.com"}', 'f', '2025-07-30 13:34:08.418019');
-INSERT INTO "public"."admin_notifications" VALUES (76, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "Born a Crime" by Jason Thompson.', '{"rating": 5.0, "book_id": 113, "comment": "A must-have reference book for computer science students.", "review_id": 41, "book_title": "Born a Crime", "customer_id": 69, "review_date": "2025-07-25T13:45:20", "customer_name": "Jason Thompson", "customer_email": "jason.thompson@email.com"}', 'f', '2025-07-30 13:34:08.418019');
+INSERT INTO "public"."admin_notifications" VALUES (10, NULL, 'new_signup', 'New User Registration', 'A new user "Sarah Johnson" has registered with email: sarah.johnson@email.com', '{"customer_id": 52, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Sarah Johnson", "customer_email": "sarah.johnson@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (11, NULL, 'new_signup', 'New User Registration', 'A new user "Michael Brown" has registered with email: michael.brown@email.com', '{"customer_id": 53, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Michael Brown", "customer_email": "michael.brown@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (12, NULL, 'new_signup', 'New User Registration', 'A new user "Emily Davis" has registered with email: emily.davis@email.com', '{"customer_id": 54, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Emily Davis", "customer_email": "emily.davis@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (13, NULL, 'new_signup', 'New User Registration', 'A new user "David Wilson" has registered with email: david.wilson@email.com', '{"customer_id": 55, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "David Wilson", "customer_email": "david.wilson@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (14, NULL, 'new_signup', 'New User Registration', 'A new user "Jessica Miller" has registered with email: jessica.miller@email.com', '{"customer_id": 56, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Jessica Miller", "customer_email": "jessica.miller@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (15, NULL, 'new_signup', 'New User Registration', 'A new user "Christopher Garcia" has registered with email: christopher.garcia@email.com', '{"customer_id": 57, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Christopher Garcia", "customer_email": "christopher.garcia@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (16, NULL, 'new_signup', 'New User Registration', 'A new user "Amanda Martinez" has registered with email: amanda.martinez@email.com', '{"customer_id": 58, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Amanda Martinez", "customer_email": "amanda.martinez@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (17, NULL, 'new_signup', 'New User Registration', 'A new user "Matthew Rodriguez" has registered with email: matthew.rodriguez@email.com', '{"customer_id": 59, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Matthew Rodriguez", "customer_email": "matthew.rodriguez@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (18, NULL, 'new_signup', 'New User Registration', 'A new user "Ashley Lopez" has registered with email: ashley.lopez@email.com', '{"customer_id": 60, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Ashley Lopez", "customer_email": "ashley.lopez@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (19, NULL, 'new_signup', 'New User Registration', 'A new user "Joshua Gonzalez" has registered with email: joshua.gonzalez@email.com', '{"customer_id": 61, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Joshua Gonzalez", "customer_email": "joshua.gonzalez@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (20, NULL, 'new_signup', 'New User Registration', 'A new user "Nicole Wilson" has registered with email: nicole.wilson@email.com', '{"customer_id": 62, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Nicole Wilson", "customer_email": "nicole.wilson@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (21, NULL, 'new_signup', 'New User Registration', 'A new user "Daniel Anderson" has registered with email: daniel.anderson@email.com', '{"customer_id": 63, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Daniel Anderson", "customer_email": "daniel.anderson@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (22, NULL, 'new_signup', 'New User Registration', 'A new user "Stephanie Thomas" has registered with email: stephanie.thomas@email.com', '{"customer_id": 64, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Stephanie Thomas", "customer_email": "stephanie.thomas@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (23, NULL, 'new_signup', 'New User Registration', 'A new user "Ryan Jackson" has registered with email: ryan.jackson@email.com', '{"customer_id": 65, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Ryan Jackson", "customer_email": "ryan.jackson@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (24, NULL, 'new_signup', 'New User Registration', 'A new user "Michelle White" has registered with email: michelle.white@email.com', '{"customer_id": 66, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Michelle White", "customer_email": "michelle.white@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (25, NULL, 'new_signup', 'New User Registration', 'A new user "Kevin Harris" has registered with email: kevin.harris@email.com', '{"customer_id": 67, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Kevin Harris", "customer_email": "kevin.harris@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (26, NULL, 'new_signup', 'New User Registration', 'A new user "Lisa Martin" has registered with email: lisa.martin@email.com', '{"customer_id": 68, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Lisa Martin", "customer_email": "lisa.martin@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (27, NULL, 'new_signup', 'New User Registration', 'A new user "Jason Thompson" has registered with email: jason.thompson@email.com', '{"customer_id": 69, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Jason Thompson", "customer_email": "jason.thompson@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (28, NULL, 'new_signup', 'New User Registration', 'A new user "Laura Garcia" has registered with email: laura.garcia@email.com', '{"customer_id": 70, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Laura Garcia", "customer_email": "laura.garcia@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (29, NULL, 'new_signup', 'New User Registration', 'A new user "Andrew Martinez" has registered with email: andrew.martinez@email.com', '{"customer_id": 71, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Andrew Martinez", "customer_email": "andrew.martinez@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (30, NULL, 'new_signup', 'New User Registration', 'A new user "Crystal Robinson" has registered with email: crystal.robinson@email.com', '{"customer_id": 72, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Crystal Robinson", "customer_email": "crystal.robinson@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (31, NULL, 'new_signup', 'New User Registration', 'A new user "Brian Clark" has registered with email: brian.clark@email.com', '{"customer_id": 73, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Brian Clark", "customer_email": "brian.clark@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (32, NULL, 'new_signup', 'New User Registration', 'A new user "Jennifer Rodriguez" has registered with email: jennifer.rodriguez@email.com', '{"customer_id": 74, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Jennifer Rodriguez", "customer_email": "jennifer.rodriguez@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (33, NULL, 'new_signup', 'New User Registration', 'A new user "Tyler Lewis" has registered with email: tyler.lewis@email.com', '{"customer_id": 75, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Tyler Lewis", "customer_email": "tyler.lewis@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (34, NULL, 'new_signup', 'New User Registration', 'A new user "Karen Lee" has registered with email: karen.lee@email.com', '{"customer_id": 76, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Karen Lee", "customer_email": "karen.lee@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (35, NULL, 'new_signup', 'New User Registration', 'A new user "Adam Walker" has registered with email: adam.walker@email.com', '{"customer_id": 77, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Adam Walker", "customer_email": "adam.walker@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (36, NULL, 'new_signup', 'New User Registration', 'A new user "Maria Hall" has registered with email: maria.hall@email.com', '{"customer_id": 78, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Maria Hall", "customer_email": "maria.hall@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (37, NULL, 'new_signup', 'New User Registration', 'A new user "Mark Allen" has registered with email: mark.allen@email.com', '{"customer_id": 79, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Mark Allen", "customer_email": "mark.allen@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (38, NULL, 'new_signup', 'New User Registration', 'A new user "Janet Young" has registered with email: janet.young@email.com', '{"customer_id": 80, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Janet Young", "customer_email": "janet.young@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (39, NULL, 'new_signup', 'New User Registration', 'A new user "Scott King" has registered with email: scott.king@email.com', '{"customer_id": 81, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Scott King", "customer_email": "scott.king@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (40, NULL, 'new_signup', 'New User Registration', 'A new user "Donna Wright" has registered with email: donna.wright@email.com', '{"customer_id": 82, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Donna Wright", "customer_email": "donna.wright@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (41, NULL, 'new_signup', 'New User Registration', 'A new user "Gary Lopez" has registered with email: gary.lopez@email.com', '{"customer_id": 83, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Gary Lopez", "customer_email": "gary.lopez@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (42, NULL, 'new_signup', 'New User Registration', 'A new user "Carolyn Hill" has registered with email: carolyn.hill@email.com', '{"customer_id": 84, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Carolyn Hill", "customer_email": "carolyn.hill@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (43, NULL, 'new_signup', 'New User Registration', 'A new user "Timothy Green" has registered with email: timothy.green@email.com', '{"customer_id": 85, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Timothy Green", "customer_email": "timothy.green@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (44, NULL, 'new_signup', 'New User Registration', 'A new user "Sharon Adams" has registered with email: sharon.adams@email.com', '{"customer_id": 86, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Sharon Adams", "customer_email": "sharon.adams@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (45, NULL, 'new_signup', 'New User Registration', 'A new user "Steven Baker" has registered with email: steven.baker@email.com', '{"customer_id": 87, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Steven Baker", "customer_email": "steven.baker@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (46, NULL, 'new_signup', 'New User Registration', 'A new user "Kimberly Gonzalez" has registered with email: kimberly.gonzalez@email.com', '{"customer_id": 88, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Kimberly Gonzalez", "customer_email": "kimberly.gonzalez@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (47, NULL, 'new_signup', 'New User Registration', 'A new user "Anthony Nelson" has registered with email: anthony.nelson@email.com', '{"customer_id": 89, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Anthony Nelson", "customer_email": "anthony.nelson@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (48, NULL, 'new_signup', 'New User Registration', 'A new user "Lisa Carter" has registered with email: lisa.carter@email.com', '{"customer_id": 90, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Lisa Carter", "customer_email": "lisa.carter@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (49, NULL, 'new_signup', 'New User Registration', 'A new user "Paul Mitchell" has registered with email: paul.mitchell@email.com', '{"customer_id": 91, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Paul Mitchell", "customer_email": "paul.mitchell@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (50, NULL, 'new_signup', 'New User Registration', 'A new user "Helen Perez" has registered with email: helen.perez@email.com', '{"customer_id": 92, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Helen Perez", "customer_email": "helen.perez@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (51, NULL, 'new_signup', 'New User Registration', 'A new user "Kenneth Roberts" has registered with email: kenneth.roberts@email.com', '{"customer_id": 93, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Kenneth Roberts", "customer_email": "kenneth.roberts@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (52, NULL, 'new_signup', 'New User Registration', 'A new user "Dorothy Turner" has registered with email: dorothy.turner@email.com', '{"customer_id": 94, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Dorothy Turner", "customer_email": "dorothy.turner@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (53, NULL, 'new_signup', 'New User Registration', 'A new user "Edward Phillips" has registered with email: edward.phillips@email.com', '{"customer_id": 95, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Edward Phillips", "customer_email": "edward.phillips@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (54, NULL, 'new_signup', 'New User Registration', 'A new user "Betty Campbell" has registered with email: betty.campbell@email.com', '{"customer_id": 96, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Betty Campbell", "customer_email": "betty.campbell@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (55, NULL, 'new_signup', 'New User Registration', 'A new user "Ronald Parker" has registered with email: ronald.parker@email.com', '{"customer_id": 97, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Ronald Parker", "customer_email": "ronald.parker@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (56, NULL, 'new_signup', 'New User Registration', 'A new user "Sandra Evans" has registered with email: sandra.evans@email.com', '{"customer_id": 98, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Sandra Evans", "customer_email": "sandra.evans@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (57, NULL, 'new_signup', 'New User Registration', 'A new user "Jerry Edwards" has registered with email: jerry.edwards@email.com', '{"customer_id": 99, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Jerry Edwards", "customer_email": "jerry.edwards@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (58, NULL, 'new_signup', 'New User Registration', 'A new user "Nancy Collins" has registered with email: nancy.collins@email.com', '{"customer_id": 100, "signup_date": "2025-07-30T13:33:40.7515", "customer_name": "Nancy Collins", "customer_email": "nancy.collins@email.com"}', 't', '2025-07-30 13:33:40.7515');
+INSERT INTO "public"."admin_notifications" VALUES (59, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "The Night Circus" by John Smith.', '{"rating": 5.0, "book_id": 103, "comment": "Insightful and practical guide to habit formation. Changed my routine for the better!", "review_id": 24, "book_title": "The Night Circus", "customer_id": 51, "review_date": "2025-07-01T14:22:10", "customer_name": "John Smith", "customer_email": "john.smith@email.com"}', 't', '2025-07-30 13:34:08.369729');
+INSERT INTO "public"."admin_notifications" VALUES (60, NULL, 'new_review', 'New Book Review', 'A new 4.0-star review has been submitted for "Where the Crawdads Sing" by Sarah Johnson.', '{"rating": 4.0, "book_id": 104, "comment": "Well written, easy to follow. Some repetitive sections though.", "review_id": 25, "book_title": "Where the Crawdads Sing", "customer_id": 52, "review_date": "2025-06-15T10:05:30", "customer_name": "Sarah Johnson", "customer_email": "sarah.johnson@email.com"}', 't', '2025-07-30 13:34:08.369729');
+INSERT INTO "public"."admin_notifications" VALUES (61, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "Dune" by Michael Brown.', '{"rating": 5.0, "book_id": 105, "comment": "Life-changing book with actionable advice. Highly recommend!", "review_id": 26, "book_title": "Dune", "customer_id": 53, "review_date": "2025-07-22T09:30:45", "customer_name": "Michael Brown", "customer_email": "michael.brown@email.com"}', 't', '2025-07-30 13:34:08.369729');
+INSERT INTO "public"."admin_notifications" VALUES (62, NULL, 'new_review', 'New Book Review', 'A new 4.0-star review has been submitted for "Dune" by Emily Davis.', '{"rating": 4.0, "book_id": 105, "comment": "Good introduction to personal finance, but a bit anecdotal.", "review_id": 27, "book_title": "Dune", "customer_id": 54, "review_date": "2025-05-12T16:45:00", "customer_name": "Emily Davis", "customer_email": "emily.davis@email.com"}', 't', '2025-07-30 13:34:08.398102');
+INSERT INTO "public"."admin_notifications" VALUES (63, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "Thinking, Fast and Slow" by David Wilson.', '{"rating": 5.0, "book_id": 106, "comment": "Excellent concepts on money mindset. Inspired me to invest.", "review_id": 28, "book_title": "Thinking, Fast and Slow", "customer_id": 55, "review_date": "2025-07-10T11:20:00", "customer_name": "David Wilson", "customer_email": "david.wilson@email.com"}', 't', '2025-07-30 13:34:08.398102');
+INSERT INTO "public"."admin_notifications" VALUES (64, NULL, 'new_review', 'New Book Review', 'A new 3.5-star review has been submitted for "Circe" by Christopher Garcia.', '{"rating": 3.5, "book_id": 108, "comment": "Valuable points but some ideas feel outdated.", "review_id": 29, "book_title": "Circe", "customer_id": 57, "review_date": "2025-07-25T18:35:20", "customer_name": "Christopher Garcia", "customer_email": "christopher.garcia@email.com"}', 't', '2025-07-30 13:34:08.398102');
+INSERT INTO "public"."admin_notifications" VALUES (65, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "The Power of Habit" by Amanda Martinez.', '{"rating": 5.0, "book_id": 109, "comment": "Fascinating overview of human history. A must-read for everyone.", "review_id": 30, "book_title": "The Power of Habit", "customer_id": 58, "review_date": "2025-06-01T13:00:00", "customer_name": "Amanda Martinez", "customer_email": "amanda.martinez@email.com"}', 't', '2025-07-30 13:34:08.40678');
+INSERT INTO "public"."admin_notifications" VALUES (66, NULL, 'new_review', 'New Book Review', 'A new 4.5-star review has been submitted for "The Power of Habit" by Matthew Rodriguez.', '{"rating": 4.5, "book_id": 109, "comment": "Very engaging and thought-provoking.", "review_id": 31, "book_title": "The Power of Habit", "customer_id": 59, "review_date": "2025-07-05T15:23:45", "customer_name": "Matthew Rodriguez", "customer_email": "matthew.rodriguez@email.com"}', 't', '2025-07-30 13:34:08.40678');
+INSERT INTO "public"."admin_notifications" VALUES (67, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "The Power of Habit" by Ashley Lopez.', '{"rating": 5.0, "book_id": 109, "comment": "Eye-opening book with deep insights into our origins.", "review_id": 32, "book_title": "The Power of Habit", "customer_id": 60, "review_date": "2025-07-20T12:10:30", "customer_name": "Ashley Lopez", "customer_email": "ashley.lopez@email.com"}', 't', '2025-07-30 13:34:08.40678');
+INSERT INTO "public"."admin_notifications" VALUES (68, NULL, 'new_review', 'New Book Review', 'A new 4.0-star review has been submitted for "The Subtle Art of Not Giving a F*ck" by Joshua Gonzalez.', '{"rating": 4.0, "book_id": 110, "comment": "Beautiful philosophy and inspiring stories; helped me find purpose.", "review_id": 33, "book_title": "The Subtle Art of Not Giving a F*ck", "customer_id": 61, "review_date": "2025-06-18T08:45:50", "customer_name": "Joshua Gonzalez", "customer_email": "joshua.gonzalez@email.com"}', 't', '2025-07-30 13:34:08.410052');
+INSERT INTO "public"."admin_notifications" VALUES (69, NULL, 'new_review', 'New Book Review', 'A new 3.0-star review has been submitted for "The Subtle Art of Not Giving a F*ck" by Nicole Wilson.', '{"rating": 3.0, "book_id": 110, "comment": "Interesting cultural insights but some chapters felt slow.", "review_id": 34, "book_title": "The Subtle Art of Not Giving a F*ck", "customer_id": 62, "review_date": "2025-07-12T10:00:00", "customer_name": "Nicole Wilson", "customer_email": "nicole.wilson@email.com"}', 't', '2025-07-30 13:34:08.410052');
+INSERT INTO "public"."admin_notifications" VALUES (70, NULL, 'new_review', 'New Book Review', 'A new 4.0-star review has been submitted for "The Subtle Art of Not Giving a F*ck" by Daniel Anderson.', '{"rating": 4.0, "book_id": 110, "comment": "A calming read that encourages mindfulness and joy.", "review_id": 35, "book_title": "The Subtle Art of Not Giving a F*ck", "customer_id": 63, "review_date": "2025-07-28T14:55:15", "customer_name": "Daniel Anderson", "customer_email": "daniel.anderson@email.com"}', 't', '2025-07-30 13:34:08.410052');
+INSERT INTO "public"."admin_notifications" VALUES (71, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "Normal People" by Stephanie Thomas.', '{"rating": 5.0, "book_id": 111, "comment": "Excellent read on how money psychology affects financial decisions.", "review_id": 36, "book_title": "Normal People", "customer_id": 64, "review_date": "2025-07-01T14:00:00", "customer_name": "Stephanie Thomas", "customer_email": "stephanie.thomas@email.com"}', 't', '2025-07-30 13:34:08.414406');
+INSERT INTO "public"."admin_notifications" VALUES (72, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "Normal People" by Ryan Jackson.', '{"rating": 5.0, "book_id": 111, "comment": "Practical lessons combined with engaging anecdotes.", "review_id": 37, "book_title": "Normal People", "customer_id": 65, "review_date": "2025-07-15T09:20:10", "customer_name": "Ryan Jackson", "customer_email": "ryan.jackson@email.com"}', 't', '2025-07-30 13:34:08.414406');
+INSERT INTO "public"."admin_notifications" VALUES (73, NULL, 'new_review', 'New Book Review', 'A new 4.5-star review has been submitted for "Normal People" by Michelle White.', '{"rating": 4.5, "book_id": 111, "comment": "Made me rethink my approach to saving and investing.", "review_id": 38, "book_title": "Normal People", "customer_id": 66, "review_date": "2025-07-29T17:40:00", "customer_name": "Michelle White", "customer_email": "michelle.white@email.com"}', 't', '2025-07-30 13:34:08.414406');
+INSERT INTO "public"."admin_notifications" VALUES (74, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "Born a Crime" by Kevin Harris.', '{"rating": 5.0, "book_id": 113, "comment": "The definitive guide for algorithms; dense but very thorough.", "review_id": 39, "book_title": "Born a Crime", "customer_id": 67, "review_date": "2025-06-05T13:30:00", "customer_name": "Kevin Harris", "customer_email": "kevin.harris@email.com"}', 't', '2025-07-30 13:34:08.418019');
+INSERT INTO "public"."admin_notifications" VALUES (75, NULL, 'new_review', 'New Book Review', 'A new 4.5-star review has been submitted for "Born a Crime" by Lisa Martin.', '{"rating": 4.5, "book_id": 113, "comment": "Clear explanations and excellent examples for competitive programmers.", "review_id": 40, "book_title": "Born a Crime", "customer_id": 68, "review_date": "2025-07-09T11:00:00", "customer_name": "Lisa Martin", "customer_email": "lisa.martin@email.com"}', 't', '2025-07-30 13:34:08.418019');
+INSERT INTO "public"."admin_notifications" VALUES (76, NULL, 'new_review', 'New Book Review', 'A new 5.0-star review has been submitted for "Born a Crime" by Jason Thompson.', '{"rating": 5.0, "book_id": 113, "comment": "A must-have reference book for computer science students.", "review_id": 41, "book_title": "Born a Crime", "customer_id": 69, "review_date": "2025-07-25T13:45:20", "customer_name": "Jason Thompson", "customer_email": "jason.thompson@email.com"}', 't', '2025-07-30 13:34:08.418019');
+INSERT INTO "public"."admin_notifications" VALUES (77, NULL, 'payment_received', 'Payment Received', 'Received payment of $17.00 for Order #35 via Online Banking from "Mohibul Islam Sawrav"', '{"amount": 17.00, "order_id": 35, "customer_id": 3, "payment_date": "2025-07-30T14:49:22.31648", "customer_name": "Mohibul Islam Sawrav", "customer_email": "2205018@ugrad.cse.buet.ac.bd", "payment_method": "Online Banking"}', 't', '2025-07-30 14:49:22.31648');
 
 -- ----------------------------
 -- Table structure for author
@@ -580,20 +570,6 @@ CREATE TABLE "public"."book_format" (
 -- ----------------------------
 
 -- ----------------------------
--- Table structure for book_recommendation
--- ----------------------------
-DROP TABLE IF EXISTS "public"."book_recommendation";
-CREATE TABLE "public"."book_recommendation" (
-  "recommendation_id" int4 NOT NULL,
-  "book_id" int4 NOT NULL
-)
-;
-
--- ----------------------------
--- Records of book_recommendation
--- ----------------------------
-
--- ----------------------------
 -- Table structure for book_sub_category
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."book_sub_category";
@@ -660,7 +636,7 @@ INSERT INTO "public"."cart" VALUES (20, NULL, '2025-07-30 11:12:18.647207', '202
 INSERT INTO "public"."cart" VALUES (21, NULL, '2025-07-30 11:12:18.915917', '2025-07-30 11:12:18.915917');
 INSERT INTO "public"."cart" VALUES (22, NULL, '2025-07-30 11:13:51.101115', '2025-07-30 11:13:51.101115');
 INSERT INTO "public"."cart" VALUES (23, NULL, '2025-07-30 11:13:51.241716', '2025-07-30 11:13:51.241716');
-INSERT INTO "public"."cart" VALUES (1, 3, '2025-07-05 18:32:03.173854', '2025-07-30 13:10:06.77868');
+INSERT INTO "public"."cart" VALUES (1, 3, '2025-07-05 18:32:03.173854', '2025-07-30 14:49:03.37065');
 INSERT INTO "public"."cart" VALUES (3, 6, '2025-07-15 20:59:54.891959', '2025-07-15 20:59:54.891959');
 INSERT INTO "public"."cart" VALUES (5, 9, '2025-07-23 13:49:44.794863', '2025-07-23 13:49:44.794863');
 INSERT INTO "public"."cart" VALUES (6, 10, '2025-07-24 02:40:22.280713', '2025-07-24 02:40:22.280713');
@@ -694,7 +670,6 @@ CREATE TABLE "public"."cart_item" (
 -- ----------------------------
 INSERT INTO "public"."cart_item" VALUES (80, 9, 14, 1, 2);
 INSERT INTO "public"."cart_item" VALUES (81, 13, 14, 1, 2);
-INSERT INTO "public"."cart_item" VALUES (86, 1, 2, 2, 2);
 
 -- ----------------------------
 -- Table structure for chat_message
@@ -757,6 +732,7 @@ CREATE TABLE "public"."customer" (
 -- ----------------------------
 -- Records of customer
 -- ----------------------------
+INSERT INTO "public"."customer" VALUES (3, 'Mohibul Islam Sawrav', '2205018@ugrad.cse.buet.ac.bd', '$2b$10$RfOVcY9RIcmrXJ3GZty4Oep21SVA3Kj2rY5wcYCen/6/SCF30hVki', '+8801864316100', 'Dhaka, Bangladesh', '2025-07-01 22:53:03.887927', '2025-07-27 01:12:39.477666', '2025-07-31 21:58:43.25025', 'customer', 't');
 INSERT INTO "public"."customer" VALUES (51, 'John Smith', 'john.smith@email.com', '$2b$10$aB3cD4eF5gH6iJ7kL8mN9oP0qR1sT2uV3wX4yZ5', '+1234567890', '123 Main St, New York, NY 10001', '2025-07-30 13:33:40.7515', '2025-07-30 13:33:40.7515', NULL, 'customer', 't');
 INSERT INTO "public"."customer" VALUES (52, 'Sarah Johnson', 'sarah.johnson@email.com', '$2b$10$bC4dE5fG6hI7jK8lM9nO0pQ1rS2tU3vW4xY5zA6', '+1234567891', '456 Oak Ave, Los Angeles, CA 90210', '2025-07-30 13:33:40.7515', '2025-07-30 13:33:40.7515', NULL, 'customer', 't');
 INSERT INTO "public"."customer" VALUES (53, 'Michael Brown', 'michael.brown@email.com', '$2b$10$cD5eF6gH7iJ8kL9mN0oP1qR2sT3uV4wX5yZ6aB7', '+1234567892', '789 Pine Rd, Chicago, IL 60601', '2025-07-30 13:33:40.7515', '2025-07-30 13:33:40.7515', NULL, 'customer', 't');
@@ -789,7 +765,6 @@ INSERT INTO "public"."customer" VALUES (7, 'saber', '2205017@ugrad.cse.buet.ac.b
 INSERT INTO "public"."customer" VALUES (72, 'Crystal Robinson', 'crystal.robinson@email.com', '$2b$10$vW4xY5zA6bC7dE8fG9hI0jK1lM2nO3pQ4rS5tU6', '+1234567811', '235 Cypress Ave, Seattle, WA 98101', '2025-07-30 13:33:40.7515', '2025-07-30 13:33:40.7515', NULL, 'customer', 't');
 INSERT INTO "public"."customer" VALUES (73, 'Brian Clark', 'brian.clark@email.com', '$2b$10$wX5yZ6aB7cD8eF9gH0iJ1kL2mN3oP4qR5sT6uV7', '+1234567812', '346 Palm St, Boston, MA 02101', '2025-07-30 13:33:40.7515', '2025-07-30 13:33:40.7515', NULL, 'customer', 't');
 INSERT INTO "public"."customer" VALUES (74, 'Jennifer Rodriguez', 'jennifer.rodriguez@email.com', '$2b$10$xY6zA7bC8dE9fG0hI1jK2lM3nO4pQ5rS6tU7vW8', '+1234567813', '457 Bamboo Rd, Nashville, TN 37201', '2025-07-30 13:33:40.7515', '2025-07-30 13:33:40.7515', NULL, 'customer', 't');
-INSERT INTO "public"."customer" VALUES (3, 'Mohibul Islam Sawrav', '2205018@ugrad.cse.buet.ac.bd', '$2b$10$RfOVcY9RIcmrXJ3GZty4Oep21SVA3Kj2rY5wcYCen/6/SCF30hVki', '+8801864316100', 'Dhaka, Bangladesh', '2025-07-01 22:53:03.887927', '2025-07-27 01:12:39.477666', '2025-07-30 13:52:44.364116', 'customer', 't');
 INSERT INTO "public"."customer" VALUES (75, 'Tyler Lewis', 'tyler.lewis@email.com', '$2b$10$yZ7aB8cD9eF0gH1iJ2kL3mN4oP5qR6sT7uV8wX9', '+1234567814', '568 Peach Dr, Baltimore, MD 21201', '2025-07-30 13:33:40.7515', '2025-07-30 13:33:40.7515', NULL, 'customer', 't');
 INSERT INTO "public"."customer" VALUES (76, 'Karen Lee', 'karen.lee@email.com', '$2b$10$zA8bC9dE0fG1hI2jK3lM4nO5pQ6rS7tU8vW9xY0', '+1234567815', '679 Orange Ln, Louisville, KY 40201', '2025-07-30 13:33:40.7515', '2025-07-30 13:33:40.7515', NULL, 'customer', 't');
 INSERT INTO "public"."customer" VALUES (77, 'Adam Walker', 'adam.walker@email.com', '$2b$10$aB9cD0eF1gH2iJ3kL4mN5oP6qR7sT8uV9wX0yZ1', '+1234567816', '780 Apple Ave, Portland, OR 97201', '2025-07-30 13:33:40.7515', '2025-07-30 13:33:40.7515', NULL, 'customer', 't');
@@ -862,7 +837,6 @@ INSERT INTO "public"."inventory" VALUES (8, 8, 8, '2025-07-24 16:55:59.814843', 
 INSERT INTO "public"."inventory" VALUES (6, 6, 8, '2025-07-27 02:16:26.976339', 1);
 INSERT INTO "public"."inventory" VALUES (4, 4, 2, '2025-07-29 16:15:33.136326', 3);
 INSERT INTO "public"."inventory" VALUES (5, 5, 9, '2025-07-29 16:15:33.136326', 2);
-INSERT INTO "public"."inventory" VALUES (13, 14, 96, '2025-07-30 11:10:57.705865', 1);
 INSERT INTO "public"."inventory" VALUES (14, 15, 100, '2025-07-30 12:01:44.406042', 1);
 INSERT INTO "public"."inventory" VALUES (15, 17, 100, '2025-07-30 12:06:17.444785', 1);
 INSERT INTO "public"."inventory" VALUES (18, 1, 30, '2025-07-12 13:00:00', 1);
@@ -895,12 +869,13 @@ INSERT INTO "public"."inventory" VALUES (44, 9, 30, '2025-07-30 13:00:00', 3);
 INSERT INTO "public"."inventory" VALUES (45, 10, 30, '2025-07-30 13:00:00', 1);
 INSERT INTO "public"."inventory" VALUES (46, 10, 30, '2025-07-30 13:00:00', 2);
 INSERT INTO "public"."inventory" VALUES (47, 10, 30, '2025-07-30 13:00:00', 3);
-INSERT INTO "public"."inventory" VALUES (51, 14, 30, '2025-07-30 13:00:00', 1);
-INSERT INTO "public"."inventory" VALUES (52, 14, 30, '2025-07-30 13:00:00', 2);
-INSERT INTO "public"."inventory" VALUES (53, 14, 30, '2025-07-30 13:00:00', 3);
 INSERT INTO "public"."inventory" VALUES (54, 102, 71, '2025-07-30 13:00:00', 1);
 INSERT INTO "public"."inventory" VALUES (55, 102, 32, '2025-07-30 13:00:00', 2);
 INSERT INTO "public"."inventory" VALUES (56, 102, 102, '2025-07-30 13:00:00', 3);
+INSERT INTO "public"."inventory" VALUES (13, 14, 95, '2025-07-30 14:49:22.31648', 1);
+INSERT INTO "public"."inventory" VALUES (51, 14, 29, '2025-07-30 14:49:22.31648', 1);
+INSERT INTO "public"."inventory" VALUES (52, 14, 29, '2025-07-30 14:49:22.31648', 2);
+INSERT INTO "public"."inventory" VALUES (53, 14, 29, '2025-07-30 14:49:22.31648', 3);
 
 -- ----------------------------
 -- Table structure for order
@@ -945,6 +920,7 @@ INSERT INTO "public"."order" VALUES (31, 3, 'Delivered', '2025-07-29 17:38:14.80
 INSERT INTO "public"."order" VALUES (32, 3, 'delivered', '2025-07-29 20:54:02.713491', 29.00, 'standard', NULL);
 INSERT INTO "public"."order" VALUES (14, 3, 'delivered', '2025-07-21 23:55:40.249489', 31.00, 'standard', NULL);
 INSERT INTO "public"."order" VALUES (34, 3, 'shipped', '2025-07-30 11:10:57.705865', 17.00, 'standard', 'LIBRI46d18');
+INSERT INTO "public"."order" VALUES (35, 3, 'delivered', '2025-07-30 14:49:22.31648', 17.00, 'standard', 'LIBRI31096');
 
 -- ----------------------------
 -- Table structure for order_cancellation
@@ -1025,6 +1001,7 @@ INSERT INTO "public"."order_item" VALUES (35, 30, 5, '2025-07-29 16:15:33.136326
 INSERT INTO "public"."order_item" VALUES (36, 31, 14, '2025-07-29 17:38:14.805835', 1, 15.00, 2);
 INSERT INTO "public"."order_item" VALUES (37, 32, 14, '2025-07-29 20:54:02.713491', 2, 12.00, 1);
 INSERT INTO "public"."order_item" VALUES (40, 34, 14, '2025-07-30 11:10:57.705865', 1, 12.00, 1);
+INSERT INTO "public"."order_item" VALUES (41, 35, 14, '2025-07-30 14:49:22.31648', 1, 12.00, 1);
 
 -- ----------------------------
 -- Table structure for payment
@@ -1044,6 +1021,7 @@ CREATE TABLE "public"."payment" (
 -- Records of payment
 -- ----------------------------
 INSERT INTO "public"."payment" VALUES (1, 34, 1, 17.00, '2025-07-30 11:10:57.705865', '2025-07-30 11:10:57.705865');
+INSERT INTO "public"."payment" VALUES (2, 35, 2, 17.00, '2025-07-30 14:49:22.31648', '2025-07-30 14:49:22.31648');
 
 -- ----------------------------
 -- Table structure for payment_method
@@ -1061,23 +1039,6 @@ CREATE TABLE "public"."payment_method" (
 INSERT INTO "public"."payment_method" VALUES (1, 'Cash On Delivery');
 INSERT INTO "public"."payment_method" VALUES (2, 'Online Banking');
 INSERT INTO "public"."payment_method" VALUES (3, 'Debit/Credit Card');
-
--- ----------------------------
--- Table structure for recommendation
--- ----------------------------
-DROP TABLE IF EXISTS "public"."recommendation";
-CREATE TABLE "public"."recommendation" (
-  "recommendation_id" int4 NOT NULL DEFAULT nextval('recommendation_recommendation_id_seq'::regclass),
-  "customer_id" int4,
-  "book_id" int4,
-  "source" varchar(255) COLLATE "pg_catalog"."default",
-  "recommended_at" timestamp(6) DEFAULT CURRENT_TIMESTAMP
-)
-;
-
--- ----------------------------
--- Records of recommendation
--- ----------------------------
 
 -- ----------------------------
 -- Table structure for review
@@ -1160,6 +1121,7 @@ INSERT INTO "public"."shipping" VALUES (21, 30, 'Dhaka, Bangladesh', 'Dhaka', '1
 INSERT INTO "public"."shipping" VALUES (22, 31, 'Dhaka, Bangladesh', 'Dhaka', '1000', 'Bangladesh', NULL, '2025-08-05 17:38:14.805835');
 INSERT INTO "public"."shipping" VALUES (23, 32, 'Dhaka, Bangladesh', 'Dhaka', '1000', 'Bangladesh', NULL, '2025-08-05 20:54:02.713491');
 INSERT INTO "public"."shipping" VALUES (24, 34, 'Suhrawardy Hall, BUET', 'Dhaka', '1000', 'Bangladesh', NULL, '2025-08-06 11:10:57.705865');
+INSERT INTO "public"."shipping" VALUES (25, 35, 'Dhaka, Bangladesh', 'Dhaka', '1000', 'Bangladesh', NULL, '2025-08-06 14:49:22.31648');
 
 -- ----------------------------
 -- Table structure for sub_category
@@ -1258,6 +1220,7 @@ INSERT INTO "public"."user_notifications" VALUES (4, 3, 'order_status_update', '
 INSERT INTO "public"."user_notifications" VALUES (5, 3, 'order_status_update', 'Order Status Updated', 'Your order #14 status has been updated to: delivered', 14, 'f', '2025-07-29 21:07:00.980868');
 INSERT INTO "public"."user_notifications" VALUES (6, 3, 'order_status_update', 'Order Status Updated', 'Your order #34 status has been updated to: processing', 34, 'f', '2025-07-30 11:12:02.487853');
 INSERT INTO "public"."user_notifications" VALUES (7, 3, 'order_status_update', 'Order Status Updated', 'Your order #34 status has been updated to: shipped', 34, 'f', '2025-07-30 11:13:45.978494');
+INSERT INTO "public"."user_notifications" VALUES (8, 3, 'order_status_update', 'Order Status Updated', 'Your order #35 status has been updated to: delivered', 35, 'f', '2025-07-30 14:50:09.762496');
 
 -- ----------------------------
 -- Table structure for wishlist
@@ -1645,7 +1608,7 @@ SELECT setval('"public"."admin_admin_id_seq"', 1, false);
 -- ----------------------------
 ALTER SEQUENCE "public"."admin_notifications_notification_id_seq"
 OWNED BY "public"."admin_notifications"."notification_id";
-SELECT setval('"public"."admin_notifications_notification_id_seq"', 76, true);
+SELECT setval('"public"."admin_notifications_notification_id_seq"', 77, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -1687,7 +1650,7 @@ SELECT setval('"public"."cart_cart_id_seq"', 23, true);
 -- ----------------------------
 ALTER SEQUENCE "public"."cart_item_cart_item_id_seq"
 OWNED BY "public"."cart_item"."cart_item_id";
-SELECT setval('"public"."cart_item_cart_item_id_seq"', 86, true);
+SELECT setval('"public"."cart_item_cart_item_id_seq"', 87, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -1736,14 +1699,14 @@ SELECT setval('"public"."order_cancellation_cancellation_id_seq"', 13, true);
 -- ----------------------------
 ALTER SEQUENCE "public"."order_item_order_item_id_seq"
 OWNED BY "public"."order_item"."order_item_id";
-SELECT setval('"public"."order_item_order_item_id_seq"', 40, true);
+SELECT setval('"public"."order_item_order_item_id_seq"', 41, true);
 
 -- ----------------------------
 -- Alter sequences owned by
 -- ----------------------------
 ALTER SEQUENCE "public"."order_order_id_seq"
 OWNED BY "public"."order"."order_id";
-SELECT setval('"public"."order_order_id_seq"', 34, true);
+SELECT setval('"public"."order_order_id_seq"', 35, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -1757,14 +1720,7 @@ SELECT setval('"public"."payment_method_payment_method_id_seq"', 1, false);
 -- ----------------------------
 ALTER SEQUENCE "public"."payment_payment_id_seq"
 OWNED BY "public"."payment"."payment_id";
-SELECT setval('"public"."payment_payment_id_seq"', 1, true);
-
--- ----------------------------
--- Alter sequences owned by
--- ----------------------------
-ALTER SEQUENCE "public"."recommendation_recommendation_id_seq"
-OWNED BY "public"."recommendation"."recommendation_id";
-SELECT setval('"public"."recommendation_recommendation_id_seq"', 1, false);
+SELECT setval('"public"."payment_payment_id_seq"', 2, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -1778,7 +1734,7 @@ SELECT setval('"public"."review_review_id_seq"', 42, true);
 -- ----------------------------
 ALTER SEQUENCE "public"."shipping_shipping_id_seq"
 OWNED BY "public"."shipping"."shipping_id";
-SELECT setval('"public"."shipping_shipping_id_seq"', 24, true);
+SELECT setval('"public"."shipping_shipping_id_seq"', 25, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -1806,7 +1762,7 @@ SELECT setval('"public"."supplier_supplier_id_seq"', 2, true);
 -- ----------------------------
 ALTER SEQUENCE "public"."user_notifications_notification_id_seq"
 OWNED BY "public"."user_notifications"."notification_id";
-SELECT setval('"public"."user_notifications_notification_id_seq"', 7, true);
+SELECT setval('"public"."user_notifications_notification_id_seq"', 8, true);
 
 -- ----------------------------
 -- Alter sequences owned by
@@ -1886,11 +1842,6 @@ ALTER TABLE "public"."book_format" ADD CONSTRAINT "book_format_book_id_format_id
 -- Primary Key structure for table book_format
 -- ----------------------------
 ALTER TABLE "public"."book_format" ADD CONSTRAINT "book_format_pkey" PRIMARY KEY ("book_format_id");
-
--- ----------------------------
--- Primary Key structure for table book_recommendation
--- ----------------------------
-ALTER TABLE "public"."book_recommendation" ADD CONSTRAINT "book_recommendation_pkey" PRIMARY KEY ("recommendation_id", "book_id");
 
 -- ----------------------------
 -- Primary Key structure for table book_sub_category
@@ -2014,11 +1965,6 @@ ALTER TABLE "public"."payment" ADD CONSTRAINT "payment_pkey" PRIMARY KEY ("payme
 ALTER TABLE "public"."payment_method" ADD CONSTRAINT "payment_method_pkey" PRIMARY KEY ("payment_method_id");
 
 -- ----------------------------
--- Primary Key structure for table recommendation
--- ----------------------------
-ALTER TABLE "public"."recommendation" ADD CONSTRAINT "recommendation_pkey" PRIMARY KEY ("recommendation_id");
-
--- ----------------------------
 -- Triggers structure for table review
 -- ----------------------------
 CREATE TRIGGER "trg_update_book_ratings_delete" AFTER DELETE ON "public"."review"
@@ -2122,12 +2068,6 @@ ALTER TABLE "public"."book_format" ADD CONSTRAINT "book_format_book_id_fkey" FOR
 ALTER TABLE "public"."book_format" ADD CONSTRAINT "book_format_format_id_fkey" FOREIGN KEY ("format_id") REFERENCES "public"."format" ("format_id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- ----------------------------
--- Foreign Keys structure for table book_recommendation
--- ----------------------------
-ALTER TABLE "public"."book_recommendation" ADD CONSTRAINT "book_recommendation_book_id_fkey" FOREIGN KEY ("book_id") REFERENCES "public"."book" ("book_id") ON DELETE CASCADE ON UPDATE NO ACTION;
-ALTER TABLE "public"."book_recommendation" ADD CONSTRAINT "book_recommendation_recommendation_id_fkey" FOREIGN KEY ("recommendation_id") REFERENCES "public"."recommendation" ("recommendation_id") ON DELETE CASCADE ON UPDATE NO ACTION;
-
--- ----------------------------
 -- Foreign Keys structure for table book_sub_category
 -- ----------------------------
 ALTER TABLE "public"."book_sub_category" ADD CONSTRAINT "book_sub_category_book_id_fkey" FOREIGN KEY ("book_id") REFERENCES "public"."book" ("book_id") ON DELETE CASCADE ON UPDATE NO ACTION;
@@ -2189,12 +2129,6 @@ ALTER TABLE "public"."order_item" ADD CONSTRAINT "order_item_order_id_fkey" FORE
 -- ----------------------------
 ALTER TABLE "public"."payment" ADD CONSTRAINT "payment_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "public"."order" ("order_id") ON DELETE CASCADE ON UPDATE NO ACTION;
 ALTER TABLE "public"."payment" ADD CONSTRAINT "payment_payment_method_id_fkey" FOREIGN KEY ("payment_method_id") REFERENCES "public"."payment_method" ("payment_method_id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- ----------------------------
--- Foreign Keys structure for table recommendation
--- ----------------------------
-ALTER TABLE "public"."recommendation" ADD CONSTRAINT "recommendation_book_id_fkey" FOREIGN KEY ("book_id") REFERENCES "public"."book" ("book_id") ON DELETE CASCADE ON UPDATE NO ACTION;
-ALTER TABLE "public"."recommendation" ADD CONSTRAINT "recommendation_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "public"."customer" ("customer_id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- ----------------------------
 -- Foreign Keys structure for table review
